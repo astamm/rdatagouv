@@ -9,8 +9,10 @@ dg_refetch(x, remove_na = FALSE)
 \arguments{
 \item{x}{Either a table returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or \code{\link[=dg_refetch]{dg_refetch()}}
 (its \code{id} attribute is read automatically) or a table address string: the
-URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
-(or \code{...#<resource_id>/<file>} for a file inside a ZIP).}
+canonical URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
+(or \code{...#<resource_id>/<file>} for a file inside a ZIP), or a legacy
+composed id of the form \verb{<dataset_id>::<resource_id>} /
+\verb{<dataset_id>::<resource_id>::<file>}.}
 
 \item{remove_na}{Whether to drop rows containing any \code{NA} value (passed to
 \code{format_tibble()}). Defaults to \code{FALSE}.}

@@ -117,17 +117,12 @@ fetch_datasets_page_v2 <- function(page, page_size, q = NULL, format) {
 # results are combined, removing datasets that matched more than one format
 # (the full dataset object is returned identically whichever format matched, so
 # deduplication by dataset id keeps a single copy).
-fetch_all_datasets <- function(
-  page_size = 1000,
-  q = NULL,
-  n = 1000,
-  format = catalog_formats(),
-  api_version = 1
-  ){
-  
+# `api_version`` api version to use, default is version 1. value 1 or 2.
+fetch_all_datasets <- function(page_size = 1000, q = NULL, n = 1000,
+                               format = catalog_formats(), api_version = 1) {
   if( api_version == 2) { fetch_api <- fetch_datasets_page_v2 }
   else { fetch_api <- fetch_datasets_page }
-
+  
   all <- list()
   seen_ids <- character()
   for (fmt in format) {
@@ -535,17 +530,17 @@ resolve_table_id <- function(x) {
 # Split a table address into its (dataset, resource, file) parts. Returns a
 # named list; `file` is NULL when absent. Errors on a malformed id.
 #
-# Accepts the URI form composed by compose_table_id():
+# Accepts the canonical URI form composed by compose_table_id():
 #   "https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>(/<file>)"
-# The fragment covers both a single resource (`#<resource_id>`) and a file
-# inside a ZIP (`#<resource_id>/<file>`).
+# and, for backwards compatibility, the legacy composed id:
+#   "<dataset_id>::<resource_id>(::<file>)"
 parse_table_id <- function(id) {
   if (!is.character(id) || length(id) != 1 || is.na(id)) {
     stop("Invalid table id: expected a single non-NA string.", call. = FALSE)
   }
   hex <- "[0-9a-fA-F]{24}"
   uuid <- "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-  # URI form: <base>#<resource_id>(/<file>)
+  # Canonical URI form: <base>#<resource_id>(/<file>)
   m <- regexec(
     paste0(
       "^https://www\\.data\\.gouv\\.fr/datasets/(",
@@ -565,12 +560,31 @@ parse_table_id <- function(id) {
       file = if (length(m) >= 4 && nzchar(m[[4]])) m[[4]] else NULL
     ))
   }
-  stop(
-    "Invalid table id '",
-    id,
-    "': expected the URI 'https://www.data.gouv.fr/datasets/<dataset>",
-    "#<resource>(/<file>)'.",
-    call. = FALSE
+  # Legacy composed id: <dataset_id>::<resource_id>(::<file>)
+  parts <- strsplit(id, "::", fixed = TRUE)[[1]]
+  if (length(parts) < 2 || length(parts) > 3) {
+    stop(
+      "Invalid table id '",
+      id,
+      "': expected the URI 'https://www.data.gouv.fr/datasets/<dataset>",
+      "#<resource>(/<file>)' or the legacy '<dataset>::<resource>(::<file>)'.",
+      call. = FALSE
+    )
+  }
+  if (!is_dataset_id(parts[[1]])) {
+    stop(
+      "Invalid table id '",
+      id,
+      "': '",
+      parts[[1]],
+      "' is not a dataset identifier.",
+      call. = FALSE
+    )
+  }
+  list(
+    dataset_id = parts[[1]],
+    resource_id = parts[[2]],
+    file = if (length(parts) == 3) parts[[3]] else NULL
   )
 }
 

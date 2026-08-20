@@ -9,8 +9,10 @@
 #'
 #' @param x Either a table returned by [dg_pull_dataset()] or [dg_refetch()]
 #'   (its `id` attribute is read automatically) or a table address string: the
-#'   URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
-#'   (or `...#<resource_id>/<file>` for a file inside a ZIP).
+#'   canonical URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
+#'   (or `...#<resource_id>/<file>` for a file inside a ZIP), or a legacy
+#'   composed id of the form `<dataset_id>::<resource_id>` /
+#'   `<dataset_id>::<resource_id>::<file>`.
 #' @param remove_na Whether to drop rows containing any `NA` value (passed to
 #'   `format_tibble()`). Defaults to `FALSE`.
 #'

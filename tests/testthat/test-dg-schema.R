@@ -46,12 +46,7 @@ test_that("dg_schema() returns the documented fields of a schema-attached resour
     http_perform = function(req) schema_resp
   )
 
-  out <- dg_schema(paste0(
-    "https://www.data.gouv.fr/datasets/",
-    did,
-    "#",
-    rid
-  ))
+  out <- dg_schema(paste(did, rid, sep = "::"))
 
   expect_s3_class(out, "tbl_df")
   expect_named(out, c("name", "title", "description", "type", "example"))
@@ -133,10 +128,7 @@ test_that("dg_schema() accepts a table and reads its id attribute", {
     http_perform = function(req) schema_resp
   )
 
-  tbl <- structure(
-    data.frame(a = 1),
-    id = paste0("https://www.data.gouv.fr/datasets/", did, "#", rid)
-  )
+  tbl <- structure(data.frame(a = 1), id = paste(did, rid, sep = "::"))
   out <- dg_schema(tbl)
 
   expect_equal(out$name, "a")
@@ -176,12 +168,7 @@ test_that("dg_schema() uses the schema URL directly when the pointer has one", {
     }
   )
 
-  out <- dg_schema(paste0(
-    "https://www.data.gouv.fr/datasets/",
-    did,
-    "#",
-    rid
-  ))
+  out <- dg_schema(paste(did, rid, sep = "::"))
 
   expect_equal(seen_url, "https://example.org/schema.json")
   expect_equal(out$name, "a")
@@ -222,12 +209,7 @@ test_that("dg_schema() tolerates fields given as a name -> spec object", {
     http_perform = function(req) schema_resp
   )
 
-  out <- dg_schema(paste0(
-    "https://www.data.gouv.fr/datasets/",
-    did,
-    "#",
-    rid
-  ))
+  out <- dg_schema(paste(did, rid, sep = "::"))
 
   expect_equal(out$name, c("a", "b"))
   expect_equal(out$type, c("string", "integer"))
@@ -263,12 +245,7 @@ test_that("dg_schema() conservatively handles a missing example value", {
     http_perform = function(req) schema_resp
   )
 
-  out <- dg_schema(paste0(
-    "https://www.data.gouv.fr/datasets/",
-    did,
-    "#",
-    rid
-  ))
+  out <- dg_schema(paste(did, rid, sep = "::"))
 
   expect_true(is.na(out$example[[1]]))
   expect_true(is.na(out$title[[1]]))
@@ -287,12 +264,7 @@ test_that("dg_schema() returns NULL (message) when the resource has no schema", 
   )
 
   expect_message(
-    out <- dg_schema(paste0(
-      "https://www.data.gouv.fr/datasets/",
-      did,
-      "#",
-      rid
-    )),
+    out <- dg_schema(paste(did, rid, sep = "::")),
     "has no declared schema"
   )
   expect_null(out)
@@ -304,9 +276,7 @@ test_that("dg_schema() errors when the resource is not on the dataset", {
   )
 
   expect_error(
-    dg_schema(
-      "https://www.data.gouv.fr/datasets/aaaaaaaaaaaaaaaaaaaaaaaa#99999999-9999-4999-8999-999999999999"
-    ),
+    dg_schema("aaaaaaaaaaaaaaaaaaaaaaaa::99999999-9999-4999-8999-999999999999"),
     "was not found on dataset"
   )
 })
