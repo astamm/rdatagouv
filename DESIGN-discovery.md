@@ -45,10 +45,9 @@ opens the right page in a browser, while the fragment carries the two stable
 platform identifiers (`#` and `/` never appear in those fields, so the fragment
 is unambiguous). This is the platform's own identity, so it is stable and
 re-fetchable, unlike filenames. *(An earlier design used a `<dataset_id>::
-<resource_id>(::<file>)` delimiter form; the implementation composes URIs, and
-the legacy `::` form was subsequently removed — the URI fragment
-`#<resource_id>(/<file>)` already covers all the single-file and ZIP-member
-cases the legacy form did.)*
+<resource_id>(::<file>)` delimiter form; the implementation now composes URIs,
+and `parse_table_id()` still accepts the legacy `::` form for backwards
+compatibility.)*
 
 ### 1.2 Store the ID as a table attribute (`dg_pull_dataset`)
 
@@ -88,7 +87,8 @@ dg_refetch(x, remove_na = FALSE)
 Re-fetch the exact table addressed by a table id (URI) and return **one
 tibble** (the id addresses a single table, not a multi-file list). `x` may be a
 table returned by `dg_pull_dataset()`/`dg_refetch()` (its `id` attribute is read
-by `resolve_table_id()`) or a bare id string — the canonical URI.
+by `resolve_table_id()`) or a bare id string — the canonical URI or, for
+backwards compatibility, the legacy `::` composed id.
 
 Steps:
 1. `resolve_table_id(x)` → table id string (the URI).
@@ -202,8 +202,8 @@ Implications for this package:
 `dg_schema(x)` — documented column metadata for a single table address.
 
 - Input: a table returned by `dg_pull_dataset()`/`dg_refetch()` (its `id`
-  attribute is read via `resolve_table_id()`), or a bare table id string (the
-  URI).
+  attribute is read via `resolve_table_id()`), or a bare table id string (URI
+  or legacy `::` composed id).
 - Implementation: data.gouv attaches a schema only as a *pointer* (`resource$schema
   = {name, url, version}`). `dg_schema()` resolves the pointer — the `url`
   directly, or the `name` via `resolve_schema_url()` against
@@ -231,7 +231,6 @@ Implications for this package:
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
 | `R/datagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |
-| `tests/test-live-api.R` (new) | Opt-in live integration tests: verify a file inside a real ZIP is addressable and re-fetchable via its composed URI on the live data.gouv API. Skipped unless `DATAGOUV_LIVE=1` (connectivity is probed against data.gouv itself, not `skip_if_offline()`'s `captive.apple.com`). See AGENTS.md. |
 | `README.qmd` | Update flow examples; rebuild README. |
 
 ---
@@ -252,6 +251,3 @@ Implications for this package:
    `dg_summary()`/`dg_summarise()` for a uniform `dg_*` prefix; `dg_download_many()` removed
    (covered by `dg_pull_dataset()` + `dg_summarise()`); each public function split into its own
    `R/dg-*.R` file (`format_tibble()` moved to `utils.R`).
-8. **Live integration tests** *(implemented)*: `tests/test-live-api.R` proves the composed
-   URI addressing (incl. a file inside a multi-file ZIP) against the real API, gated behind
-   `DATAGOUV_LIVE=1`.
