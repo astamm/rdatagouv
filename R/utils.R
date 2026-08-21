@@ -6,6 +6,11 @@ datagouv_base_url <- function() {
   "https://www.data.gouv.fr/api/1/"
 }
 
+# Base URL of the data.gouv public API v2.
+datagouv_base_url_v2 <- function() {
+  "https://www.data.gouv.fr/api/2/"
+}
+
 # Build a configured httr2 request against the data.gouv API.
 # Adds a polite user agent, a timeout, retry on transient errors and a
 # friendly error message extracted from the JSON error body.
@@ -76,6 +81,27 @@ fetch_datasets_page <- function(page, page_size, q = NULL, format) {
   httr2::resp_body_json(http_perform(req))
 }
 
+# Fetch a single page of datasets from the API V2 for a single resource format.
+#
+# The API only honours one `format` value per query (a comma-joined or repeated
+# `format` is not unioned), so a page is always fetched for exactly one format;
+# `fetch_all_datasets()` issues one query per requested format and unions them.
+fetch_datasets_page_v2 <- function(page, page_size, q = NULL, format) {
+  req <- httr2::req_url_query(
+    httr2::req_url_path_append(
+      req_data_gouv(httr2::request(datagouv_base_url_v2())),
+      "datasets/search"
+    ),
+    page = page,
+    page_size = page_size,
+    format = format
+  )
+  if (!is.null(q)) {
+    req <- httr2::req_url_query(req, q = q)
+  }
+  httr2::resp_body_json(http_perform(req))
+}
+
 # Fetch dataset objects, following pagination until the last page or until `n`
 # datasets have been collected (whichever comes first).
 #
@@ -95,8 +121,13 @@ fetch_all_datasets <- function(
   page_size = 1000,
   q = NULL,
   n = 1000,
-  format = catalog_formats()
-) {
+  format = catalog_formats(),
+  api_version = 1
+  ){
+  
+  if( api_version == 2) { fetch_api <- fetch_datasets_page_v2 }
+  else { fetch_api <- fetch_datasets_page }
+
   all <- list()
   seen_ids <- character()
   for (fmt in format) {
@@ -111,7 +142,7 @@ fetch_all_datasets <- function(
       }
       remaining <- n - length(all) - length(datasets)
       this_size <- min(page_size, remaining)
-      body <- fetch_datasets_page(page, this_size, q = q, format = fmt)
+      body <- fetch_api(page, this_size, q = q, format = fmt)
       items <- body$data
       if (length(items) == 0) {
         break
