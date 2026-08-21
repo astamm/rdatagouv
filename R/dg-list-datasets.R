@@ -111,7 +111,7 @@ dg_list_datasets <- function(
 #'
 #' @export
 #' @examplesIf interactive()
-#' datasets <- dg_datasetssearch(q = "data.gouv")
+#' datasets <- dg_datasets_search(q = "data.gouv")
 #' head(datasets)
 #'
 #' # Search server-side instead of downloading the whole catalog.
@@ -120,7 +120,7 @@ dg_list_datasets <- function(
 #' # Only datasets that carry at least one parquet resource (a more compact
 #' # format than CSV, so a later download is lighter).
 #' parquet <- dg_datasets_search(q="vélo", format = "parquet", n = 10)
-dg_datasets_seach <- function( q="",  n = 1000, format = catalog_formats()) {
+dg_datasets_search <- function( q="",  n = 1000, format = catalog_formats()) {
   if (is.null(q) || length(q) != 1 || is.na(q) || !nzchar(trimws(q))) {
     stop("q (query) parameter not set")
   }

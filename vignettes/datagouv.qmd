@@ -97,6 +97,7 @@ than it should be:
 
 | Step | Function |
 |------|----------|
+| Search in all the catalog | `dg_datasets_search()` |
 | Find / search the catalog | `dg_list_datasets()` |
 | Judge documented columns | `dg_schema()` |
 | Download tabular resources | `dg_pull_dataset()` |
@@ -109,7 +110,32 @@ tailored to the data.gouv.fr API.
 
 ## Finding datasets
 
-`dg_list_datasets()` returns a tibble with one row per dataset:
+`dg_datasets_search()`returns a tibble with one row per dataset.  
+It use API V2 search, that mean it performs a global search in all datasets attributes.
+```{r}
+#| live: true
+library(datagouv)
+
+datasets <- dg_datasets_search(q = "vélo")
+head(datasets)
+```
+
+The columns are chosen to help you decide, at a glance, whether a dataset is
+worth pulling:
+
+* `title` dataset title.
+* `id` is the stable, unique identifier used to address the dataset later.
+* `description_short`a short description.
+* `description`dataset description.
+* `slug` dataset uri shotname.
+* `organization` organization name.
+* `n_resources` is the number of files the dataset contains.
+* `resources_href` resources API V2 REST URL 
+* `datasets_uri` datasets API V1 URL
+
+
+
+`dg_list_datasets()` returns a tibble with one row per dataset (use API V1):
 
 ```{r}
 #| live: true
