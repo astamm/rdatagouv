@@ -44,14 +44,17 @@ knitr::opts_hooks$set(
     # Gate the in-memory, network-free example chunks (marked `#| dg: <fn>`)
     # so a broken install can never abort R CMD build/check. We fail closed:
     # the chunk runs only on the website — pkgdown sets DATAGOUV_LIVE=1, where
-    # the package is guaranteed to work — and is always skipped during the
-    # packaging build, which never sets that variable. A requireNamespace()/
+    # the package is guaranteed to work — and is skipped during the packaging
+    # build, which normally does not set that variable. A requireNamespace()/
     # get() "is it callable?" prediction proved unreliable on Windows/R-devel,
     # where a present-but-unforceable lazy-load export reports callable yet
     # throws when the function is actually invoked, hard-failing the build
-    # (see AGENTS.md). Gating on DATAGOUV_LIVE removes that failure class while
-    # keeping the examples live on the site; dg_summary()/dg_summarise() are
-    # still fully exercised by the test suite.
+    # (see AGENTS.md). Gating on DATAGOUV_LIVE is therefore a best-effort
+    # guard: the chunks additionally set `#| error: true`, so that even in the
+    # unforeseen case that DATAGOUV_LIVE is set (or leaks) in a packaging build
+    # environment and a chunk does run, a broken export degrades to in-chunk
+    # error output instead of aborting the vignette render. dg_summary()/
+    # dg_summarise() are still fully exercised by the test suite.
     fun <- options$dg
     ok <- is.character(fun) && length(fun) == 1L &&
       toupper(Sys.getenv("DATAGOUV_LIVE")) == "1" &&
@@ -260,6 +263,7 @@ script or a database and reproduce the pull without re-searching the catalog.
 
 ```{r}
 #| dg: dg_summary
+#| error: true
 dg_summary(iris, name = "iris")
 ```
 
@@ -282,6 +286,7 @@ flexible about its input, accepting:
 ```{r}
 # In-memory tables — no network needed
 #| dg: dg_summarise
+#| error: true
 dg_summarise(datasets = list(iris = iris, mtcars = mtcars))
 ```
 
