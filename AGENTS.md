@@ -205,7 +205,22 @@ transient platform artifacts — none reflect a defect in the package (local
   native toolchain. That clang21-only step sits between `setup-deps` and
   `run-check`; the post-run cache step then saves the repaired library so
   later runs restore the good bit64.
-- **windows (R-devel) vignette:** freshly-installed package passed
+- **nosuggests** (fedora-42/4.7, R-devel r90185 — a *healthy* fresh snapshot, so
+  NOT part of the stale-snapshot family) breaks because the container's
+  `libR.so` is built with Address/UndefinedBehaviour sanitization: its link
+  propagates `libasan.so.8`/`libubsan.so.1` as DT_NEEDED onto *every* package
+  `.so` compiled against it, and those runtime libraries are absent from the
+  container. Loading any such `.so` (processx, pulled in by rcmdcheck -> callr)
+  fails with `libasan.so.8: cannot open shared object file` before the test
+  suite runs. **This is NOT a cache problem** (contrary to an early 2026-08-22
+  hypothesis). Forcing a clean source rebuild of processx via
+  `install.packages(type="source", repos=NULL)` (run 32599565727) *did*
+  recompile the package, but the rebuilt `processx.so` still linked
+  `libasan.so.8 => not found`/`libubsan.so.1 => not found` (confirmed by the
+  step's own `ldd`), and run-check then failed identically — so the cache-delete
+  fix (as for clang21/bit64) is inapplicable. Resolved: exclude `nosuggests`
+  from the matrix until r-hub rebuilds the container to drop the sanitizer
+  instrumentation or ship the missing runtime libraries.
   `requireNamespace()` yet did not expose `dg_summarise` (while `dg_summary`
   was callable) in the build subprocess. Reproduced across runs 32387247290,
   32462190016, and 32561358512; neither the `exists()`- nor the `get()`-based

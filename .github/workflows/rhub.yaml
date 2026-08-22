@@ -88,6 +88,20 @@ jobs:
         # the run-check action aborts with "bcheck output file does not exist".
         # It can never pass for this package (no compiled code to analyze), so
         # it provides no signal here.
+        #
+        # `nosuggests` (fedora-42/4.7, R-devel 4.7.0 r90185) is excluded for
+        # yet another reason (added 2026-08-22, run 32599565727): the
+        # container's `libR.so` is built with Address/UndefinedBehaviour
+        # sanitization, so its link propagates `libasan.so.8`/`libubsan.so.1`
+        # as DT_NEEDED onto every package `.so` compiled against it — and those
+        # runtime libraries are not present in the container. Loading any such
+        # `.so` (e.g. processx pulled in by rcmdcheck -> callr) fails with
+        # "libasan.so.8: cannot open shared object file" before the test suite
+        # runs. This is NOT a cache problem: forcing a clean source rebuild of
+        # processx restores the same broken NEEDED entries (verified via the
+        # step's own `ldd`, run 32599565727), so a source rebuild cannot help.
+        # Rerunning is pointless until r-hub rebuilds the container to either
+        # drop the sanitizer instrumentation or ship the missing runtimes.
         exclude:
           - config:
               name: c23
@@ -111,6 +125,8 @@ jobs:
               name: intel
           - config:
               name: noremap
+          - config:
+              name: nosuggests
           - config:
               name: rchk
     container:
@@ -200,37 +216,6 @@ jobs:
             download.file(url, dest, quiet = TRUE)
             install.packages(dest, lib = lib, repos = NULL, type = "source")
             cat("installed bit64 from source: ", "bit64" %in% rownames(installed.packages(lib = lib)), "\n", sep = "")
-          '
-      # nosuggests-only repair. This fresh-snapshot R-devel container
-      # (fedora-42/4.7) is NOT stale (its setup-deps step builds magrittr/rlang
-      # fine), but its cached `processx` binary is poisoned exactly the way
-      # clang21's cached `bit64` was (see the bit64 step above): a
-      # previously-cached `processx.so` links against `libasan.so.8`, which is
-      # missing at load time here, so loading any package that depends on
-      # processx (e.g. rcmdcheck/rcmdcheck -> callr -> processx) fails with
-      # "libasan.so.8: cannot open shared object file" during the check step,
-      # before the test suite runs. The "Build dependencies from source" step
-      # above does not help because the cache restores the poisoned binary and
-      # pak's lockfile install sees the version as already-satisfied. Fix:
-      # drop the cached processx out of R_LIBS_USER and force a source rebuild
-      # from the CRAN tarball, which links against the container's native
-      # toolchain. The post-run cache step then saves the repaired library.
-      - name: Force source rebuild of processx (nosuggests libasan workaround)
-        if: ${{ matrix.config.name == 'nosuggests' }}
-        env:
-          R_LIBS_USER: ${{ env.R_LIBS_USER }}
-        run: |
-          Rscript -e '
-            lib <- Sys.getenv("R_LIBS_USER")
-            url <- "https://cran.r-project.org/src/contrib/processx_3.9.0.tar.gz"
-            dest <- file.path(tempdir(), "processx_3.9.0.tar.gz")
-            cat("processx in ", lib, ": ", "processx" %in% rownames(installed.packages(lib = lib)), "\n", sep = "")
-            download.file(url, dest, quiet = TRUE)
-            install.packages(dest, lib = lib, repos = NULL, type = "source")
-            cat("installed processx from source: ", "processx" %in% rownames(installed.packages(lib = lib)), "\n", sep = "")
-            ## verify the DLL no longer links against the missing libasan runtime
-            dll <- file.path(lib, "processx", "libs", paste0("processx", .Platform$dynlib.ext))
-            cat("ldd processx:", system(paste("ldd", dll), intern = TRUE), "\n")
           '
       - uses: r-hub/actions/run-check@v1
         with:
