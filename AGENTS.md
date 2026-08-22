@@ -252,9 +252,15 @@ in the package (local `R CMD build` + test suite, 0 errors, are green):
   [`get()`](https://rdrr.io/r/base/get.html)-based `dg` hook caught it,
   pointing to a *present-but-unforceable* lazy-load entry that reports
   “callable” yet throws at call time. R-devel-Windows-specific; not
-  reproducible on macOS. **Resolved 2026-08-22:** the `dg` hook now
-  fails closed on `DATAGOUV_LIVE` (see below), so the decorative
-  in-memory chunk can never abort `R CMD build`.
+  reproducible on macOS. **Resolved 2026-08-22:** the `dg` hook fails
+  closed on `DATAGOUV_LIVE` *and* the two decorative chunks set
+  `#| error: true` (see below), so the in-memory chunks can never abort
+  `R CMD build`. Note run 32579232283: after the DATAGOUV_LIVE gate was
+  committed, chunk 10 still ran and threw during `R CMD build` — the
+  gate alone was not sufficient, because either `DATAGOUV_LIVE` was
+  set/leaked in that Windows build subprocess or the hook failed to fire
+  there. The `error: true` hardening is environment- independent and
+  catches whichever mechanism let the chunk run.
 
 ### The `dg` opts_hook (vignette) — why and how
 
@@ -263,11 +269,12 @@ in the package (local `R CMD build` + test suite, 0 errors, are green):
 `live` (DATAGOUV_LIVE=1) and `dg`. The `dg` hook gates the two
 network-free in-memory chunks so a bad environment degrades to a skip
 instead of failing `R CMD build`. Each chunk sets
-`#| dg: <function name>` (e.g. `dg: dg_summarise`); the hook evaluates
-the chunk only when `DATAGOUV_LIVE=1` **and**
-`"package:datagouv" %in% search()` **and** the named export forces to a
-real function — checked with `get(<fn>, inherits = TRUE)` inside
-`tryCatch`, NOT [`exists()`](https://rdrr.io/r/base/exists.html).
+`#| dg: <function name>` (e.g. `dg: dg_summarise`) **and**
+`#| error: true`; the hook evaluates the chunk only when
+`DATAGOUV_LIVE=1` **and** `"package:datagouv" %in% search()` **and** the
+named export forces to a real function — checked with
+`get(<fn>, inherits = TRUE)` inside `tryCatch`, NOT
+[`exists()`](https://rdrr.io/r/base/exists.html).
 
 **Why fail closed on `DATAGOUV_LIVE`:** the pkgdown site render alone
 sets `DATAGOUV_LIVE=1` (see `.github/workflows/pkgdown.yaml`), where the
@@ -290,9 +297,20 @@ unforced lazy-load promise without error, so the hook judged the export
 “callable” and the subsequent call threw. No
 [`get()`](https://rdrr.io/r/base/get.html)/[`exists()`](https://rdrr.io/r/base/exists.html)
 prediction reliably catches a present-but-unforceable lazy-load entry,
-so the hook now gates on `DATAGOUV_LIVE` as well. This removes the
-failure class from the packaging build while keeping the examples live
-on the website.
+so the hook now gates on `DATAGOUV_LIVE` as well. **This environment
+gate alone proved insufficient:** run 32579232283 (which carried the
+DATAGOUV_LIVE-gated hook from commit `1130f56`) *still* executed chunk
+10 during `R CMD build` and aborted — meaning `DATAGOUV_LIVE` was
+set/leaked in that Windows build subprocess, or the hook did not fire
+there. The hook replaced the *callability* test as the sole guard but
+kept a genuinely environment-independent backstop: both decorative
+chunks also set `#| error: true`, so a chunk that leaks into execution
+renders an in-chunk error message instead of aborting the vignette
+render, no matter why it ran (locally verified with `quarto_render()`: a
+chunk calling a nonexistent function with `error: true` completes the
+render successfully). This removes the failure class from the packaging
+build while keeping the examples live on the website (a healthy install
+runs them without error).
 
 **Assessment: does the gate mask a real partial-install bug?** No
 package-side mechanism can drop a single export (namespaces load
@@ -302,10 +320,11 @@ locally). The anomaly fits the known run of R-hub install/hash
 artifacts. Caveat: runs 32387247290, 32462190016, and 32561358512 all
 aborted at the vignette before the Windows *test suite* ran, so there is
 still no Windows test signal confirming `dg_summarise`. The
-DATAGOUV_LIVE-gated hook lets the vignette render without the broken
-export, so the Windows check can finally proceed to the test suite. If a
-future Windows/R-devel run shows the *tests* failing on `dg_summarise`
-specifically, that would point to a real platform-specific bug the gate
-would hide. The gate only controls whether the *decorative in-memory
-chunks* display on the website; it is a vignette-display guard, not a
-package-correctness check (the test suite is the right place for that).
+DATAGOUV_LIVE-gated hook + `error: true` lets the vignette render even
+with the broken export, so the Windows check can finally proceed to the
+test suite. If a future Windows/R-devel run shows the *tests* failing on
+`dg_summarise` specifically, that would point to a real
+platform-specific bug the gate would hide. The gate only controls
+whether the *decorative in-memory chunks* display on the website; it is
+a vignette-display guard, not a package-correctness check (the test
+suite is the right place for that).

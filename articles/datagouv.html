@@ -127,12 +127,12 @@
 <pre><code># A tibble: 6 × 8
   title         id    description slug  n_resources formats has_table has_schema
   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;       &lt;int&gt; &lt;chr&gt;   &lt;lgl&gt;     &lt;lgl&gt;
-1 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
-2 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE
-3 AFA Eurobaro… 6a88… "AFA Eurob… afa-…           2 csv, j… TRUE      FALSE
-4 AFA extrait … 6a88… "AFA extra… afa-…           2 csv, j… TRUE      FALSE
-5 Stock et flu… 6a88… "Le jeu de… stoc…           9 csv     TRUE      FALSE
-6 Stock et flu… 6a88… "Le jeu de… stoc…           9 csv     TRUE      FALSE     </code></pre>
+1 Matrice ouve… 6a89… "Ce jeu de… matr…          15 csv, j… TRUE      FALSE
+2 Informations… 6a89… "Version d… info…           3 csv, j… TRUE      FALSE
+3 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
+4 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE
+5 AFA Eurobaro… 6a88… "AFA Eurob… afa-…           2 csv, j… TRUE      FALSE
+6 AFA extrait … 6a88… "AFA extra… afa-…           2 csv, j… TRUE      FALSE     </code></pre>
 </div>
 </div>
 <p>The columns are chosen to help you decide, at a glance, whether a dataset is worth pulling:</p>
@@ -159,14 +159,14 @@
    &lt;chr&gt;                                              &lt;int&gt; &lt;lgl&gt;     &lt;lgl&gt;
  1 Stations du réseau vélo libre-service C.vélo           9 TRUE      FALSE
  2 Comptages vélo à Nantes par Place au Vélo -…           2 TRUE      FALSE
- 3 Stationnements vélo                                    1 TRUE      TRUE
- 4 Stationnement vélo                                     1 TRUE      FALSE
- 5 Arceau vélo                                           16 TRUE      FALSE
- 6 Primes « vélo »                                        2 TRUE      FALSE
- 7 Arceau vélo                                            7 TRUE      FALSE
- 8 Prime vélo                                             2 TRUE      FALSE
- 9 Stationnement vélo                                     4 TRUE      FALSE
-10 Chartrain à vélo                                       8 TRUE      FALSE     </code></pre>
+ 3 Stationnement vélo                                     1 TRUE      FALSE
+ 4 Stationnement vélo                                     4 TRUE      FALSE
+ 5 Prime vélo                                             2 TRUE      FALSE
+ 6 Arceau vélo                                           16 TRUE      FALSE
+ 7 Primes « vélo »                                        2 TRUE      FALSE
+ 8 Stationnements vélo                                    1 TRUE      TRUE
+ 9 Arceau vélo                                            7 TRUE      FALSE
+10 Stationnement vélo existant                            1 TRUE      TRUE      </code></pre>
 </div>
 </div>
 <p>The discovery catalog is <strong>restricted to data.gouv’s official tabular formats</strong> (<code>csv</code>, <code>csv.gz</code>, <code>xls</code>, <code>xlsx</code>, <code>parquet</code>), so every listed dataset is in principle openable as a table — <code>has_table</code> is almost always <code>TRUE</code>. This is a deliberate choice: JSON, TSV and TXT resources can still be parsed when you address them directly (see <code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code>), but they are not guaranteed tabular and are left out of the catalog so that “the catalog” stays a reliable list of tables.</p>
@@ -365,6 +365,7 @@ num (2): lat, lon
 <div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In-memory tables — no network needed</span></span>
 <span><span class="co">#| dg: dg_summarise</span></span>
+<span><span class="co">#| error: true</span></span>
 <span><span class="fu"><a href="../reference/dg_summarise.html">dg_summarise</a></span><span class="op">(</span>datasets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iris <span class="op">=</span> <span class="va">iris</span>, mtcars <span class="op">=</span> <span class="va">mtcars</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 7
@@ -386,13 +387,12 @@ num (2): lat, lon
 <span>  <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/dg_schema.html">dg_schema</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Rows: 527 Columns: 36
+<pre><code>Rows: 308 Columns: 42
 ── Column specification ────────────────────────────────────────────────────────
 Delimiter: ","
-chr   (1): url_sdirve
-dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
-lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
-date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
+chr  (1): date_realisation_diagnostic
+dbl (14): date_objectifs, code_commune_insee, code_iris_insee, existant_nb_p...
+lgl (27): date_adoption_sdirve, existant_nb_moyen_recharges, existant_duree_...
 
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
