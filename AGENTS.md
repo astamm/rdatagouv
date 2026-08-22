@@ -221,6 +221,16 @@ transient platform artifacts — none reflect a defect in the package (local
   fix (as for clang21/bit64) is inapplicable. Resolved: exclude `nosuggests`
   from the matrix until r-hub rebuilds the container to drop the sanitizer
   instrumentation or ship the missing runtime libraries.
+- **valgrind** (debian/R-devel, run 32601275200) fails for the **same**
+  sanitizer reason as `nosuggests` (confirmed 2026-08-23): `rcmdcheck` pulls in
+  callr -> processx, and `dyn.load(processx.so)` aborts with
+  `libasan.so.8: cannot open shared object file` before the test suite runs.
+  The valgrind container's `libR.so` is instrumented (it runs
+  `R CMD check --use-valgrind`), so every dependency `.so` linked against it
+  carries the ASan runtime as a DT_NEEDED that is absent at load time. Not
+  reproducible package-side (pure-R package, no native code for valgrind to
+  check anyway). Excluded from the matrix alongside `nosuggests`; re-enable
+  only when r-hub ships the missing `libasan.so.8` in that image.
   `requireNamespace()` yet did not expose `dg_summarise` (while `dg_summary`
   was callable) in the build subprocess. Reproduced across runs 32387247290,
   32462190016, and 32561358512; neither the `exists()`- nor the `get()`-based

@@ -102,6 +102,19 @@ jobs:
         # step's own `ldd`, run 32599565727), so a source rebuild cannot help.
         # Rerunning is pointless until r-hub rebuilds the container to either
         # drop the sanitizer instrumentation or ship the missing runtimes.
+        #
+        # `valgrind` (debian/R-devel, run 32601275200) fails for the SAME
+        # sanitizer reason as `nosuggests` (confirmed 2026-08-22): rcmdcheck
+        # pulls in callr -> processx, and `dyn.load(processx.so)` aborts with
+        # "libasan.so.8: cannot open shared object file: No such file or
+        # directory" before the test suite runs. The valgrind container's
+        # `libR.so` is instrumented (that is its purpose — it runs
+        # `R CMD check --use-valgrind`), so every dependency `.so` linked
+        # against it carries the ASan runtime as a DT_NEEDED that is absent at
+        # load time. Not reproducible package-side; exclude until r-hub ships
+        # the missing libasan runtime in the image. (De-prioritize: valgrind
+        # memory checking is aimed at native code, of which this pure-R package
+        # has none anyway.)
         exclude:
           - config:
               name: c23
@@ -127,6 +140,8 @@ jobs:
               name: noremap
           - config:
               name: nosuggests
+          - config:
+              name: valgrind
           - config:
               name: rchk
     container:
