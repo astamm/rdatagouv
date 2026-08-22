@@ -66,11 +66,28 @@ jobs:
         # newer-snapshot devel containers (clang-asan/ubsan, clang21/22,
         # gcc-asan, gcc16, ubuntu-*) still provide R-devel coverage.
         #
+        # Added 2026-08-22 (run 32598239019): `noremap` (ubuntu-22.04/4.6,
+        # R-devel 4.6.0) and `intel` (fedora-38/4.6, R-devel 4.6.0) are
+        # additional stale-snapshot containers excluded for the same reason. In
+        # this run rlang 1.3.0 failed on `noremap` with the exact documented
+        # "implicit declaration of function 'R_envSymbols'" error, and magrittr
+        # 2.0.5 failed on `intel` with "use of undeclared identifier
+        # 'R_MakeDelayedBinding'" (a still-newer symbol than `R_envSymbols`),
+        # i.e. the same stale snapshot family hitting a different package.
+        #
         # NB: clang21 (R-devel r90185) is excluded from the above rationale but
         # is separately unreliable right now: its prebuilt `bit64` binary (from
         # the r-hub CRAN mirror) links against libclang_rt.ubsan_standalone,
         # which is missing at load time, so readr-based table parsing fails at
         # test/vignette time there too.
+        #
+        # `rchk` is excluded too, but for a different reason: it is not a stale
+        # snapshot (ubuntu-22.04/4.7, R-devel 4.7.0). rchk analyzes native code
+        # for memory-protection errors, and `datagouv` is a pure-R package with
+        # no src/ directory, so `rchk.sh` produces no `.so.bcheck` output and
+        # the run-check action aborts with "bcheck output file does not exist".
+        # It can never pass for this package (no compiled code to analyze), so
+        # it provides no signal here.
         exclude:
           - config:
               name: c23
@@ -90,6 +107,12 @@ jobs:
               name: gcc14
           - config:
               name: gcc15
+          - config:
+              name: intel
+          - config:
+              name: noremap
+          - config:
+              name: rchk
     container:
       image: ${{ matrix.config.container }}
 
@@ -177,6 +200,37 @@ jobs:
             download.file(url, dest, quiet = TRUE)
             install.packages(dest, lib = lib, repos = NULL, type = "source")
             cat("installed bit64 from source: ", "bit64" %in% rownames(installed.packages(lib = lib)), "\n", sep = "")
+          '
+      # nosuggests-only repair. This fresh-snapshot R-devel container
+      # (fedora-42/4.7) is NOT stale (its setup-deps step builds magrittr/rlang
+      # fine), but its cached `processx` binary is poisoned exactly the way
+      # clang21's cached `bit64` was (see the bit64 step above): a
+      # previously-cached `processx.so` links against `libasan.so.8`, which is
+      # missing at load time here, so loading any package that depends on
+      # processx (e.g. rcmdcheck/rcmdcheck -> callr -> processx) fails with
+      # "libasan.so.8: cannot open shared object file" during the check step,
+      # before the test suite runs. The "Build dependencies from source" step
+      # above does not help because the cache restores the poisoned binary and
+      # pak's lockfile install sees the version as already-satisfied. Fix:
+      # drop the cached processx out of R_LIBS_USER and force a source rebuild
+      # from the CRAN tarball, which links against the container's native
+      # toolchain. The post-run cache step then saves the repaired library.
+      - name: Force source rebuild of processx (nosuggests libasan workaround)
+        if: ${{ matrix.config.name == 'nosuggests' }}
+        env:
+          R_LIBS_USER: ${{ env.R_LIBS_USER }}
+        run: |
+          Rscript -e '
+            lib <- Sys.getenv("R_LIBS_USER")
+            url <- "https://cran.r-project.org/src/contrib/processx_3.9.0.tar.gz"
+            dest <- file.path(tempdir(), "processx_3.9.0.tar.gz")
+            cat("processx in ", lib, ": ", "processx" %in% rownames(installed.packages(lib = lib)), "\n", sep = "")
+            download.file(url, dest, quiet = TRUE)
+            install.packages(dest, lib = lib, repos = NULL, type = "source")
+            cat("installed processx from source: ", "processx" %in% rownames(installed.packages(lib = lib)), "\n", sep = "")
+            ## verify the DLL no longer links against the missing libasan runtime
+            dll <- file.path(lib, "processx", "libs", paste0("processx", .Platform$dynlib.ext))
+            cat("ldd processx:", system(paste("ldd", dll), intern = TRUE), "\n")
           '
       - uses: r-hub/actions/run-check@v1
         with:
