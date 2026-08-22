@@ -270,7 +270,9 @@ in the package (local `R CMD build` + test suite, 0 errors, are green):
 network-free in-memory chunks so a bad environment degrades to a skip
 instead of failing `R CMD build`. Each chunk sets
 `#| dg: <function name>` (e.g. `dg: dg_summarise`) **and**
-`#| error: true`; the hook evaluates the chunk only when
+`#| error: true`, and wraps its call in
+[`try()`](https://rdrr.io/r/base/try.html) (the actual robustness
+guarantee — see below); the hook evaluates the chunk only when
 `DATAGOUV_LIVE=1` **and** `"package:datagouv" %in% search()` **and** the
 named export forces to a real function — checked with
 `get(<fn>, inherits = TRUE)` inside `tryCatch`, NOT
@@ -302,29 +304,50 @@ gate alone proved insufficient:** run 32579232283 (which carried the
 DATAGOUV_LIVE-gated hook from commit `1130f56`) *still* executed chunk
 10 during `R CMD build` and aborted — meaning `DATAGOUV_LIVE` was
 set/leaked in that Windows build subprocess, or the hook did not fire
-there. The hook replaced the *callability* test as the sole guard but
-kept a genuinely environment-independent backstop: both decorative
-chunks also set `#| error: true`, so a chunk that leaks into execution
-renders an in-chunk error message instead of aborting the vignette
-render, no matter why it ran (locally verified with `quarto_render()`: a
-chunk calling a nonexistent function with `error: true` completes the
-render successfully). This removes the failure class from the packaging
-build while keeping the examples live on the website (a healthy install
-runs them without error).
+there.
+
+**`error: true` alone is NOT a sufficient backstop (run 32594354116,
+head `9bf4b6f`).** The follow-up commit added `#| error: true` to both
+decorative chunks and still aborted identically —
+`* creating vignettes ... ERROR`, `Quitting from datagouv.qmd:286-291`,
+`could not find function "dg_summarise"`. Reproduced locally with
+`quarto_render()`: knitr’s `error` option does contain a *normal
+function-body error*, but it does **not** contain the unforceable-export
+hard failure. The error is raised while forcing the lazy-load promise
+during call/frame setup — a level knitr’s `withCallingHandlers` around
+the chunk expression never sees — so it hard-quits regardless of
+`error: true`. Neither the DATAGOUV_LIVE gate nor the
+[`get()`](https://rdrr.io/r/base/get.html) callability test nor
+`error: true` can stop a broken-export chunk that executes.
+
+**The robust fix is [`try()`](https://rdrr.io/r/base/try.html), which
+lower-level-contains everything.** Both decorative chunk bodies are now
+wrapped in `try(<call>)` (e.g. `try(dg_summarise(...))`), a base-R
+catch-all that converts the unforceable-export hard failure into printed
+`try-error` output instead of an abort. Verified three ways with
+`quarto_render()`/`R CMD build`: (1) healthy install with
+`DATAGOUV_LIVE=1` shows the real metrics tables (try() does not swallow
+correct output); (2) normal `R CMD build` with `DATAGOUV_LIVE` unset
+skips the chunks and builds clean; (3) a broken binding that hard-quits
+a bare `error: true` chunk renders to completion when the identical body
+is wrapped in [`try()`](https://rdrr.io/r/base/try.html). This removes
+the failure class from the packaging build while keeping the examples
+live on the website.
 
 **Assessment: does the gate mask a real partial-install bug?** No
 package-side mechanism can drop a single export (namespaces load
 atomically; `dg-summarise.R` is the only source file with no non-ASCII,
 no load-time side effects; all 7 exports resolve to callable functions
 locally). The anomaly fits the known run of R-hub install/hash
-artifacts. Caveat: runs 32387247290, 32462190016, and 32561358512 all
-aborted at the vignette before the Windows *test suite* ran, so there is
-still no Windows test signal confirming `dg_summarise`. The
-DATAGOUV_LIVE-gated hook + `error: true` lets the vignette render even
-with the broken export, so the Windows check can finally proceed to the
-test suite. If a future Windows/R-devel run shows the *tests* failing on
-`dg_summarise` specifically, that would point to a real
-platform-specific bug the gate would hide. The gate only controls
+artifacts. Caveat: runs 32387247290, 32462190016, 32561358512, and
+32594354116 all aborted at the vignette before the Windows *test suite*
+ran, so there is still no Windows test signal confirming `dg_summarise`.
+The DATAGOUV_LIVE-gated hook +
+[`try()`](https://rdrr.io/r/base/try.html)-wrapped bodies let the
+vignette render even with the broken export, so the Windows check can
+finally proceed to the test suite. If a future Windows/R-devel run shows
+the *tests* failing on `dg_summarise` specifically, that would point to
+a real platform-specific bug the gate would hide. The gate only controls
 whether the *decorative in-memory chunks* display on the website; it is
 a vignette-display guard, not a package-correctness check (the test
 suite is the right place for that).
