@@ -50,11 +50,11 @@ knitr::opts_hooks$set(
     # where a present-but-unforceable lazy-load export reports callable yet
     # throws when the function is actually invoked, hard-failing the build
     # (see AGENTS.md). Gating on DATAGOUV_LIVE is therefore a best-effort
-    # guard: the chunks additionally set `#| error: true`, so that even in the
-    # unforeseen case that DATAGOUV_LIVE is set (or leaks) in a packaging build
-    # environment and a chunk does run, a broken export degrades to in-chunk
-    # error output instead of aborting the vignette render. dg_summary()/
-    # dg_summarise() are still fully exercised by the test suite.
+    # guard: even with the chunk allowed to run, it can no longer abort the
+    # render, because its body is wrapped in try() (a low-level catch-all
+    # that contains even the unforceable-export hard failure) and it sets
+    # `#| error: true`. dg_summary()/dg_summarise() are still fully exercised
+    # by the test suite.
     fun <- options$dg
     ok <- is.character(fun) && length(fun) == 1L &&
       toupper(Sys.getenv("DATAGOUV_LIVE")) == "1" &&
@@ -264,7 +264,12 @@ script or a database and reproduce the pull without re-searching the catalog.
 ```{r}
 #| dg: dg_summary
 #| error: true
-dg_summary(iris, name = "iris")
+# The call is wrapped in try() as a low-level backstop: neither knitr's
+# `error: true` option nor the DATAGOUV_LIVE/get() gate can contain a
+# present-but-unforceable lazy-load export (the Windows/R-devel failure,
+# see AGENTS.md), whereas try() degrades even that hard failure to printed
+# output instead of aborting R CMD build/check.
+try(dg_summary(iris, name = "iris"))
 ```
 
 The reported columns are `dataset` (a label), `size_kb` (in-memory weight),
@@ -287,7 +292,7 @@ flexible about its input, accepting:
 # In-memory tables — no network needed
 #| dg: dg_summarise
 #| error: true
-dg_summarise(datasets = list(iris = iris, mtcars = mtcars))
+try(dg_summarise(datasets = list(iris = iris, mtcars = mtcars)))
 ```
 
 ## A complete workflow
