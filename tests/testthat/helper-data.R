@@ -1,8 +1,11 @@
 # Helpers to build synthetic API objects for tests.
 
 # Build a minimal, realistic dataset object as returned by the API.
-mock_dataset <- function(title = "Example dataset", id = "dset-1",
-                         resources = NULL) {
+mock_dataset <- function(
+  title = "Example dataset",
+  id = "dset-1",
+  resources = NULL
+) {
   if (is.null(resources)) {
     resources <- list(mock_resource("csv"))
   }
@@ -15,7 +18,13 @@ mock_dataset <- function(title = "Example dataset", id = "dset-1",
 }
 
 # Build a minimal, realistic resource object.
-mock_resource <- function(format = "csv", title = "data", url = "https://example.org/data.csv", id = "res-1", filesize = 1024) {
+mock_resource <- function(
+  format = "csv",
+  title = "data",
+  url = "https://example.org/data.csv",
+  id = "res-1",
+  filesize = 1024
+) {
   list(
     id = id,
     title = title,

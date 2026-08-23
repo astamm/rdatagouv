@@ -33,7 +33,10 @@ test_that("dg_summary() reports all numeric variables when appropriate", {
 })
 
 test_that("dg_summary() handles a zero-row tibble", {
-  out <- dg_summary(tibble::tibble(a = numeric(), b = character()), name = "empty")
+  out <- dg_summary(
+    tibble::tibble(a = numeric(), b = character()),
+    name = "empty"
+  )
 
   expect_equal(out$n_rows, 0)
   expect_equal(out$prop_missing, 0)

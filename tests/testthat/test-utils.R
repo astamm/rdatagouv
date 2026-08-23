@@ -33,7 +33,9 @@ test_that("req_data_gouv() sets a timeout and bounded retries", {
 })
 
 test_that("req_data_gouv() treats only gateway 429/5xx as transient", {
-  is_transient <- req_data_gouv(httr2::request("https://example.org"))$policies$retry_is_transient
+  is_transient <- req_data_gouv(httr2::request(
+    "https://example.org"
+  ))$policies$retry_is_transient
 
   transient <- c(429, 500, 502, 503, 504)
   expect_true(all(sapply(transient, function(st) {
@@ -66,7 +68,9 @@ test_that("download_resource() routes through req_data_gouv() hardening", {
 
 test_that("fetch_datasets_page() parses the JSON response", {
   local_mock_req_perform(function(req, ...) {
-    fake_json_response('{"data": [{"title": "A"}], "next_page": null, "total": 1}')
+    fake_json_response(
+      '{"data": [{"title": "A"}], "next_page": null, "total": 1}'
+    )
   })
 
   body <- fetch_datasets_page(page = 1, page_size = 20, format = "csv")
@@ -116,7 +120,7 @@ test_that("resource_has_schema() detects a schema pointer by name or url", {
   by_url$schema <- list(name = NULL, url = "https://example.org/schema.json")
   empty <- mock_resource("csv")
   empty$schema <- list(name = NULL, url = NULL)
-  none <- mock_resource("csv")  # no $schema node at all
+  none <- mock_resource("csv") # no $schema node at all
 
   expect_true(resource_has_schema(by_name))
   expect_true(resource_has_schema(by_url))
@@ -137,7 +141,11 @@ test_that("fetch_all_datasets() stops once n datasets are collected", {
       start <- (page - 1) * page_size + 1
       end <- min(page * page_size, length(titles))
       list(
-        data = Map(mock_dataset, title = titles[start:end], id = paste0("id", start:end)),
+        data = Map(
+          mock_dataset,
+          title = titles[start:end],
+          id = paste0("id", start:end)
+        ),
         next_page = if (end < length(titles)) paste0("page", page + 1) else NULL
       )
     }
@@ -146,7 +154,10 @@ test_that("fetch_all_datasets() stops once n datasets are collected", {
   out <- fetch_all_datasets(page_size = 100, n = 5, format = "csv")
 
   expect_length(out, 5)
-  expect_equal(unname(vapply(out, function(x) x$title, character(1))), letters[1:5])
+  expect_equal(
+    unname(vapply(out, function(x) x$title, character(1))),
+    letters[1:5]
+  )
   # The first request is capped at n (5), and no further page is fetched.
   expect_equal(requested_sizes, 5)
   expect_equal(formats_seen, "csv")
@@ -159,7 +170,11 @@ test_that("fetch_all_datasets() fetches all pages when n is Inf", {
       start <- (page - 1) * page_size + 1
       end <- min(page * page_size, length(titles))
       list(
-        data = Map(mock_dataset, title = titles[start:end], id = paste0("id", start:end)),
+        data = Map(
+          mock_dataset,
+          title = titles[start:end],
+          id = paste0("id", start:end)
+        ),
         next_page = if (end < length(titles)) paste0("page", page + 1) else NULL
       )
     }
@@ -168,7 +183,10 @@ test_that("fetch_all_datasets() fetches all pages when n is Inf", {
   out <- fetch_all_datasets(page_size = 3, n = Inf, format = "csv")
 
   expect_length(out, 7)
-  expect_equal(unname(vapply(out, function(x) x$title, character(1))), letters[1:7])
+  expect_equal(
+    unname(vapply(out, function(x) x$title, character(1))),
+    letters[1:7]
+  )
 })
 
 test_that("fetch_all_datasets() honors the search query", {
@@ -191,7 +209,9 @@ test_that("fetch_all_datasets() pages until there is no next page", {
     list(data = list(mock_dataset(title = "B", id = "b")), next_page = NULL)
   )
   local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) pages[[page]]
+    fetch_datasets_page = function(page, page_size, q = NULL, format) {
+      pages[[page]]
+    }
   )
 
   out <- fetch_all_datasets(format = "csv")
@@ -287,7 +307,7 @@ test_that("is_dataset_id() recognises 24-char hex object ids", {
   expect_true(is_dataset_id("AAAAAAAAAAAAAAAAAAAAAAAA"))
   expect_false(is_dataset_id("A"))
   expect_false(is_dataset_id("This is a dataset title, not an id."))
-  expect_false(is_dataset_id("6397c0ff56d3963118a1834"))  # too short
+  expect_false(is_dataset_id("6397c0ff56d3963118a1834")) # too short
   expect_false(is_dataset_id(NA_character_))
 })
 
@@ -344,10 +364,12 @@ test_that("read_first_parseable_resource() returns the first successful candidat
       mock_csv_data()
     }
   )
-  dataset <- mock_dataset(resources = list(
-    mock_resource("pdf"),
-    mock_resource("csv", title = "data.csv")
-  ))
+  dataset <- mock_dataset(
+    resources = list(
+      mock_resource("pdf"),
+      mock_resource("csv", title = "data.csv")
+    )
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -367,10 +389,12 @@ test_that("read_first_parseable_resource() skips a failing candidate and tries t
       mock_csv_data()
     }
   )
-  dataset <- mock_dataset(resources = list(
-    mock_resource("json", title = "metadata"),
-    mock_resource("csv", title = "data.csv")
-  ))
+  dataset <- mock_dataset(
+    resources = list(
+      mock_resource("json", title = "metadata"),
+      mock_resource("csv", title = "data.csv")
+    )
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -382,10 +406,12 @@ test_that("read_first_parseable_resource() auto-selects a zip resource", {
   local_mocked_bindings(
     read_resource = function(resource) mock_csv_data()
   )
-  dataset <- mock_dataset(resources = list(
-    mock_resource("pdf"),
-    mock_resource("zip", title = "archive.zip")
-  ))
+  dataset <- mock_dataset(
+    resources = list(
+      mock_resource("pdf"),
+      mock_resource("zip", title = "archive.zip")
+    )
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -401,8 +427,18 @@ test_that("read_first_parseable_resource() errors when no resource is supported"
 test_that("read_first_parseable_resource() picks the lightest of same-data formats", {
   # A dataset offering the same table as both csv and xlsx: the xlsx copy is
   # smaller, so it must be chosen to lighten the download.
-  csv <- mock_resource(format = "csv", title = "data.csv", url = "https://x/data.csv", filesize = 100000)
-  xlsx <- mock_resource(format = "xlsx", title = "data.xlsx", url = "https://x/data.xlsx", filesize = 40000)
+  csv <- mock_resource(
+    format = "csv",
+    title = "data.csv",
+    url = "https://x/data.csv",
+    filesize = 100000
+  )
+  xlsx <- mock_resource(
+    format = "xlsx",
+    title = "data.xlsx",
+    url = "https://x/data.xlsx",
+    filesize = 40000
+  )
   dataset <- mock_dataset(resources = list(csv, xlsx))
   local_mocked_bindings(read_resource = function(resource) mock_csv_data())
 
@@ -414,7 +450,11 @@ test_that("read_first_parseable_resource() picks the lightest of same-data forma
 test_that("read_first_parseable_resource() keeps declared order for distinct data", {
   # Distinct files (different base names) must keep their declared order, so the
   # first (population.csv) is chosen even though the second is lighter.
-  pop <- mock_resource(format = "csv", title = "population.csv", filesize = 90000)
+  pop <- mock_resource(
+    format = "csv",
+    title = "population.csv",
+    filesize = 90000
+  )
   income <- mock_resource(format = "csv", title = "income.csv", filesize = 1000)
   dataset <- mock_dataset(resources = list(pop, income))
   local_mocked_bindings(read_resource = function(resource) mock_csv_data())
@@ -459,17 +499,22 @@ test_that("prefer_lightest_file() leaves distinct resources in order", {
   out <- prefer_lightest_file(res)
 
   expect_length(out, 2)
-  expect_equal(vapply(out, function(x) x$title, character(1)), c("a.csv", "b.csv"))
+  expect_equal(
+    vapply(out, function(x) x$title, character(1)),
+    c("a.csv", "b.csv")
+  )
 })
 
 test_that("read_first_parseable_resource() errors when every candidate fails", {
   local_mocked_bindings(
     read_resource = function(resource) stop("boom")
   )
-  dataset <- mock_dataset(resources = list(
-    mock_resource("csv", title = "a.csv"),
-    mock_resource("tsv", title = "b.tsv")
-  ))
+  dataset <- mock_dataset(
+    resources = list(
+      mock_resource("csv", title = "a.csv"),
+      mock_resource("tsv", title = "b.tsv")
+    )
+  )
 
   expect_snapshot(error = TRUE, read_first_parseable_resource(dataset))
 })
@@ -482,7 +527,9 @@ local_csv_path <- function(ext, lines) {
 
 test_that("read_resource() parses a CSV resource", {
   local_mocked_bindings(
-    download_resource = function(resource) local_csv_path("csv", c("a,b", "1,x", "2,y"))
+    download_resource = function(resource) {
+      local_csv_path("csv", c("a,b", "1,x", "2,y"))
+    }
   )
 
   out <- read_resource(mock_resource("csv"))
@@ -493,7 +540,9 @@ test_that("read_resource() parses a CSV resource", {
 
 test_that("read_resource() supports tsv and txt resources", {
   local_mocked_bindings(
-    download_resource = function(resource) local_csv_path("tsv", c("a\tb", "1\tx"))
+    download_resource = function(resource) {
+      local_csv_path("tsv", c("a\tb", "1\tx"))
+    }
   )
 
   out <- read_resource(mock_resource("tsv"))
@@ -504,7 +553,9 @@ test_that("read_resource() supports tsv and txt resources", {
 
 test_that("read_resource() parses a txt resource with a tab delim", {
   local_mocked_bindings(
-    download_resource = function(resource) local_csv_path("txt", c("a\tb", "1\tx"))
+    download_resource = function(resource) {
+      local_csv_path("txt", c("a\tb", "1\tx"))
+    }
   )
 
   out <- read_resource(mock_resource("txt"))
@@ -528,7 +579,9 @@ test_that("read_resource() auto-detects a European semicolon CSV", {
 
 test_that("read_resource() guesses a pipe delimiter as given a csv.gz file", {
   local_mocked_bindings(
-    download_resource = function(resource) local_csv_path("csv.gz", c("a|b", "1|x"))
+    download_resource = function(resource) {
+      local_csv_path("csv.gz", c("a|b", "1|x"))
+    }
   )
 
   out <- read_resource(mock_resource("csv.gz"))

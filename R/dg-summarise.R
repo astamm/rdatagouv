@@ -43,7 +43,8 @@ dg_summarise <- function(datasets = NULL, n = 100) {
     datasets <- stats::setNames(datasets, datasets)
     datasets <- lapply(datasets, dg_pull_dataset)
   } else if (!is.list(datasets)) {
-    stop("`datasets` must be a list of tibbles, a character vector or NULL.",
+    stop(
+      "`datasets` must be a list of tibbles, a character vector or NULL.",
       call. = FALSE
     )
   }
@@ -62,7 +63,12 @@ dg_summarise <- function(datasets = NULL, n = 100) {
     ))
   }
 
-  res <- mapply(function(df, nm) dg_summary(df, name = nm), datasets, names(datasets), SIMPLIFY = FALSE)
+  res <- mapply(
+    function(df, nm) dg_summary(df, name = nm),
+    datasets,
+    names(datasets),
+    SIMPLIFY = FALSE
+  )
   do.call(rbind, res)
 }
 
