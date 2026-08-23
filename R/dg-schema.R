@@ -17,10 +17,9 @@
 #'
 #' @param x Either a table returned by [dg_pull_dataset()] or [dg_refetch()]
 #'   (its `id` attribute is read automatically) or a table address string: the
-#'   canonical URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
-#'   (or `...#<resource_id>/<file>` for a file inside a ZIP), or a legacy
-#'   composed id of the form `<dataset_id>::<resource_id>` /
-#'   `<dataset_id>::<resource_id>::<file>`, as readable with [dg_table_id()].
+#'   URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
+#'   (or `...#<resource_id>/<file>` for a file inside a ZIP), as readable with
+#'   [dg_table_id()].
 #'
 #' @return A [tibble::tibble()] with one row per column and the columns `name`,
 #'   `title`, `description`, `type` and `example` (where the schema provides

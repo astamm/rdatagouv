@@ -9,10 +9,9 @@ dg_schema(x)
 \arguments{
 \item{x}{Either a table returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or \code{\link[=dg_refetch]{dg_refetch()}}
 (its \code{id} attribute is read automatically) or a table address string: the
-canonical URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
-(or \code{...#<resource_id>/<file>} for a file inside a ZIP), or a legacy
-composed id of the form \verb{<dataset_id>::<resource_id>} /
-\verb{<dataset_id>::<resource_id>::<file>}, as readable with \code{\link[=dg_table_id]{dg_table_id()}}.}
+URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
+(or \code{...#<resource_id>/<file>} for a file inside a ZIP), as readable with
+\code{\link[=dg_table_id]{dg_table_id()}}.}
 }
 \value{
 A \code{\link[tibble:tibble]{tibble::tibble()}} with one row per column and the columns \code{name},

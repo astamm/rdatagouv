@@ -22,28 +22,6 @@ test_that("dg_refetch() re-fetches a single-file table by its URI", {
   expect_equal(dg_table_id(out), uri)
 })
 
-test_that("dg_refetch() still accepts the legacy '::' id", {
-  did <- "aaaaaaaaaaaaaaaaaaaaaaaa"
-  rid <- "99999999-9999-4999-8999-999999999999"
-  legacy <- paste(did, rid, sep = "::")
-  uri <- paste0("https://www.data.gouv.fr/datasets/", did, "#", rid)
-
-  local_mocked_bindings(
-    fetch_dataset = function(id) {
-      mock_dataset(
-        title = id,
-        id = id,
-        resources = list(mock_resource("csv", id = rid))
-      )
-    },
-    read_resource = function(resource) mock_csv_data()
-  )
-
-  out <- dg_refetch(legacy)
-
-  expect_equal(dg_table_id(out), uri)
-})
-
 test_that("dg_refetch() accepts a table and reads its id attribute", {
   did <- "aaaaaaaaaaaaaaaaaaaaaaaa"
   rid <- "99999999-9999-4999-8999-999999999999"
@@ -139,7 +117,7 @@ test_that("a file inside a ZIP is addressable via its URI", {
 test_that("dg_refetch() forwards remove_na to format_tibble()", {
   did <- "aaaaaaaaaaaaaaaaaaaaaaaa"
   rid <- "99999999-9999-4999-8999-999999999999"
-  legacy <- paste(did, rid, sep = "::")
+  uri <- paste0("https://www.data.gouv.fr/datasets/", did, "#", rid)
 
   local_mocked_bindings(
     fetch_dataset = function(id) {
@@ -152,7 +130,7 @@ test_that("dg_refetch() forwards remove_na to format_tibble()", {
     read_resource = function(resource) mock_csv_data()
   )
 
-  out <- dg_refetch(legacy, remove_na = TRUE)
+  out <- dg_refetch(uri, remove_na = TRUE)
 
   # mock_csv_data() has one NA row; removing NA drops it.
   expect_equal(nrow(out), 2)
@@ -177,7 +155,12 @@ test_that("dg_refetch() errors when the resource is not found", {
   )
 
   expect_error(
-    dg_refetch(paste(did, rid, sep = "::")),
+    dg_refetch(paste0(
+      "https://www.data.gouv.fr/datasets/",
+      did,
+      "#",
+      rid
+    )),
     "was not found on dataset"
   )
 })

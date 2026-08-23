@@ -45,9 +45,10 @@ opens the right page in a browser, while the fragment carries the two stable
 platform identifiers (`#` and `/` never appear in those fields, so the fragment
 is unambiguous). This is the platform's own identity, so it is stable and
 re-fetchable, unlike filenames. *(An earlier design used a `<dataset_id>::
-<resource_id>(::<file>)` delimiter form; the implementation now composes URIs,
-and `parse_table_id()` still accepts the legacy `::` form for backwards
-compatibility.)*
+<resource_id>(::<file>)` delimiter form; the implementation composes URIs, and
+the legacy `::` form was subsequently removed — the URI fragment
+`#<resource_id>(/<file>)` already covers all the single-file and ZIP-member
+cases the legacy form did.)*
 
 ### 1.2 Store the ID as a table attribute (`dg_pull_dataset`)
 
@@ -87,8 +88,7 @@ dg_refetch(x, remove_na = FALSE)
 Re-fetch the exact table addressed by a table id (URI) and return **one
 tibble** (the id addresses a single table, not a multi-file list). `x` may be a
 table returned by `dg_pull_dataset()`/`dg_refetch()` (its `id` attribute is read
-by `resolve_table_id()`) or a bare id string — the canonical URI or, for
-backwards compatibility, the legacy `::` composed id.
+by `resolve_table_id()`) or a bare id string — the canonical URI.
 
 Steps:
 1. `resolve_table_id(x)` → table id string (the URI).
@@ -202,8 +202,8 @@ Implications for this package:
 `dg_schema(x)` — documented column metadata for a single table address.
 
 - Input: a table returned by `dg_pull_dataset()`/`dg_refetch()` (its `id`
-  attribute is read via `resolve_table_id()`), or a bare table id string (URI
-  or legacy `::` composed id).
+  attribute is read via `resolve_table_id()`), or a bare table id string (the
+  URI).
 - Implementation: data.gouv attaches a schema only as a *pointer* (`resource$schema
   = {name, url, version}`). `dg_schema()` resolves the pointer — the `url`
   directly, or the `name` via `resolve_schema_url()` against

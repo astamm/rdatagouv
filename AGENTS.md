@@ -98,10 +98,11 @@ inside a ZIP), built by `compose_table_id()`. `dataset_id` is a 24-hex ObjectId,
 Built from the platform's own identifiers (and href-able to the dataset page),
 so it is stable and re-fetchable, unlike human-readable titles. Stored as the
 `id` **attribute** of each table by `dg_pull_dataset()`/`dg_refetch()` (not a
-column); `dg_table_id()` and `dg_refetch()`/`dg_schema()` consume it.
-`parse_table_id()` also accepts the legacy `<dataset_id>::<resource_id>(::<file>)`
-composition for backwards compatibility. Set *after* parsing so low-level
-readers stay untouched.
+column); `dg_table_id()` and `dg_refetch()`/`dg_schema()` consume it. Parsed
+by `parse_table_id()` (URI form only — the legacy `<dataset>::<resource>(::<file>)`
+delimited form was removed; the URI fragment `#<resource_id>(/<file>)` covers
+all the single-file and ZIP-member cases the legacy form did). Set *after*
+parsing so low-level readers stay untouched.
 
 **Format handling — two lists, deliberately different.**
 - `catalog_formats()` = `c("csv", "csv.gz", "xls", "xlsx", "parquet")` — the
