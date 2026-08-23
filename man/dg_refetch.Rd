@@ -2,15 +2,15 @@
 % Please edit documentation in R/dg-refetch.R
 \name{dg_refetch}
 \alias{dg_refetch}
-\title{Re-fetch a single parsed table by its stable identifier}
+\title{Re-fetch a single parsed table by its stable address}
 \usage{
 dg_refetch(x, remove_na = FALSE)
 }
 \arguments{
 \item{x}{Either a table returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or \code{\link[=dg_refetch]{dg_refetch()}}
-(its \code{id} attribute is read automatically) or a composed table id string
-of the form \verb{<dataset_id>::<resource_id>} or
-\verb{<dataset_id>::<resource_id>::<file>}.}
+(its \code{id} attribute is read automatically) or a table address string: the
+URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
+(or \code{...#<resource_id>/<file>} for a file inside a ZIP).}
 
 \item{remove_na}{Whether to drop rows containing any \code{NA} value (passed to
 \code{format_tibble()}). Defaults to \code{FALSE}.}
@@ -21,12 +21,12 @@ one table, not a multi-file ZIP as a whole). The table's id is attached as
 an \code{id} attribute.
 }
 \description{
-Downloads again the exact table addressed by a composed table id, stored as
-an \code{id} attribute on the tables returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} and readable
-with \code{\link[=dg_table_id]{dg_table_id()}}. The id is built from the platform's own stable
-identifiers (dataset id + resource id, plus the file name inside a ZIP), so
-this reproducibly returns the same table, independent of the human-readable
-list keys.
+Downloads again the exact table addressed by a table URI, stored as an \code{id}
+attribute on the tables returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} and readable with
+\code{\link[=dg_table_id]{dg_table_id()}}. The URI is built from the platform's own stable identifiers
+(dataset id + resource id, plus the file name inside a ZIP) and opens the
+dataset page in a browser, so this reproducibly returns the same table,
+independent of the human-readable list keys.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

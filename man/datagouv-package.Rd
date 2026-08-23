@@ -28,6 +28,7 @@ Authors:
 \itemize{
   \item Aymeric Stamm \email{aymeric.stamm@cnrs.fr} (\href{https://orcid.org/0000-0002-8725-3654}{ORCID})
   \item Pierre Gloaguen \email{pierre.gloaguen@univ-ubs.fr}
+  \item Arthur Leroy \email{arthur.leroy@inrae.fr}
 }
 
 }

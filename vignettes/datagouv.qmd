@@ -239,10 +239,11 @@ A few things to know about pulling:
 
 ## Re-fetching the same table reproducibly
 
-This is what makes your analysis reproducible over time. The table's id is
-built from the platform's own stable identifiers
-(`<dataset_id>::<resource_id>`, plus the file name for a file inside a ZIP).
-Unlike a human-readable title, this address always resolves to the same table:
+This is what makes your analysis reproducible over time. The table's id is a
+URI built from the platform's own stable identifiers —
+`https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (plus
+`/<file>` for a file inside a ZIP). Unlike a human-readable title, this
+address always resolves to the same table:
 
 ```{r}
 #| live: true
@@ -254,7 +255,7 @@ table_id
 again <- dg_refetch(tbl)
 ```
 
-`dg_refetch()` accepts the composed id directly, so you can store it in a
+`dg_refetch()` accepts the table id (URI) directly, so you can store it in a
 script or a database and reproduce the pull without re-searching the catalog.
 
 ## Summarising datasets

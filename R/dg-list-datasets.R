@@ -48,13 +48,19 @@
 #'
 #' # Only datasets with a declared schema (documented variables).
 #' documented <- dg_list_datasets(schema_only = TRUE, n = 10)
-dg_list_datasets <- function(q = NULL, n = 1000, format = catalog_formats(),
-                             schema_only = FALSE) {
+dg_list_datasets <- function(
+  q = NULL,
+  n = 1000,
+  format = catalog_formats(),
+  schema_only = FALSE
+) {
   datasets <- fetch_all_datasets(q = q, n = n, format = format)
   rows <- lapply(datasets, function(.x) {
     resources <- .x$resources %||% list()
     fmts <- sort(unique(tolower(vapply(
-      resources, function(r) r$format %||% "", character(1)
+      resources,
+      function(r) r$format %||% "",
+      character(1)
     ))))
     data.frame(
       title = .x$title %||% NA_character_,

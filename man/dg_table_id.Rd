@@ -2,7 +2,7 @@
 % Please edit documentation in R/dg-table-id.R
 \name{dg_table_id}
 \alias{dg_table_id}
-\title{Read a table's stable composed id}
+\title{Read a table's stable address}
 \usage{
 dg_table_id(x)
 }
@@ -16,8 +16,9 @@ attribute (e.g. an ordinary data frame).
 \description{
 Returns the stable, unique address of a table downloaded with
 \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or \code{\link[=dg_refetch]{dg_refetch()}}, which is stored as an \code{id} attribute
-on the table. The composed id has the form
-\verb{(<dataset_id>::<resource_id>(::<file>))} and uniquely identifies a table on
+on the table. The address is a URI of the form
+\verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>} (plus
+\verb{/&lt;file&gt;} for a file inside a ZIP) and uniquely identifies a table on
 the platform, independent of the human-readable catalog titles. It can be
 passed directly to \code{\link[=dg_refetch]{dg_refetch()}} or \code{\link[=dg_schema]{dg_schema()}} to re-fetch or document
 that exact table.

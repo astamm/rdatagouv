@@ -5,8 +5,15 @@ test_that("dg_summarise() summarises a named list of tibbles", {
   expect_equal(nrow(out), 2)
   expect_named(
     out,
-    c("dataset", "size_kb", "n_vars", "n_numeric", "n_non_numeric",
-      "n_rows", "prop_missing")
+    c(
+      "dataset",
+      "size_kb",
+      "n_vars",
+      "n_numeric",
+      "n_non_numeric",
+      "n_rows",
+      "prop_missing"
+    )
   )
   expect_equal(out$dataset, c("iris", "mtcars"))
   expect_equal(out$n_rows, c(150, 32))
@@ -89,7 +96,10 @@ test_that("dg_summarise() labels by title but downloads by id", {
   out <- dg_summarise(n = 2)
 
   expect_equal(out$dataset, c("Alpha", "Beta"))
-  expect_equal(downloaded, c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb"))
+  expect_equal(
+    downloaded,
+    c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb")
+  )
 })
 
 test_that("dg_summarise() disambiguates duplicated titles with their id", {
@@ -98,7 +108,11 @@ test_that("dg_summarise() disambiguates duplicated titles with their id", {
     dg_list_datasets = function(q = NULL, n = 1000) {
       tibble::tibble(
         title = c("Shared", "Shared", "Unique"),
-        id = c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb", "cccccccccccccccccccccccc"),
+        id = c(
+          "aaaaaaaaaaaaaaaaaaaaaaaa",
+          "bbbbbbbbbbbbbbbbbbbbbbbb",
+          "cccccccccccccccccccccccc"
+        ),
         description = NA_character_,
         slug = NA_character_
       )
@@ -114,7 +128,11 @@ test_that("dg_summarise() disambiguates duplicated titles with their id", {
   # Both distinct ids must still be downloaded even though they share a title.
   expect_equal(
     downloaded,
-    c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb", "cccccccccccccccccccccccc")
+    c(
+      "aaaaaaaaaaaaaaaaaaaaaaaa",
+      "bbbbbbbbbbbbbbbbbbbbbbbb",
+      "cccccccccccccccccccccccc"
+    )
   )
   # Duplicated titles get their id appended so the labels stay unique, while a
   # single-occurrence title is left unchanged.
@@ -147,14 +165,19 @@ test_that("dg_summarise() summarises a multi-table dataset by table", {
     }
   )
 
-  out <- dg_summarise(datasets = c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb"))
+  out <- dg_summarise(
+    datasets = c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb")
+  )
 
-  expect_equal(out$dataset, c(
-    "aaaaaaaaaaaaaaaaaaaaaaaa / data.csv",
-    "aaaaaaaaaaaaaaaaaaaaaaaa / notes.tsv",
-    "bbbbbbbbbbbbbbbbbbbbbbbb / data.csv",
-    "bbbbbbbbbbbbbbbbbbbbbbbb / notes.tsv"
-  ))
+  expect_equal(
+    out$dataset,
+    c(
+      "aaaaaaaaaaaaaaaaaaaaaaaa / data.csv",
+      "aaaaaaaaaaaaaaaaaaaaaaaa / notes.tsv",
+      "bbbbbbbbbbbbbbbbbbbbbbbb / data.csv",
+      "bbbbbbbbbbbbbbbbbbbbbbbb / notes.tsv"
+    )
+  )
   expect_equal(out$n_rows, c(2, 1, 2, 1))
 })
 

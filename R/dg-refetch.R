@@ -1,16 +1,16 @@
-#' Re-fetch a single parsed table by its stable identifier
+#' Re-fetch a single parsed table by its stable address
 #'
-#' Downloads again the exact table addressed by a composed table id, stored as
-#' an `id` attribute on the tables returned by [dg_pull_dataset()] and readable
-#' with [dg_table_id()]. The id is built from the platform's own stable
-#' identifiers (dataset id + resource id, plus the file name inside a ZIP), so
-#' this reproducibly returns the same table, independent of the human-readable
-#' list keys.
+#' Downloads again the exact table addressed by a table URI, stored as an `id`
+#' attribute on the tables returned by [dg_pull_dataset()] and readable with
+#' [dg_table_id()]. The URI is built from the platform's own stable identifiers
+#' (dataset id + resource id, plus the file name inside a ZIP) and opens the
+#' dataset page in a browser, so this reproducibly returns the same table,
+#' independent of the human-readable list keys.
 #'
 #' @param x Either a table returned by [dg_pull_dataset()] or [dg_refetch()]
-#'   (its `id` attribute is read automatically) or a composed table id string
-#'   of the form `<dataset_id>::<resource_id>` or
-#'   `<dataset_id>::<resource_id>::<file>`.
+#'   (its `id` attribute is read automatically) or a table address string: the
+#'   URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
+#'   (or `...#<resource_id>/<file>` for a file inside a ZIP).
 #' @param remove_na Whether to drop rows containing any `NA` value (passed to
 #'   `format_tibble()`). Defaults to `FALSE`.
 #'
@@ -30,8 +30,12 @@ dg_refetch <- function(x, remove_na = FALSE) {
   hit <- Filter(function(r) identical(r$id, parts$resource_id), resources)
   if (length(hit) == 0) {
     stop(
-      "Resource '", parts$resource_id,
-      "' was not found on dataset '", parts$dataset_id, "'.", call. = FALSE
+      "Resource '",
+      parts$resource_id,
+      "' was not found on dataset '",
+      parts$dataset_id,
+      "'.",
+      call. = FALSE
     )
   }
   resource <- hit[[1]]
@@ -42,5 +46,10 @@ dg_refetch <- function(x, remove_na = FALSE) {
     read_one_zip_file(resource, parts$file)
   }
   tbl <- format_tibble(tbl, remove_na = remove_na)
-  tibble::as_tibble(table_attr(tbl, parts$dataset_id, parts$resource_id, parts$file))
+  tibble::as_tibble(table_attr(
+    tbl,
+    parts$dataset_id,
+    parts$resource_id,
+    parts$file
+  ))
 }

@@ -13,7 +13,10 @@ test_that("dg_pull_dataset() returns a single tibble with its id as an attribute
   expect_s3_class(out, "tbl_df")
   expect_equal(nrow(out), 3)
   expect_named(out, c("a", "b"))
-  expect_equal(dg_table_id(out), "aaaaaaaaaaaaaaaaaaaaaaaa::rid")
+  expect_equal(
+    dg_table_id(out),
+    "https://www.data.gouv.fr/datasets/aaaaaaaaaaaaaaaaaaaaaaaa#rid"
+  )
 })
 
 test_that("dg_pull_dataset() forwards remove_na to format_tibble()", {
@@ -49,7 +52,10 @@ test_that("dg_pull_dataset() returns the first file of a ZIP by default", {
   expect_s3_class(out, "tbl_df")
   expect_named(out, c("a", "b"))
   expect_equal(nrow(out), 3)
-  expect_equal(dg_table_id(out), "aaaaaaaaaaaaaaaaaaaaaaaa::rid::data.csv")
+  expect_equal(
+    dg_table_id(out),
+    "https://www.data.gouv.fr/datasets/aaaaaaaaaaaaaaaaaaaaaaaa#rid/data.csv"
+  )
 })
 
 test_that("dg_pull_dataset(all_files = TRUE) keeps every file of a ZIP", {
@@ -73,8 +79,14 @@ test_that("dg_pull_dataset(all_files = TRUE) keeps every file of a ZIP", {
   expect_s3_class(out$`data.csv`, "tbl_df")
   expect_s3_class(out$notes.tsv, "tbl_df")
   expect_equal(nrow(out$`data.csv`), 3)
-  expect_equal(dg_table_id(out$`data.csv`), "aaaaaaaaaaaaaaaaaaaaaaaa::rid::data.csv")
-  expect_equal(dg_table_id(out$notes.tsv), "aaaaaaaaaaaaaaaaaaaaaaaa::rid::notes.tsv")
+  expect_equal(
+    dg_table_id(out$`data.csv`),
+    "https://www.data.gouv.fr/datasets/aaaaaaaaaaaaaaaaaaaaaaaa#rid/data.csv"
+  )
+  expect_equal(
+    dg_table_id(out$notes.tsv),
+    "https://www.data.gouv.fr/datasets/aaaaaaaaaaaaaaaaaaaaaaaa#rid/notes.tsv"
+  )
 })
 
 test_that("dg_pull_dataset() skips a resource that fails to parse", {

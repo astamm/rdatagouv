@@ -91,8 +91,12 @@ fetch_datasets_page <- function(page, page_size, q = NULL, format) {
 # results are combined, removing datasets that matched more than one format
 # (the full dataset object is returned identically whichever format matched, so
 # deduplication by dataset id keeps a single copy).
-fetch_all_datasets <- function(page_size = 1000, q = NULL, n = 1000,
-                               format = catalog_formats()) {
+fetch_all_datasets <- function(
+  page_size = 1000,
+  q = NULL,
+  n = 1000,
+  format = catalog_formats()
+) {
   all <- list()
   seen_ids <- character()
   for (fmt in format) {
@@ -157,7 +161,8 @@ fetch_dataset <- function(id) {
     http_perform(
       httr2::req_url_path_append(
         req_data_gouv(httr2::request(datagouv_base_url())),
-        "datasets", id
+        "datasets",
+        id
       )
     )
   )
@@ -185,7 +190,8 @@ find_dataset <- function(id) {
   hits <- Filter(function(d) identical(d$title, id), body$data)
   if (length(hits) == 0) {
     stop(
-      "No dataset titled '", id,
+      "No dataset titled '",
+      id,
       "' was found on data.gouv.fr. Check the name with dg_list_datasets().",
       call. = FALSE
     )
@@ -249,7 +255,11 @@ prefer_lightest_file <- function(resources) {
       out[[length(out) + 1]] <- resources[[idx]]
       next
     }
-    sizes <- vapply(resources[idx], function(r) r$filesize %||% NA_real_, numeric(1))
+    sizes <- vapply(
+      resources[idx],
+      function(r) r$filesize %||% NA_real_,
+      numeric(1)
+    )
     pick <- idx[[1]]
     if (!all(is.na(sizes))) {
       pick <- idx[which.min(sizes)]
@@ -282,8 +292,11 @@ read_first_parseable_resource <- function(dataset) {
   if (length(candidates) == 0) {
     supported <- paste(supported_formats(), collapse = ", ")
     stop(
-      "Dataset '", dataset$title,
-      "' has no resource in a supported format (", supported, ").",
+      "Dataset '",
+      dataset$title,
+      "' has no resource in a supported format (",
+      supported,
+      ").",
       call. = FALSE
     )
   }
@@ -299,8 +312,11 @@ read_first_parseable_resource <- function(dataset) {
     }
   }
   stop(
-    "None of the ", length(candidates), " tabular resource(s) of dataset '",
-    dataset$title, "' could be parsed into a table. First failure: ",
+    "None of the ",
+    length(candidates),
+    " tabular resource(s) of dataset '",
+    dataset$title,
+    "' could be parsed into a table. First failure: ",
     conditionMessage(first_error),
     call. = FALSE
   )
@@ -319,9 +335,13 @@ read_first_parseable_resource <- function(dataset) {
 guess_delimiter <- function(path, n = 20) {
   lines <- readLines(path, n = n, warn = FALSE)
   candidates <- c("\t", ";", ",", "|", ":")
-  counts <- vapply(candidates, function(d) {
-    sum(lengths(regmatches(lines, gregexpr(d, lines, fixed = TRUE))))
-  }, integer(1))
+  counts <- vapply(
+    candidates,
+    function(d) {
+      sum(lengths(regmatches(lines, gregexpr(d, lines, fixed = TRUE))))
+    },
+    integer(1)
+  )
   candidates[which.max(counts)]
 }
 
@@ -349,7 +369,9 @@ read_json_file <- function(path) {
       tibble::as_tibble(out),
       error = function(e) {
         stop(
-          "JSON object is not tabular data: ", conditionMessage(e), ". ",
+          "JSON object is not tabular data: ",
+          conditionMessage(e),
+          ". ",
           "This resource declares `json` but does not contain a table (it is ",
           "likely an API metadata document). Try another resource of the ",
           "dataset, e.g. via dg_list_datasets() or dg_refetch().",
@@ -422,17 +444,23 @@ read_zip_resource <- function(resource) {
   parsed
 }
 
-# Compose the stable, unique identifier of a parsed table. Format:
-#   "<dataset_id>::<resource_id>"        for a single-file resource
-#   "<dataset_id>::<resource_id>::<file>" for a file inside a ZIP
-# `::` never appears in dataset ids (24-hex), resource ids (UUIDs) or file
-# base names, so the delimiter is unambiguous.
+# Compose the stable, unique address of a parsed table as a proper URI:
+#   "https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>"
+#         for a single-file resource
+#   "https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>/<file>"
+#         for a file inside a ZIP
+# The base is data.gouv's own dataset page, so the address is href-able and
+# opens the right page in a browser, while the fragment carries the two stable
+# platform identifiers (`dataset_id`, 24-hex; `resource_id`, a UUID) plus an
+# optional ZIP member. `#` and `/` never appear in those fields, so the
+# fragment is unambiguous.
 compose_table_id <- function(dataset_id, resource_id, file = NULL) {
-  id <- paste(dataset_id, resource_id, sep = "::")
+  base <- paste0("https://www.data.gouv.fr/datasets/", dataset_id)
+  frag <- resource_id
   if (!is.null(file)) {
-    id <- paste(id, file, sep = "::")
+    frag <- paste(frag, file, sep = "/")
   }
-  id
+  paste0(base, "#", frag)
 }
 
 # Attach a table's composed id as an attribute (the metadata address added by
@@ -468,29 +496,50 @@ resolve_table_id <- function(x) {
   }
   stop(
     "`x` must be a table returned by dg_pull_dataset() (with its id attached) ",
-    "or a composed id string.", call. = FALSE
+    "or a composed id string.",
+    call. = FALSE
   )
 }
 
-# Split a composed table id into its (dataset, resource, file) parts.
-# Returns a named list; `file` is NULL when absent. Errors on a malformed id.
+# Split a table address into its (dataset, resource, file) parts. Returns a
+# named list; `file` is NULL when absent. Errors on a malformed id.
+#
+# Accepts the URI form composed by compose_table_id():
+#   "https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>(/<file>)"
+# The fragment covers both a single resource (`#<resource_id>`) and a file
+# inside a ZIP (`#<resource_id>/<file>`).
 parse_table_id <- function(id) {
-  parts <- strsplit(id, "::", fixed = TRUE)[[1]]
-  if (length(parts) < 2 || length(parts) > 3) {
-    stop(
-      "Invalid table id '", id, "': expected '<dataset>::<resource>' or ",
-      "'<dataset>::<resource>::<file>'.", call. = FALSE
-    )
+  if (!is.character(id) || length(id) != 1 || is.na(id)) {
+    stop("Invalid table id: expected a single non-NA string.", call. = FALSE)
   }
-  if (!is_dataset_id(parts[[1]])) {
-    stop("Invalid table id '", id, "': '", parts[[1]],
-      "' is not a dataset identifier.", call. = FALSE
-    )
+  hex <- "[0-9a-fA-F]{24}"
+  uuid <- "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+  # URI form: <base>#<resource_id>(/<file>)
+  m <- regexec(
+    paste0(
+      "^https://www\\.data\\.gouv\\.fr/datasets/(",
+      hex,
+      ")#(",
+      uuid,
+      ")(?:/(.+))?$"
+    ),
+    id,
+    perl = TRUE
+  )
+  m <- regmatches(id, m)[[1]]
+  if (length(m) > 0) {
+    return(list(
+      dataset_id = m[[2]],
+      resource_id = m[[3]],
+      file = if (length(m) >= 4 && nzchar(m[[4]])) m[[4]] else NULL
+    ))
   }
-  list(
-    dataset_id = parts[[1]],
-    resource_id = parts[[2]],
-    file = if (length(parts) == 3) parts[[3]] else NULL
+  stop(
+    "Invalid table id '",
+    id,
+    "': expected the URI 'https://www.data.gouv.fr/datasets/<dataset>",
+    "#<resource>(/<file>)'.",
+    call. = FALSE
   )
 }
 
@@ -507,7 +556,10 @@ read_one_zip_file <- function(resource, name) {
   path <- file.path(dir, name)
   fmt <- format_from_path(path)
   if (is.na(fmt)) {
-    stop("File '", name, "' inside the ZIP is not in a supported format.",
+    stop(
+      "File '",
+      name,
+      "' inside the ZIP is not in a supported format.",
       call. = FALSE
     )
   }

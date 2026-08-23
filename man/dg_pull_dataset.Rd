@@ -24,8 +24,10 @@ multi-file ZIP, \code{TRUE} keeps every parseable file, one named element each.}
 A \code{\link[tibble:tibble]{tibble::tibble()}} (default) or, when \code{all_files = TRUE} and the
 resource is a multi-file ZIP, a named list of tibbles (one element per
 parseable file, named after it). Every table carries its stable, unique
-address as an \code{id} attribute — \verb{(<dataset_id>::<resource_id>(::<file>))} —
-re-fetchable with \code{\link[=dg_refetch]{dg_refetch()}} and readable with \code{\link[=dg_table_id]{dg_table_id()}}.
+address as an \code{id} attribute — a URI of the form
+\verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>} (plus
+\verb{/&lt;file&gt;} for a file inside a ZIP) — re-fetchable with \code{\link[=dg_refetch]{dg_refetch()}}
+and readable with \code{\link[=dg_table_id]{dg_table_id()}}.
 }
 \description{
 Downloads the first tabular resource of a dataset and parses it into a

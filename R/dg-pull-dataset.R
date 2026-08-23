@@ -27,8 +27,10 @@
 #' @return A [tibble::tibble()] (default) or, when `all_files = TRUE` and the
 #'   resource is a multi-file ZIP, a named list of tibbles (one element per
 #'   parseable file, named after it). Every table carries its stable, unique
-#'   address as an `id` attribute — `(<dataset_id>::<resource_id>(::<file>))` —
-#'   re-fetchable with [dg_refetch()] and readable with [dg_table_id()].
+#'   address as an `id` attribute — a URI of the form
+#'   `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (plus
+#'   `/&lt;file&gt;` for a file inside a ZIP) — re-fetchable with [dg_refetch()]
+#'   and readable with [dg_table_id()].
 #'
 #' @export
 #' @examplesIf interactive()
@@ -66,8 +68,12 @@ dg_pull_dataset <- function(id, all_files = FALSE, remove_na = FALSE) {
 
   # all_files = TRUE with a multi-file ZIP: one tibble per parseable file,
   # each carrying its own composed id attribute.
-  Map(function(tbl, file) {
-    tbl <- format_tibble(tbl, remove_na = remove_na)
-    tibble::as_tibble(table_attr(tbl, dataset$id, resource$id, file))
-  }, data, names(data))
+  Map(
+    function(tbl, file) {
+      tbl <- format_tibble(tbl, remove_na = remove_na)
+      tibble::as_tibble(table_attr(tbl, dataset$id, resource$id, file))
+    },
+    data,
+    names(data)
+  )
 }

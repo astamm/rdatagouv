@@ -45,9 +45,9 @@ hits[, c("title", "formats", "n_resources", "has_table", "has_schema")]
 #>   <chr>                                 <chr>         <int> <lgl>     <lgl>     
 #> 1 Stations du réseau vélo libre-servic… csv, g…           9 TRUE      FALSE     
 #> 2 Comptages vélo à Nantes par Place au… csv, j…           2 TRUE      FALSE     
-#> 3 Stationnement vélo                    csv               1 TRUE      FALSE     
-#> 4 Arceau vélo                           arcgis…           7 TRUE      FALSE     
-#> 5 Primes « vélo »                       csv, j…           2 TRUE      FALSE
+#> 3 Arceau vélo                           arcgis…          16 TRUE      FALSE     
+#> 4 Stationnements vélo                   csv               1 TRUE      TRUE      
+#> 5 Prime vélo                            csv, j…           2 TRUE      FALSE
 ```
 
 `id` is the stable identifier you use to download; `has_schema` tells
@@ -82,7 +82,7 @@ head(tbl[, 1:6])
 #> 5         14 14 - Les Carmes       REGULAR                4.58e7 3.09e6 0.0     
 #> 6         19 19 - Amboise          REGULAR                4.58e7 3.09e6 0.0
 dg_table_id(tbl)
-#> [1] "6397c0ff56d3963118a18345::01f5b3da-8d58-42c6-a07d-202538ad6672"
+#> [1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"
 ```
 
 Judge whether the columns mean what you think. `dg_schema()` resolves
