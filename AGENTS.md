@@ -158,8 +158,13 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
 
 ## Documentation / build
 
-- README is Quarto: edit `README.qmd`, regenerate `README.md` via
-  `quarto::quarto_render("README.qmd", "gfm")`. Do not hand-edit README.md.
+- **README is Quarto and README.md is always generated.** Make all content
+  changes in `README.qmd`, never in `README.md` directly. Whenever README.md
+  needs updating, regenerate it from `README.qmd` with
+  `devtools::build_readme()` (which renders with `format: gfm`) and commit
+  both files together. Do not hand-edit README.md — edits there are lost on the
+  next regeneration and make it drift from the source. This applies
+  systematically to any change touching the README.
 - One Quarto vignette: `vignettes/datagouv.qmd`. It uses a knitr chunk hook so
   live-API chunks (marked `#| live: true`) run only when the `DATAGOUV_LIVE=1`
   env var is set (the pkgdown workflow sets it so the site shows real output).

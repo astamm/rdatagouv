@@ -38,7 +38,7 @@ all titles regardless of count.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
-datasets <- dg_datasetssearch(q = "data.gouv")
+datasets <- dg_datasets_search(q = "data.gouv")
 head(datasets)
 
 # Search server-side instead of downloading the whole catalog.
