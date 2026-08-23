@@ -46,8 +46,8 @@ hits[, c("title", "formats", "n_resources", "has_table", "has_schema")]
 #> 1 Stations du réseau vélo libre-servic… csv, g…           9 TRUE      FALSE     
 #> 2 Comptages vélo à Nantes par Place au… csv, j…           2 TRUE      FALSE     
 #> 3 Arceau vélo                           arcgis…          16 TRUE      FALSE     
-#> 4 Primes « vélo »                       csv, j…           2 TRUE      FALSE     
-#> 5 Arceau vélo                           arcgis…           7 TRUE      FALSE
+#> 4 Stationnements vélo                   csv               1 TRUE      TRUE      
+#> 5 Prime vélo                            csv, j…           2 TRUE      FALSE
 ```
 
 `id` is the stable identifier you use to download; `has_schema` tells
