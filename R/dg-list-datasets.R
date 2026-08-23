@@ -146,4 +146,7 @@ dg_datasets_search <- function( q="",  n = 1000, format = catalog_formats()) {
   out
 
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2dd28fd (Add an opt-in live integration test.)

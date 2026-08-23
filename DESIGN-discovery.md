@@ -231,6 +231,7 @@ Implications for this package:
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
 | `R/datagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |
+| `tests/test-live-api.R` (new) | Opt-in live integration tests: verify a file inside a real ZIP is addressable and re-fetchable via its composed URI on the live data.gouv API. Skipped unless `DATAGOUV_LIVE=1` (connectivity is probed against data.gouv itself, not `skip_if_offline()`'s `captive.apple.com`). See AGENTS.md. |
 | `README.qmd` | Update flow examples; rebuild README. |
 
 ---
@@ -251,3 +252,6 @@ Implications for this package:
    `dg_summary()`/`dg_summarise()` for a uniform `dg_*` prefix; `dg_download_many()` removed
    (covered by `dg_pull_dataset()` + `dg_summarise()`); each public function split into its own
    `R/dg-*.R` file (`format_tibble()` moved to `utils.R`).
+8. **Live integration tests** *(implemented)*: `tests/test-live-api.R` proves the composed
+   URI addressing (incl. a file inside a multi-file ZIP) against the real API, gated behind
+   `DATAGOUV_LIVE=1`.

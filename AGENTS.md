@@ -25,8 +25,13 @@ Four workflow steps, each mapping to exported functions:
 | Re-fetch a table reproducibly | `dg_refetch()` |
 
 The design rationale and full history live in `DESIGN-discovery.md` (top-level,
-ignored by R CMD build). The README and the vignette `vignettes/datagouv.qmd`
-document usage for end users.
+ignored by R CMD build). Treat that file as a proposal/decision log: its
+`*(implemented)*` phasing markers and change map reflect status, but the
+"Core design concepts", [Public API](#public-api-7-exports) and architecture
+sections of *this* AGENTS.md are the source of truth for how the package
+currently behaves; exploratory/optional and superseded-alternative sections in
+the design doc are historical, not normative. The README and the vignette
+`vignettes/datagouv.qmd` document usage for end users.
 
 ## Public API (7 exports)
 
@@ -143,6 +148,11 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
 
 ## Conventions & gotchas
 
+- **Format with `air`.** R code is formatted with the `air` formatter.
+  **Systematically run `air format .` at the root of the package at the end of
+  every task that involves changes to any R files** (source under `R/`, tests,
+  or any other `.R` file). Do this before committing so all code stays
+  consistently formatted.
 - Source files use **hyphens**, not underscores (`dg-list-datasets.R`, not
   `dg_list_datasets.R`).
 - All HTTP goes through `req_data_gouv()` + `http_perform()` (consistent
@@ -151,6 +161,15 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
   (`test-dg-*.R`, `test-dg-summary.R`, `test-dg-summarise.R`, `test-utils.R`);
   mocks in `helper-data.R` (`mock_dataset`, `mock_resource`, `mock_csv_data`);
   snapshots under `_snaps/`. Run `devtools::test()`.
+- **Opt-in live tests** (`test-live-api.R`): verify URL addressing against the
+  real data.gouv API — the one thing mocks cannot prove. Skipped unless
+  `DATAGOUV_LIVE=1`; run with
+  `DATAGOUV_LIVE=1 Rscript -e 'devtools::test(filter = "live")'`. The live
+  connectivity probe targets data.gouv itself, *not* testthat's default
+  `skip_if_offline()` (which probes `captive.apple.com` and can be unreachable
+  even when data.gouv works). Fixtures: dataset
+  `6a6be5976a05df136d48fb7a` (Caen GTFS), ZIP resource
+  `a5a8f046-e282-4010-91c5-82bc1f70ff73`, member `stops.txt`.
 - **Examples in roxygen**: use `@examples` for network-free code (e.g.
   `dg_summary`, and the in-memory branch of `dg_summarise`) and
   `@examplesIf interactive()` for anything that hits the live API (a live call
