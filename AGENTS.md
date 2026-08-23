@@ -25,7 +25,13 @@ Four workflow steps, each mapping to exported functions:
 | Re-fetch a table reproducibly | [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md) |
 
 The design rationale and full history live in `DESIGN-discovery.md`
-(top-level, ignored by R CMD build). The README and the vignette
+(top-level, ignored by R CMD build). Treat that file as a
+proposal/decision log: its `*(implemented)*` phasing markers and change
+map reflect status, but the “Core design concepts”, [Public
+API](#public-api-7-exports) and architecture sections of *this*
+AGENTS.md are the source of truth for how the package currently behaves;
+exploratory/optional and superseded-alternative sections in the design
+doc are historical, not normative. The README and the vignette
 `vignettes/datagouv.qmd` document usage for end users.
 
 ## Public API (7 exports)
@@ -102,19 +108,26 @@ tests).
 
 ## Core design concepts
 
-**Composed table id.** Each parsed table’s address is
-`<dataset_id>::<resource_id>` (single file) or
-`<dataset_id>::<resource_id>::<file>` (a file inside a ZIP).
-`dataset_id` is a 24-hex ObjectId, `resource_id` a UUID, `<file>` a base
-name; `::` never appears in those fields. Built from the platform’s own
-identifiers, so it is stable and re-fetchable, unlike human-readable
-titles. Stored as the `id` **attribute** of each table by
+**Composed table id (URI form).** Each parsed table’s address is a URI —
+`https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (single
+file) or
+`https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>/<file>` (a
+file inside a ZIP), built by `compose_table_id()`. `dataset_id` is a
+24-hex ObjectId, `resource_id` a UUID, `<file>` a base name; `#`/`/`
+never appear in those fields. Built from the platform’s own identifiers
+(and href-able to the dataset page), so it is stable and re-fetchable,
+unlike human-readable titles. Stored as the `id` **attribute** of each
+table by
 [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
 (not a column);
 [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
 and
 [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
-consume it. Set *after* parsing so low-level readers stay untouched.
+consume it. Parsed by `parse_table_id()` (URI form only — the legacy
+`<dataset>::<resource>(::<file>)` delimited form was removed; the URI
+fragment `#<resource_id>(/<file>)` covers all the single-file and
+ZIP-member cases the legacy form did). Set *after* parsing so low-level
+readers stay untouched.
 
 **Format handling — two lists, deliberately different.** -
 `catalog_formats()` = `c("csv", "csv.gz", "xls", "xlsx", "parquet")` —
@@ -172,6 +185,11 @@ resources 404 on the tabular service).
 
 ## Conventions & gotchas
 
+- **Format with `air`.** R code is formatted with the `air` formatter.
+  **Systematically run `air format .` at the root of the package at the
+  end of every task that involves changes to any R files** (source under
+  `R/`, tests, or any other `.R` file). Do this before committing so all
+  code stays consistently formatted.
 - Source files use **hyphens**, not underscores (`dg-list-datasets.R`,
   not `dg_list_datasets.R`).
 - All HTTP goes through `req_data_gouv()` + `http_perform()` (consistent
@@ -180,6 +198,15 @@ resources 404 on the tabular service).
   `test-dg-summary.R`, `test-dg-summarise.R`, `test-utils.R`); mocks in
   `helper-data.R` (`mock_dataset`, `mock_resource`, `mock_csv_data`);
   snapshots under `_snaps/`. Run `devtools::test()`.
+- **Opt-in live tests** (`test-live-api.R`): verify URL addressing
+  against the real data.gouv API — the one thing mocks cannot prove.
+  Skipped unless `DATAGOUV_LIVE=1`; run with
+  `DATAGOUV_LIVE=1 Rscript -e 'devtools::test(filter = "live")'`. The
+  live connectivity probe targets data.gouv itself, *not* testthat’s
+  default `skip_if_offline()` (which probes `captive.apple.com` and can
+  be unreachable even when data.gouv works). Fixtures: dataset
+  `6a6be5976a05df136d48fb7a` (Caen GTFS), ZIP resource
+  `a5a8f046-e282-4010-91c5-82bc1f70ff73`, member `stops.txt`.
 - **Examples in roxygen**: use `@examples` for network-free code (e.g.
   `dg_summary`, and the in-memory branch of `dg_summarise`) and
   `@examplesIf interactive()` for anything that hits the live API (a
@@ -187,9 +214,13 @@ resources 404 on the tabular service).
 
 ## Documentation / build
 
-- README is Quarto: edit `README.qmd`, regenerate `README.md` via
-  `quarto::quarto_render("README.qmd", "gfm")`. Do not hand-edit
-  README.md.
+- **README is Quarto and README.md is always generated.** Make all
+  content changes in `README.qmd`, never in `README.md` directly.
+  Whenever README.md needs updating, regenerate it from `README.qmd`
+  with `devtools::build_readme()` (which renders with `format: gfm`) and
+  commit both files together. Do not hand-edit README.md — edits there
+  are lost on the next regeneration and make it drift from the source.
+  This applies systematically to any change touching the README.
 - One Quarto vignette: `vignettes/datagouv.qmd`. It uses a knitr chunk
   hook so live-API chunks (marked `#| live: true`) run only when the
   `DATAGOUV_LIVE=1` env var is set (the pkgdown workflow sets it so the

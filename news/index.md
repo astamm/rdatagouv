@@ -2,6 +2,29 @@
 
 ## datagouv 0.0.0.9000
 
+- Tables pulled with
+  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+  are now addressed by a proper URI instead of a `::`-composed id: the
+  `id` attribute (read with
+  [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md))
+  is now `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
+  (plus `/<file>` for a file inside a ZIP). The address still carries
+  the platform’s stable dataset/resource ids — so
+  [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+  stay reproducible — and, as a URI, it is now href-able and opens the
+  right dataset page in a browser. Legacy composed ids of the form
+  `<dataset_id>::<resource_id>` / `<dataset_id>::<resource_id>::<file>`
+  remain accepted by
+  [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+  for backwards compatibility.
+
+- Added opt-in live integration tests (`tests/testthat/test-live-api.R`)
+  that verify a file inside a real data.gouv ZIP is addressable and
+  re-fetchable via its composed URI on the live API — the one thing the
+  mocked unit tests cannot prove. Skipped unless the environment
+  variable `DATAGOUV_LIVE=1` is set; run with
+  `DATAGOUV_LIVE=1 Rscript -e 'devtools::test(filter = "live")'`.
+
 - `get_summary()` and `summarise_datasets()` are renamed to
   [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)
   and

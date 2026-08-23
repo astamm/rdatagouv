@@ -31,17 +31,27 @@ flowchart LR
 
 ## Baseline (agreed): stable per-table ID + re-fetch
 
-### 1.1 Composed ID encoding
+### 1.1 Composed table id encoding (URI form)
 
-Each parsed table gets a stable, parseable, globally unique ID:
+Each parsed table gets a stable, parseable, globally unique address — a
+URI:
 
-- Single-file resource: `dataset_id::resource_id`
-- File inside a multi-file ZIP: `dataset_id::resource_id::file`
+- Single-file resource:
+  `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
+- File inside a multi-file ZIP:
+  `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>/<file>`
 
 `dataset_id` is a 24-hex ObjectId; `resource_id` is a UUID; `file` is
-the base name. `::` is safe as a delimiter (never appears in those
-fields). This is the platform’s own identity, so it is stable and
-re-fetchable, unlike filenames.
+the base name. The base is data.gouv’s own dataset page, so the address
+is href-able and opens the right page in a browser, while the fragment
+carries the two stable platform identifiers (`#` and `/` never appear in
+those fields, so the fragment is unambiguous). This is the platform’s
+own identity, so it is stable and re-fetchable, unlike filenames. *(An
+earlier design used a `<dataset_id>:: <resource_id>(::<file>)` delimiter
+form; the implementation composes URIs, and the legacy `::` form was
+subsequently removed — the URI fragment `#<resource_id>(/<file>)`
+already covers all the single-file and ZIP-member cases the legacy form
+did.)*
 
 ### 1.2 Store the ID as a table attribute (`dg_pull_dataset`)
 
@@ -53,11 +63,12 @@ carries its composed ID as an `id` **attribute** (added by the internal
 *after* `read_resource()`/`format_tibble()`, so the low-level parsers
 stay untouched.
 
-- Single resource: the returned table gets `dataset$id::resource$id`.
+- Single resource: the returned table gets the URI for `dataset$id` +
+  `resource$id` (`compose_table_id(dataset$id, resource$id)`).
 - Multi-file ZIP: by default the first parseable file is returned as a
-  single tibble (`dataset$id::resource$id::<file>`); `all_files = TRUE`
-  returns one tibble per parseable file, each with its own `::<file>`
-  id.
+  single tibble (`compose_table_id(dataset$id, resource$id, <file>)`);
+  `all_files = TRUE` returns one tibble per parseable file, each with
+  its own URI.
 
 The new exported getter `dg_table_id(x)` reads the attribute and returns
 `NULL` for an ordinary data frame. Because the id is an attribute, not a
@@ -88,16 +99,16 @@ raise a clear “carries no table id” error.
 dg_refetch(x, remove_na = FALSE)
 ```
 
-Re-fetch the exact table addressed by a composed ID and return **one
-tibble** (the ID addresses a single table, not a multi-file list). `x`
+Re-fetch the exact table addressed by a table id (URI) and return **one
+tibble** (the id addresses a single table, not a multi-file list). `x`
 may be a table returned by
 [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
-(its `id` attribute is read by `resolve_table_id()`) or a bare composed
-id string (backwards compatibility).
+(its `id` attribute is read by `resolve_table_id()`) or a bare id string
+— the canonical URI.
 
-Steps: 1. `resolve_table_id(x)` → composed id string. 2. Split `id` on
-`::` → `dataset_id` (+ optional `resource_id` + `file`). 3.
-`fetch_dataset(dataset_id)`. 4. Locate the resource by `resource_id`;
+Steps: 1. `resolve_table_id(x)` → table id string (the URI). 2.
+`parse_table_id(id)` → `dataset_id` (+ optional `resource_id` + `file`).
+3. `fetch_dataset(dataset_id)`. 4. Locate the resource by `resource_id`;
 error if absent. 5. Read it; if a `file` segment is present, unpack the
 ZIP and parse **only that file** (`read_one_zip_file(zip, file)`);
 otherwise `read_resource(resource)`. 6. `format_tibble(..., remove_na)`,
@@ -207,8 +218,8 @@ Implications for this package:
   the tabular service is not used by the current implementation.
 - Keying lines up with the ID design: the tabular API is addressed by
   `resource$id` (a UUID), and its profile carries `dataset_id`, so a
-  composed table ID maps straight onto a
-  `<dataset_id>::<resource_id>(::<file>)` address.
+  composed table id maps straight onto the
+  `dataset_id`/`resource_id`/`file` triple encoded in the id URI.
 
 ------------------------------------------------------------------------
 
@@ -218,8 +229,8 @@ Implications for this package:
 
 - Input: a table returned by
   [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
-  (its `id` attribute is read via `resolve_table_id()`), or a bare
-  composed table id.
+  (its `id` attribute is read via `resolve_table_id()`), or a bare table
+  id string (the URI).
 - Implementation: data.gouv attaches a schema only as a *pointer*
   (`resource$schema = {name, url, version}`).
   [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
@@ -250,6 +261,7 @@ Implications for this package:
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
 | `R/datagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |
+| `tests/test-live-api.R` (new) | Opt-in live integration tests: verify a file inside a real ZIP is addressable and re-fetchable via its composed URI on the live data.gouv API. Skipped unless `DATAGOUV_LIVE=1` (connectivity is probed against data.gouv itself, not `skip_if_offline()`’s `captive.apple.com`). See AGENTS.md. |
 | `README.qmd` | Update flow examples; rebuild README. |
 
 ------------------------------------------------------------------------
@@ -287,3 +299,6 @@ Implications for this package:
     [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md));
     each public function split into its own `R/dg-*.R` file
     (`format_tibble()` moved to `utils.R`).
+8.  **Live integration tests** *(implemented)*: `tests/test-live-api.R`
+    proves the composed URI addressing (incl. a file inside a multi-file
+    ZIP) against the real API, gated behind `DATAGOUV_LIVE=1`.

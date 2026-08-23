@@ -26,3 +26,5 @@ Authors:
   ([ORCID](https://orcid.org/0000-0002-8725-3654))
 
 - Pierre Gloaguen <pierre.gloaguen@univ-ubs.fr>
+
+- Arthur Leroy <arthur.leroy@inrae.fr>

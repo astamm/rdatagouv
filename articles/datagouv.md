@@ -74,12 +74,12 @@ head(datasets)
     # A tibble: 6 × 8
       title         id    description slug  n_resources formats has_table has_schema
       <chr>         <chr> <chr>       <chr>       <int> <chr>   <lgl>     <lgl>
-    1 Matrice ouve… 6a89… "Ce jeu de… matr…          15 csv, j… TRUE      FALSE
-    2 Informations… 6a89… "Version p… info…           3 csv, j… TRUE      FALSE
-    3 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
-    4 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE
-    5 AFA Eurobaro… 6a88… "AFA Eurob… afa-…           2 csv, j… TRUE      FALSE
-    6 AFA extrait … 6a88… "AFA extra… afa-…           2 csv, j… TRUE      FALSE     
+    1 Entreprises … 6a8b… "Recenseme… entr…           6 csv, j… TRUE      FALSE
+    2 Tarifs des p… 6a8a… "Les prix … tari…           3 csv, h… TRUE      FALSE
+    3 Matrice ouve… 6a89… "Ce jeu de… matr…          15 csv, j… TRUE      FALSE
+    4 Informations… 6a89… "Version p… info…           3 csv, j… TRUE      FALSE
+    5 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
+    6 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE     
 
 The columns are chosen to help you decide, at a glance, whether a
 dataset is worth pulling:
@@ -110,13 +110,13 @@ cycle[, c("title", "n_resources", "has_table", "has_schema")]
        <chr>                                              <int> <lgl>     <lgl>
      1 Stations du réseau vélo libre-service C.vélo           9 TRUE      FALSE
      2 Comptages vélo à Nantes par Place au Vélo -…           2 TRUE      FALSE
-     3 Stationnements vélo                                    1 TRUE      TRUE
+     3 Arceau vélo                                           16 TRUE      FALSE
      4 Primes « vélo »                                        2 TRUE      FALSE
-     5 Stationnement vélo                                     4 TRUE      FALSE
-     6 Arceau vélo                                            7 TRUE      FALSE
-     7 Stationnement vélo                                     1 TRUE      FALSE
-     8 Arceau vélo                                           16 TRUE      FALSE
-     9 Prime vélo                                             2 TRUE      FALSE
+     5 Stationnement vélo                                     1 TRUE      FALSE
+     6 Prime vélo                                             2 TRUE      FALSE
+     7 Arceau vélo                                            7 TRUE      FALSE
+     8 Stationnement vélo                                     4 TRUE      FALSE
+     9 Stationnements vélo                                    1 TRUE      TRUE
     10 Perche à vélo                                          8 TRUE      FALSE     
 
 The discovery catalog is **restricted to data.gouv’s official tabular
@@ -281,7 +281,7 @@ head(tbl)
 dg_table_id(tbl)
 ```
 
-    [1] "6397c0ff56d3963118a18345::01f5b3da-8d58-42c6-a07d-202538ad6672"
+    [1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"
 
 A few things to know about pulling:
 
@@ -310,10 +310,10 @@ A few things to know about pulling:
 ## Re-fetching the same table reproducibly
 
 This is what makes your analysis reproducible over time. The table’s id
-is built from the platform’s own stable identifiers
-(`<dataset_id>::<resource_id>`, plus the file name for a file inside a
-ZIP). Unlike a human-readable title, this address always resolves to the
-same table:
+is a URI built from the platform’s own stable identifiers —
+`https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (plus
+`/<file>` for a file inside a ZIP). Unlike a human-readable title, this
+address always resolves to the same table:
 
 ``` r
 
@@ -338,7 +338,7 @@ table_id <- dg_table_id(tbl)
 table_id
 ```
 
-    [1] "6397c0ff56d3963118a18345::01f5b3da-8d58-42c6-a07d-202538ad6672"
+    [1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"
 
 ``` r
 
@@ -356,8 +356,8 @@ again <- dg_refetch(tbl)
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
-accepts the composed id directly, so you can store it in a script or a
-database and reproduce the pull without re-searching the catalog.
+accepts the table id (URI) directly, so you can store it in a script or
+a database and reproduce the pull without re-searching the catalog.
 
 ## Summarising datasets
 
@@ -476,12 +476,13 @@ tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |
   dg_pull_dataset()
 ```
 
-    Rows: 308 Columns: 42
+    Rows: 527 Columns: 36
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr  (1): date_realisation_diagnostic
-    dbl (14): date_objectifs, code_commune_insee, code_iris_insee, existant_nb_p...
-    lgl (27): date_adoption_sdirve, existant_nb_moyen_recharges, existant_duree_...
+    chr   (1): url_sdirve
+    dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
+    lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
+    date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -493,12 +494,13 @@ tbl_id <- dg_table_id(tbl)
 again <- dg_refetch(tbl_id)
 ```
 
-    Rows: 308 Columns: 42
+    Rows: 527 Columns: 36
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr  (1): date_realisation_diagnostic
-    dbl (14): date_objectifs, code_commune_insee, code_iris_insee, existant_nb_p...
-    lgl (27): date_adoption_sdirve, existant_nb_moyen_recharges, existant_duree_...
+    chr   (1): url_sdirve
+    dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
+    lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
+    date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.

@@ -54,19 +54,19 @@
 <div class="section level2">
 <h2 id="baseline-agreed-stable-per-table-id--re-fetch">Baseline (agreed): stable per-table ID + re-fetch<a class="anchor" aria-label="anchor" href="#baseline-agreed-stable-per-table-id--re-fetch"></a></h2>
 <div class="section level3">
-<h3 id="id_11-composed-id-encoding">1.1 Composed ID encoding<a class="anchor" aria-label="anchor" href="#id_11-composed-id-encoding"></a></h3>
-<p>Each parsed table gets a stable, parseable, globally unique ID:</p>
-<ul><li>Single-file resource: <code>dataset_id::resource_id</code>
+<h3 id="id_11-composed-table-id-encoding-uri-form">1.1 Composed table id encoding (URI form)<a class="anchor" aria-label="anchor" href="#id_11-composed-table-id-encoding-uri-form"></a></h3>
+<p>Each parsed table gets a stable, parseable, globally unique address — a URI:</p>
+<ul><li>Single-file resource: <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;</code>
 </li>
-<li>File inside a multi-file ZIP: <code>dataset_id::resource_id::file</code>
+<li>File inside a multi-file ZIP: <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;/&lt;file&gt;</code>
 </li>
-</ul><p><code>dataset_id</code> is a 24-hex ObjectId; <code>resource_id</code> is a UUID; <code>file</code> is the base name. <code>::</code> is safe as a delimiter (never appears in those fields). This is the platform’s own identity, so it is stable and re-fetchable, unlike filenames.</p>
+</ul><p><code>dataset_id</code> is a 24-hex ObjectId; <code>resource_id</code> is a UUID; <code>file</code> is the base name. The base is data.gouv’s own dataset page, so the address is href-able and opens the right page in a browser, while the fragment carries the two stable platform identifiers (<code>#</code> and <code>/</code> never appear in those fields, so the fragment is unambiguous). This is the platform’s own identity, so it is stable and re-fetchable, unlike filenames. <em>(An earlier design used a <code>&lt;dataset_id&gt;:: &lt;resource_id&gt;(::&lt;file&gt;)</code> delimiter form; the implementation composes URIs, and the legacy <code>::</code> form was subsequently removed — the URI fragment <code>#&lt;resource_id&gt;(/&lt;file&gt;)</code> already covers all the single-file and ZIP-member cases the legacy form did.)</em></p>
 </div>
 <div class="section level3">
 <h3 id="id_12-store-the-id-as-a-table-attribute-dg_pull_dataset">1.2 Store the ID as a table attribute (<code>dg_pull_dataset</code>)<a class="anchor" aria-label="anchor" href="#id_12-store-the-id-as-a-table-attribute-dg_pull_dataset"></a></h3>
 <p>Each tibble returned by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> carries its composed ID as an <code>id</code> <strong>attribute</strong> (added by the internal <code>table_attr()</code>), <em>not</em> a per-row column. Injected in <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> <em>after</em> <code>read_resource()</code>/<code>format_tibble()</code>, so the low-level parsers stay untouched.</p>
-<ul><li>Single resource: the returned table gets <code>dataset$id::resource$id</code>.</li>
-<li>Multi-file ZIP: by default the first parseable file is returned as a single tibble (<code>dataset$id::resource$id::&lt;file&gt;</code>); <code>all_files = TRUE</code> returns one tibble per parseable file, each with its own <code>::&lt;file&gt;</code> id.</li>
+<ul><li>Single resource: the returned table gets the URI for <code>dataset$id</code> + <code>resource$id</code> (<code>compose_table_id(dataset$id, resource$id)</code>).</li>
+<li>Multi-file ZIP: by default the first parseable file is returned as a single tibble (<code>compose_table_id(dataset$id, resource$id, &lt;file&gt;)</code>); <code>all_files = TRUE</code> returns one tibble per parseable file, each with its own URI.</li>
 </ul><p>The new exported getter <code>dg_table_id(x)</code> reads the attribute and returns <code>NULL</code> for an ordinary data frame. Because the id is an attribute, not a column, it <strong>cannot</strong> inflate <code>n_vars</code>/<code>n_numeric</code>/<code>n_non_numeric</code>/<code>prop_missing</code> in <code><a href="reference/dg_summary.html">dg_summary()</a></code> — no exclusion hack is needed (the old <code>.id</code> column design required one).</p>
 <p><strong>Attribute survival.</strong> On the tibbles this package returns, the <code>id</code> attribute survives row/column verbs (<code><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">dplyr::select</a></code>, <code>filter</code>, <code>mutate</code>, <code>slice</code>, <code>arrange</code>, <code>rename</code>, <code>distinct</code>, <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code>, base <code>[</code>) because <code>[.tbl_df</code> keeps extra attributes. It is dropped only by verbs that build a structurally different table (<code>pivot_longer</code>, <code>nest</code>, <code>summarise</code>) — the intended behaviour, since those objects are no longer the same logical table. After a drop, <code><a href="reference/dg_table_id.html">dg_table_id()</a></code> returns <code>NULL</code> and <code><a href="reference/dg_refetch.html">dg_refetch()</a></code>/<code><a href="reference/dg_schema.html">dg_schema()</a></code> raise a clear “carries no table id” error.</p>
 </div>
@@ -74,8 +74,8 @@
 <h3 id="id_13-dg_refetchx-remove_na--false--new-export">1.3 <code>dg_refetch(x, remove_na = FALSE)</code> — new export<a class="anchor" aria-label="anchor" href="#id_13-dg_refetchx-remove_na--false--new-export"></a></h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">x</span>, remove_na <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p>Re-fetch the exact table addressed by a composed ID and return <strong>one tibble</strong> (the ID addresses a single table, not a multi-file list). <code>x</code> may be a table returned by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code>/<code><a href="reference/dg_refetch.html">dg_refetch()</a></code> (its <code>id</code> attribute is read by <code>resolve_table_id()</code>) or a bare composed id string (backwards compatibility).</p>
-<p>Steps: 1. <code>resolve_table_id(x)</code> → composed id string. 2. Split <code>id</code> on <code>::</code> → <code>dataset_id</code> (+ optional <code>resource_id</code> + <code>file</code>). 3. <code>fetch_dataset(dataset_id)</code>. 4. Locate the resource by <code>resource_id</code>; error if absent. 5. Read it; if a <code>file</code> segment is present, unpack the ZIP and parse <strong>only that file</strong> (<code>read_one_zip_file(zip, file)</code>); otherwise <code>read_resource(resource)</code>. 6. <code>format_tibble(..., remove_na)</code>, re-attach the <code>id</code> attribute, and return a single tibble.</p>
+<p>Re-fetch the exact table addressed by a table id (URI) and return <strong>one tibble</strong> (the id addresses a single table, not a multi-file list). <code>x</code> may be a table returned by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code>/<code><a href="reference/dg_refetch.html">dg_refetch()</a></code> (its <code>id</code> attribute is read by <code>resolve_table_id()</code>) or a bare id string — the canonical URI.</p>
+<p>Steps: 1. <code>resolve_table_id(x)</code> → table id string (the URI). 2. <code>parse_table_id(id)</code> → <code>dataset_id</code> (+ optional <code>resource_id</code> + <code>file</code>). 3. <code>fetch_dataset(dataset_id)</code>. 4. Locate the resource by <code>resource_id</code>; error if absent. 5. Read it; if a <code>file</code> segment is present, unpack the ZIP and parse <strong>only that file</strong> (<code>read_one_zip_file(zip, file)</code>); otherwise <code>read_resource(resource)</code>. 6. <code>format_tibble(..., remove_na)</code>, re-attach the <code>id</code> attribute, and return a single tibble.</p>
 <p>Validation: <code>resolve_table_id()</code> errors on anything that is neither a table with an <code>id</code> attribute nor a bare id string; <code>parse_table_id()</code> rejects malformed ids (wrong segment count / non-hex dataset id) with a clear message.</p>
 <hr></div>
 </div>
@@ -136,12 +136,12 @@
 <code>dg_list_datasets(q)</code> remains irreplaceable: the tabular API has no keyword search, and discovery metadata (is this dataset about my interest?) comes only from the main API. The educational core rests on the main API.</li>
 <li>The pull path (<code>read_resource</code>) keeps downloading raw files itself. That preserves full format/coverage (xlsx, json, zip; resources the tabular service hasn’t indexed), which the tabular API cannot guarantee.</li>
 <li>The tabular API’s unique value is <strong>variable metadata at pull time</strong>, which the main API lacks. In practice this package sources that metadata from the producer’s schema documents on schema.data.gouv.fr (see below) rather than the tabular service’s <code>/profile/</code> endpoint; the tabular service is not used by the current implementation.</li>
-<li>Keying lines up with the ID design: the tabular API is addressed by <code>resource$id</code> (a UUID), and its profile carries <code>dataset_id</code>, so a composed table ID maps straight onto a <code>&lt;dataset_id&gt;::&lt;resource_id&gt;(::&lt;file&gt;)</code> address.</li>
+<li>Keying lines up with the ID design: the tabular API is addressed by <code>resource$id</code> (a UUID), and its profile carries <code>dataset_id</code>, so a composed table id maps straight onto the <code>dataset_id</code>/<code>resource_id</code>/<code>file</code> triple encoded in the id URI.</li>
 </ul><hr></div>
 <div class="section level2">
 <h2 id="new-phase-variableprofile-pull-via-schemadatagouvfr">New phase: variable/profile pull (via schema.data.gouv.fr)<a class="anchor" aria-label="anchor" href="#new-phase-variableprofile-pull-via-schemadatagouvfr"></a></h2>
 <p><code>dg_schema(x)</code> — documented column metadata for a single table address.</p>
-<ul><li>Input: a table returned by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code>/<code><a href="reference/dg_refetch.html">dg_refetch()</a></code> (its <code>id</code> attribute is read via <code>resolve_table_id()</code>), or a bare composed table id.</li>
+<ul><li>Input: a table returned by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code>/<code><a href="reference/dg_refetch.html">dg_refetch()</a></code> (its <code>id</code> attribute is read via <code>resolve_table_id()</code>), or a bare table id string (the URI).</li>
 <li>Implementation: data.gouv attaches a schema only as a <em>pointer</em> (<code>resource$schema = {name, url, version}</code>). <code><a href="reference/dg_schema.html">dg_schema()</a></code> resolves the pointer — the <code>url</code> directly, or the <code>name</code> via <code>resolve_schema_url()</code> against <code>schema.data.gouv.fr</code> — to a Table Schema document and returns its <code>fields</code> as a tibble of <code>name</code>, <code>title</code>, <code>description</code>, <code>type</code>, <code>example</code>, with the schema’s <code>title</code>/<code>name</code> as attributes. <em>(An early sketch targeted the tabular API <code>/resources/{rid}/profile/</code> endpoint; the implementation instead reads documented fields from schema.data.gouv.fr, which is where producer-written per-column descriptions actually live.)</em>
 </li>
 <li>Returns <code>NULL</code> (with a message) when the resource declares no schema pointer, and errors when the resource is not found or the id is malformed.</li>
@@ -179,6 +179,9 @@
 <td>Document/export the new functions.</td>
 </tr><tr><td><code>tests/</code></td>
 <td>Unit + snapshot tests for each change.</td>
+</tr><tr><td>
+<code>tests/test-live-api.R</code> (new)</td>
+<td>Opt-in live integration tests: verify a file inside a real ZIP is addressable and re-fetchable via its composed URI on the live data.gouv API. Skipped unless <code>DATAGOUV_LIVE=1</code> (connectivity is probed against data.gouv itself, not <code>skip_if_offline()</code>’s <code>captive.apple.com</code>). See AGENTS.md.</td>
 </tr><tr><td><code>README.qmd</code></td>
 <td>Update flow examples; rebuild README.</td>
 </tr></tbody></table><hr></div>
@@ -197,6 +200,8 @@
 <li>(Optional) convenience tweaks.</li>
 <li>
 <strong>API cleanup</strong> <em>(implemented)</em>: <code>get_summary()</code>/<code>summarise_datasets()</code> renamed to <code><a href="reference/dg_summary.html">dg_summary()</a></code>/<code><a href="reference/dg_summarise.html">dg_summarise()</a></code> for a uniform <code>dg_*</code> prefix; <code>dg_download_many()</code> removed (covered by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> + <code><a href="reference/dg_summarise.html">dg_summarise()</a></code>); each public function split into its own <code>R/dg-*.R</code> file (<code>format_tibble()</code> moved to <code>utils.R</code>).</li>
+<li>
+<strong>Live integration tests</strong> <em>(implemented)</em>: <code>tests/test-live-api.R</code> proves the composed URI addressing (incl. a file inside a multi-file ZIP) against the real API, gated behind <code>DATAGOUV_LIVE=1</code>.</li>
 </ol></div>
 </div>
 

@@ -84,8 +84,10 @@ multi-file ZIP, <code>TRUE</code> keeps every parseable file, one named element 
     <p>A <code><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble::tibble()</a></code> (default) or, when <code>all_files = TRUE</code> and the
 resource is a multi-file ZIP, a named list of tibbles (one element per
 parseable file, named after it). Every table carries its stable, unique
-address as an <code>id</code> attribute — <code>(&lt;dataset_id&gt;::&lt;resource_id&gt;(::&lt;file&gt;))</code> —
-re-fetchable with <code><a href="dg_refetch.html">dg_refetch()</a></code> and readable with <code><a href="dg_table_id.html">dg_table_id()</a></code>.</p>
+address as an <code>id</code> attribute — a URI of the form
+<code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;</code> (plus
+<code>/&amp;lt;file&amp;gt;</code> for a file inside a ZIP) — re-fetchable with <code><a href="dg_refetch.html">dg_refetch()</a></code>
+and readable with <code><a href="dg_table_id.html">dg_table_id()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

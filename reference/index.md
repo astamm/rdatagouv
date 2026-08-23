@@ -10,9 +10,9 @@ tabular resources into tidy tables.
 - [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
   : Download a dataset from data.gouv.fr
 - [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
-  : Read a table's stable composed id
+  : Read a table's stable address
 - [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
-  : Re-fetch a single parsed table by its stable identifier
+  : Re-fetch a single parsed table by its stable address
 - [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
   : Documented schema of a parsed table's columns
 

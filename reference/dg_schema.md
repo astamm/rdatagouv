@@ -23,9 +23,10 @@ dg_schema(x)
   [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
   or
   [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
-  (its `id` attribute is read automatically) or a composed table id
-  string of the form `<dataset_id>::<resource_id>` or
-  `<dataset_id>::<resource_id>::<file>`, as readable with
+  (its `id` attribute is read automatically) or a table address string:
+  the URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
+  (or `...#<resource_id>/<file>` for a file inside a ZIP), as readable
+  with
   [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md).
 
 ## Value

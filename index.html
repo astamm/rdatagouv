@@ -76,9 +76,9 @@
 <span><span class="co">#&gt;   &lt;chr&gt;                                 &lt;chr&gt;         &lt;int&gt; &lt;lgl&gt;     &lt;lgl&gt;     </span></span>
 <span><span class="co">#&gt; 1 Stations du réseau vélo libre-servic… csv, g…           9 TRUE      FALSE     </span></span>
 <span><span class="co">#&gt; 2 Comptages vélo à Nantes par Place au… csv, j…           2 TRUE      FALSE     </span></span>
-<span><span class="co">#&gt; 3 Stationnement vélo                    csv               1 TRUE      FALSE     </span></span>
-<span><span class="co">#&gt; 4 Arceau vélo                           arcgis…           7 TRUE      FALSE     </span></span>
-<span><span class="co">#&gt; 5 Primes « vélo »                       csv, j…           2 TRUE      FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt; 3 Arceau vélo                           arcgis…          16 TRUE      FALSE     </span></span>
+<span><span class="co">#&gt; 4 Stationnements vélo                   csv               1 TRUE      TRUE      </span></span>
+<span><span class="co">#&gt; 5 Prime vélo                            csv, j…           2 TRUE      FALSE</span></span></code></pre></div>
 <p><code>id</code> is the stable identifier you use to download; <code>has_schema</code> tells you whether the dataset declares per-column documentation (see below). You can restrict the catalog to datasets that carry at least one resource in a given format — e.g. only the more compact <code>parquet</code> files, which are quicker to download:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">parquet_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_list_datasets.html">dg_list_datasets</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"parquet"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
@@ -102,7 +102,7 @@
 <span><span class="co">#&gt; 5         14 14 - Les Carmes       REGULAR                4.58e7 3.09e6 0.0     </span></span>
 <span><span class="co">#&gt; 6         19 19 - Amboise          REGULAR                4.58e7 3.09e6 0.0</span></span>
 <span><span class="fu"><a href="reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "6397c0ff56d3963118a18345::01f5b3da-8d58-42c6-a07d-202538ad6672"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</span></span></code></pre></div>
 <p>Judge whether the columns mean what you think. <code><a href="reference/dg_schema.html">dg_schema()</a></code> resolves the dataset’s declared schema and returns human-readable column documentation (pass the table directly — its id is read automatically):</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Find a schema-documented dataset, then look at its documented columns.</span></span>

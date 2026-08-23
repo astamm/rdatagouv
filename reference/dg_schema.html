@@ -68,9 +68,10 @@ really means what a statistical exploration assumes.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>Either a table returned by <code><a href="dg_pull_dataset.html">dg_pull_dataset()</a></code> or <code><a href="dg_refetch.html">dg_refetch()</a></code>
-(its <code>id</code> attribute is read automatically) or a composed table id string
-of the form <code>&lt;dataset_id&gt;::&lt;resource_id&gt;</code> or
-<code>&lt;dataset_id&gt;::&lt;resource_id&gt;::&lt;file&gt;</code>, as readable with <code><a href="dg_table_id.html">dg_table_id()</a></code>.</p></dd>
+(its <code>id</code> attribute is read automatically) or a table address string: the
+URI <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;</code>
+(or <code>...#&lt;resource_id&gt;/&lt;file&gt;</code> for a file inside a ZIP), as readable with
+<code><a href="dg_table_id.html">dg_table_id()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

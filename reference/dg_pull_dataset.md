@@ -42,8 +42,9 @@ A
 (default) or, when `all_files = TRUE` and the resource is a multi-file
 ZIP, a named list of tibbles (one element per parseable file, named
 after it). Every table carries its stable, unique address as an `id`
-attribute — `(<dataset_id>::<resource_id>(::<file>))` — re-fetchable
-with
+attribute — a URI of the form
+`https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (plus
+`/&lt;file&gt;` for a file inside a ZIP) — re-fetchable with
 [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
 and readable with
 [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md).

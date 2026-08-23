@@ -127,12 +127,12 @@
 <pre><code># A tibble: 6 × 8
   title         id    description slug  n_resources formats has_table has_schema
   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;       &lt;int&gt; &lt;chr&gt;   &lt;lgl&gt;     &lt;lgl&gt;
-1 Matrice ouve… 6a89… "Ce jeu de… matr…          15 csv, j… TRUE      FALSE
-2 Informations… 6a89… "Version p… info…           3 csv, j… TRUE      FALSE
-3 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
-4 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE
-5 AFA Eurobaro… 6a88… "AFA Eurob… afa-…           2 csv, j… TRUE      FALSE
-6 AFA extrait … 6a88… "AFA extra… afa-…           2 csv, j… TRUE      FALSE     </code></pre>
+1 Entreprises … 6a8b… "Recenseme… entr…           6 csv, j… TRUE      FALSE
+2 Tarifs des p… 6a8a… "Les prix … tari…           3 csv, h… TRUE      FALSE
+3 Matrice ouve… 6a89… "Ce jeu de… matr…          15 csv, j… TRUE      FALSE
+4 Informations… 6a89… "Version p… info…           3 csv, j… TRUE      FALSE
+5 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
+6 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE     </code></pre>
 </div>
 </div>
 <p>The columns are chosen to help you decide, at a glance, whether a dataset is worth pulling:</p>
@@ -159,13 +159,13 @@
    &lt;chr&gt;                                              &lt;int&gt; &lt;lgl&gt;     &lt;lgl&gt;
  1 Stations du réseau vélo libre-service C.vélo           9 TRUE      FALSE
  2 Comptages vélo à Nantes par Place au Vélo -…           2 TRUE      FALSE
- 3 Stationnements vélo                                    1 TRUE      TRUE
+ 3 Arceau vélo                                           16 TRUE      FALSE
  4 Primes « vélo »                                        2 TRUE      FALSE
- 5 Stationnement vélo                                     4 TRUE      FALSE
- 6 Arceau vélo                                            7 TRUE      FALSE
- 7 Stationnement vélo                                     1 TRUE      FALSE
- 8 Arceau vélo                                           16 TRUE      FALSE
- 9 Prime vélo                                             2 TRUE      FALSE
+ 5 Stationnement vélo                                     1 TRUE      FALSE
+ 6 Prime vélo                                             2 TRUE      FALSE
+ 7 Arceau vélo                                            7 TRUE      FALSE
+ 8 Stationnement vélo                                     4 TRUE      FALSE
+ 9 Stationnements vélo                                    1 TRUE      TRUE
 10 Perche à vélo                                          8 TRUE      FALSE     </code></pre>
 </div>
 </div>
@@ -288,7 +288,7 @@ num (2): lat, lon
 <div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "6397c0ff56d3963118a18345::01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
+<pre><code>[1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
 </div>
 </div>
 <p>A few things to know about pulling:</p>
@@ -300,7 +300,7 @@ num (2): lat, lon
 <li>Every returned table carries its stable, unique address as an <code>id</code> attribute, readable with <code><a href="../reference/dg_table_id.html">dg_table_id()</a></code>.</li>
 </ul></section><section class="level2"><h2 id="re-fetching-the-same-table-reproducibly">Re-fetching the same table reproducibly<a class="anchor" aria-label="anchor" href="#re-fetching-the-same-table-reproducibly"></a>
 </h2>
-<p>This is what makes your analysis reproducible over time. The table’s id is built from the platform’s own stable identifiers (<code>&lt;dataset_id&gt;::&lt;resource_id&gt;</code>, plus the file name for a file inside a ZIP). Unlike a human-readable title, this address always resolves to the same table:</p>
+<p>This is what makes your analysis reproducible over time. The table’s id is a URI built from the platform’s own stable identifiers — <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;</code> (plus <code>/&lt;file&gt;</code> for a file inside a ZIP). Unlike a human-readable title, this address always resolves to the same table:</p>
 <div class="cell" data-live="true">
 <div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span></code></pre></div>
@@ -322,7 +322,7 @@ num (2): lat, lon
 <code class="sourceCode R"><span><span class="va">table_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="va">table_id</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "6397c0ff56d3963118a18345::01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
+<pre><code>[1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Re-fetch the exact same table later:</span></span>
@@ -338,7 +338,7 @@ num (2): lat, lon
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
 </div>
-<p><code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> accepts the composed id directly, so you can store it in a script or a database and reproduce the pull without re-searching the catalog.</p>
+<p><code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> accepts the table id (URI) directly, so you can store it in a script or a database and reproduce the pull without re-searching the catalog.</p>
 </section><section class="level2"><h2 id="summarising-datasets">Summarising datasets<a class="anchor" aria-label="anchor" href="#summarising-datasets"></a>
 </h2>
 <p><code><a href="../reference/dg_summary.html">dg_summary()</a></code> computes metrics for a single table:</p>
@@ -428,12 +428,13 @@ date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Rows: 308 Columns: 42
+<pre><code>Rows: 527 Columns: 36
 ── Column specification ────────────────────────────────────────────────────────
 Delimiter: ","
-chr  (1): date_realisation_diagnostic
-dbl (14): date_objectifs, code_commune_insee, code_iris_insee, existant_nb_p...
-lgl (27): date_adoption_sdirve, existant_nb_moyen_recharges, existant_duree_...
+chr   (1): url_sdirve
+dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
+lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
+date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
 
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
@@ -443,12 +444,13 @@ lgl (27): date_adoption_sdirve, existant_nb_moyen_recharges, existant_duree_...
 <span><span class="va">tbl_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl_id</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Rows: 308 Columns: 42
+<pre><code>Rows: 527 Columns: 36
 ── Column specification ────────────────────────────────────────────────────────
 Delimiter: ","
-chr  (1): date_realisation_diagnostic
-dbl (14): date_objectifs, code_commune_insee, code_iris_insee, existant_nb_p...
-lgl (27): date_adoption_sdirve, existant_nb_moyen_recharges, existant_duree_...
+chr   (1): url_sdirve
+dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
+lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
+date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
 
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
