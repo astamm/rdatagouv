@@ -32,22 +32,22 @@ of the [`httr2`](https://httr2.r-lib.org) package.
 
 The examples below hit the live data.gouv.fr API and show real results.
 
-Find datasets matching a topic — `dg_list_datasets()` searches titles
+Find datasets matching a topic — `dg_find_datasets()` searches titles
 and descriptions server-side:
 
 ``` r
 library(datagouv)
 
-hits <- dg_list_datasets(q = "vélo", n = 5)
+hits <- dg_find_datasets(q = "vélo", n = 5)
 hits[, c("title", "id", "organization", "quality_score", "views")]
 #> # A tibble: 5 × 5
 #>   title                                   id    organization quality_score views
 #>   <chr>                                   <chr> <chr>                <dbl> <int>
-#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7131
-#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7939
-#> 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2251
-#> 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16104
-#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8552
+#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7137
+#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7955
+#> 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2252
+#> 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16121
+#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8559
 ```
 
 `id` is the stable identifier you use to download; `quality_score` and
@@ -62,13 +62,74 @@ least one resource in a given format — e.g. only the more compact
 `parquet` files, which are quicker to download:
 
 ``` r
-parquet_only <- dg_list_datasets(format = "parquet", n = 5)
+parquet_only <- dg_find_datasets(format = "parquet", n = 5)
 parquet_only$title
 #> [1] "Bases statistiques communale, départementale et régionale de la délinquance enregistrée par la police et la gendarmerie nationales "
 #> [2] "Géolocalisation des établissements du répertoire SIRENE-pour les études statistiques"                                               
 #> [3] "Bureaux de vote et adresses de leurs électeurs"                                                                                     
 #> [4] "Base Sirene des entreprises et de leurs établissements (SIREN, SIRET)"                                                              
 #> [5] "Données sur la localisation et l’accès de la population aux équipements"
+```
+
+You can also narrow a search to a single producer. Pass the producer’s
+exact name or slug — it is resolved to its stable id for you — or look
+producers up first with `dg_find_organization()` to see which exist and
+how their names are spelled:
+
+``` r
+orgs <- dg_find_organization(q = "SNCF")
+orgs[, c("id", "name", "datasets")]
+#> # A tibble: 17 × 3
+#>    id                       name                                        datasets
+#>    <chr>                    <chr>                                          <int>
+#>  1 534fffb0a3a7292c64a78115 SNCF                                             183
+#>  2 568e5e9488ee38033aaf0bf4 Île-de-France Mobilités                           97
+#>  3 5d823fd98b4c411e38e820b4 Fluo Grand Est                                    50
+#>  4 5db983ac8b4c4167f275d526 AlertesRER                                         1
+#>  5 5d0b7e3f6f44412d6d301778 Etablissement public d'aménagement Bordeau…        1
+#>  6 66f6b1c0668db6794d377dfb SFERIS                                             1
+#>  7 5a2023c388ee383e1dea3b3f Mairie de St NICOLAS DE REDON                      1
+#>  8 5f8581d1414580f029f22ec7 Isomaps                                            0
+#>  9 693fcf26eb48b48f67a2fbf6 SNCF Connect                                       0
+#> 10 679df2bff83a64dbfdf3ea6b Fleury-sur-Orne                                   37
+#> 11 6788e513830b33588b9529c2 SNCF Gares & Connexions                            0
+#> 12 5b87edb0634f41368b820b86 Toucan Toco                                        0
+#> 13 5d00c25a8b4c417012fd62c2 Tictactrip                                         0
+#> 14 5d6a3fef634f417b657b2279 viaTransit                                         0
+#> 15 6a0de9ce491d351c8f8764f0 MaxRail                                            0
+#> 16 5d56018d6f444123160357a1 Kombo                                              0
+#> 17 6a21d93a76e2d715124ebcc8 Trayn                                              0
+
+sncf <- dg_find_datasets(organization = "sncf", n = 5)
+sncf$title
+#> [1] "HORAIRES SNCF"                                        
+#> [2] "Fichier de formes des voies du Réseau Ferré National" 
+#> [3] "Horaires des gares"                                   
+#> [4] "Liste des gares"                                      
+#> [5] "Fichier de formes des lignes du Réseau Ferré National"
+```
+
+You can likewise narrow a search to a curated *theme*. Discover which
+themes exist with `dg_find_topics()` (which also reports how many
+elements each groups), then filter the catalog by a theme’s id:
+
+``` r
+topics <- dg_find_topics(q = "mobilité", n = 3)
+topics[, c("id", "name", "n_elements")]
+#> # A tibble: 3 × 3
+#>   id                       name                                       n_elements
+#>   <chr>                    <chr>                                           <int>
+#> 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         27
+#> 2 68da7823bc643f6ea5cae5a0 🚎 Tarification sociale/solidaire des tran…          0
+#> 3 673cba35210c475e77ef3e38 Catalogue des données sur l'immobilier lo…        135
+
+mobility <- dg_find_datasets(topic = topics$id[1], n = 5)
+mobility$title
+#> [1] "Nombre de places de stationnement vélo "                                  
+#> [2] "Flux domicile-travail selon le mode de transport principal utilisé"       
+#> [3] "Distance domicile-travail moyenne, selon le mode de déplacement principal"
+#> [4] "Nombre de stations de transports en commun selon le type de réseau"       
+#> [5] "Nombre de flux domicile-travail"
 ```
 
 Glimpse a dataset’s health and engagement metadata before deciding to
@@ -111,10 +172,10 @@ g$quality
 #> [1] TRUE
 g$metrics
 #> $views
-#> [1] 537
+#> [1] 549
 #> 
 #> $resources_downloads
-#> [1] 38
+#> [1] 39
 #> 
 #> $followers
 #> [1] 0
@@ -206,7 +267,7 @@ element per file. The delimiter of CSV/TXT resources is auto-detected
 (semicolon/comma-decimal) files are handled without special
 configuration.
 
-The discovery catalog (`dg_list_datasets()`) is restricted to the
+The discovery catalog (`dg_find_datasets()`) is restricted to the
 official tabular formats data.gouv.fr itself indexes (`csv`, `csv.gz`,
 `xls`, `xlsx`, `parquet`), so every listed dataset is in principle
 openable as a table. Use the `format` argument to narrow the catalog to

@@ -1,5 +1,44 @@
 # datagouv 0.0.0.9000
 
+- New export `dg_find_topics(q = NULL, n = 20, elements = FALSE)` queries the
+  v2 `topics/search` endpoint and returns a tibble of
+  `{id, name, slug, description, tags, featured, n_elements}` (plus
+  `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE`) for the
+  curated themes grouping datasets, reuses and dataservices. Use it to
+  discover a theme and get its stable 24-hex `id`. The per-kind counts require
+  one extra request per topic (an N+1 crawl), so `n_elements` is always the
+  topic's declared total while the breakdown defaults to `NA`.
+- `dg_find_datasets()` gains a `topic` filter: pass the 24-hex id of a theme
+  (found via `dg_find_topics()`) to return only datasets grouped under that
+  topic. Matched server-side as a single-valued filter, echoing how
+  `organization`/`geozone` narrow the catalog. Like `tag`/`geozone`, topic ids
+  form an open vocabulary, so the argument is not enumerated or validated; a
+  human-readable topic name/slug is not auto-resolved (see
+  `dg_find_topics()`).
+- `dg_find_datasets()` now validates its closed-vocabulary filter arguments
+  (`access_type`, `license`, `granularity`, `last_update`, `producer_type`)
+  before they reach the server, erroring with the exhaustive list of valid
+  options on an unknown value. This replaces three silent/cryptic failure
+  modes of the v2 search endpoint: an invalid `producer_type` returned a
+  cryptic server validation error, an invalid `license`/`granularity`/
+  `access_type` silently returned zero hits, and an invalid `last_update` was
+  silently ignored. The roxygen docs now enumerate the full option set for
+  each closed-vocabulary filter (and document the territory-code format for
+  `geozone`, whose codes are open-ended).
+- `dg_list_datasets()` is renamed to `dg_find_datasets()` for a verb-first API
+  that pairs with the other discovery functions. The old name is removed
+  without a deprecation shim (the package has never been released).
+- New export `dg_find_organization(q = NULL, n = 20)` queries the v2
+  `organizations/search` endpoint and returns a tibble of
+  `{id, name, slug, acronym, description, datasets, badges,
+  business_number_id}` for matching producers. Use it to discover an
+  organization and get its stable 24-hex `id`.
+- `dg_find_datasets(organization =)` now accepts an organization's `name` or
+  `slug` as well as a 24-hex id. Names and slugs are resolved to their id via
+  the organizations endpoint using an exact match; if zero or several
+  organizations match, the call errors and lists the candidates so you can
+  disambiguate. A bare 24-hex id is passed straight through without a lookup.
+
 - `dg_list_datasets()` now talks to the v2 `datasets/search` API instead of the
   v1 `datasets` endpoint. In v2, multiple `format` values are sent as repeated
   query parameters (a server-side union) in a single call, pagination follows

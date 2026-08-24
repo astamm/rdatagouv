@@ -32,7 +32,7 @@ test_that("dg_summarise() downloads datasets from names when given a character v
   expect_equal(out$n_vars, c(2, 2))
 })
 
-test_that("dg_summarise() accepts a dg_list_datasets() tibble", {
+test_that("dg_summarise() accepts a dg_find_datasets() tibble", {
   local_mocked_bindings(
     dg_pull_dataset = function(id, remove_na = FALSE) {
       if (id == "id1") data.frame(x = 1) else data.frame(x = 1, y = 2)
@@ -55,7 +55,7 @@ test_that("dg_summarise() accepts a dg_list_datasets() tibble", {
 
 test_that("dg_summarise() uses the first n datasets by default", {
   local_mocked_bindings(
-    dg_list_datasets = function(q = NULL, n = 1000) {
+    dg_find_datasets = function(q = NULL, n = 1000) {
       utils::head(
         tibble::tibble(
           title = paste0("ds", 1:10),
@@ -79,7 +79,7 @@ test_that("dg_summarise() uses the first n datasets by default", {
 test_that("dg_summarise() labels by title but downloads by id", {
   downloaded <- c()
   local_mocked_bindings(
-    dg_list_datasets = function(q = NULL, n = 1000) {
+    dg_find_datasets = function(q = NULL, n = 1000) {
       tibble::tibble(
         title = c("Alpha", "Beta"),
         id = c("aaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbb"),
@@ -105,7 +105,7 @@ test_that("dg_summarise() labels by title but downloads by id", {
 test_that("dg_summarise() disambiguates duplicated titles with their id", {
   downloaded <- c()
   local_mocked_bindings(
-    dg_list_datasets = function(q = NULL, n = 1000) {
+    dg_find_datasets = function(q = NULL, n = 1000) {
       tibble::tibble(
         title = c("Shared", "Shared", "Unique"),
         id = c(

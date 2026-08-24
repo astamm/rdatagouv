@@ -7,7 +7,9 @@ reference:
     Find a dataset on data.gouv.fr, judge whether it is usable, and pull its
     tabular resources into tidy tables.
   contents:
-  - dg_list_datasets
+  - dg_find_datasets
+  - dg_find_organization
+  - dg_find_topics
   - dg_glimpse
   - dg_pull_dataset
   - dg_table_id

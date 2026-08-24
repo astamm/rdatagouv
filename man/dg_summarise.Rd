@@ -10,10 +10,10 @@ dg_summarise(datasets = NULL, n = 100)
 \item{datasets}{Either a named list of tibbles (each element is a single
 table, named after it), a named list of such lists (as returned by
 \code{\link[=dg_pull_dataset]{dg_pull_dataset()}}, where a ZIP may contribute several tables), a tibble
-from \code{\link[=dg_list_datasets]{dg_list_datasets()}} (identified by its \code{id} column; each dataset is
+from \code{\link[=dg_find_datasets]{dg_find_datasets()}} (identified by its \code{id} column; each dataset is
 downloaded and summarised), a character vector of dataset identifiers (or
 exact titles), or \code{NULL} (the default) to use the first \code{n} datasets from
-\code{\link[=dg_list_datasets]{dg_list_datasets()}}.}
+\code{\link[=dg_find_datasets]{dg_find_datasets()}}.}
 
 \item{n}{Number of datasets to summarise when \code{datasets} is \code{NULL}.
 Defaults to \code{100}.}
@@ -25,7 +25,7 @@ described in \code{\link[=dg_summary]{dg_summary()}}.
 \description{
 Applies \code{\link[=dg_summary]{dg_summary()}} to a collection of tables and combines the resulting
 metrics into a single tibble. If \code{datasets} is \code{NULL}, the first \code{n} datasets
-returned by \code{\link[=dg_list_datasets]{dg_list_datasets()}} are downloaded and summarised.
+returned by \code{\link[=dg_find_datasets]{dg_find_datasets()}} are downloaded and summarised.
 }
 \examples{
 # Summarise in-memory tables (no network needed).

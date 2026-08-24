@@ -11,7 +11,7 @@
 #' This is a *supplement* to [dg_pull_dataset()]: the table itself comes from the
 #' main API; the schema is read from the producer's declared data specification.
 #' Only resources that carry a schema pointer have documentation; resources
-#' without one return `NULL` with a message. Use `dg_list_datasets()` (column
+#' without one return `NULL` with a message. Use `dg_find_datasets()` (column
 #' `has_schema`, or the `schema_only` argument) to target schema-documented
 #' tables in the first place.
 #'
@@ -58,7 +58,7 @@ dg_schema <- function(x) {
       "' of dataset '",
       dataset$title,
       "' has no declared schema; no variable documentation available. ",
-      "Search with dg_list_datasets(schema_only = TRUE) to find documented ",
+      "Search with dg_find_datasets(schema_only = TRUE) to find documented ",
       "resources."
     )
     return(NULL)

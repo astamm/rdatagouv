@@ -125,3 +125,133 @@ test_that("a refetched ZIP member matches a direct read of that file", {
 
   expect_identical(tbl, direct)
 })
+
+# A stable, current producer used for the live organization-resolution tests.
+# SNCF (id 534fffb0a3a7292c64a78115) publishes many datasets as both `SNCF`
+# (name) and `sncf` (slug); these are exact matches, so resolution is
+# unambiguous. Update the id if the producer ever changes.
+live_org_id <- "534fffb0a3a7292c64a78115"
+
+test_that("dg_find_organization() returns the expected tibble live", {
+  skip_unless_live()
+
+  orgs <- dg_find_organization(q = "SNCF", n = 5)
+
+  expect_s3_class(orgs, "tbl_df")
+  expect_true(all(
+    c(
+      "id",
+      "name",
+      "slug",
+      "acronym",
+      "description",
+      "datasets",
+      "badges",
+      "business_number_id"
+    ) %in%
+      names(orgs)
+  ))
+  # SNCF is a large producer and must surface when searched by its name.
+  expect_true(live_org_id %in% orgs$id)
+})
+
+test_that("dg_find_datasets(organization =) resolves a name and a slug live", {
+  skip_unless_live()
+
+  by_name <- dg_find_datasets(organization = "SNCF", n = 5)
+  by_slug <- dg_find_datasets(organization = "sncf", n = 5)
+  by_id <- dg_find_datasets(organization = live_org_id, n = 5)
+
+  # All three spellings address the same producer, so they must return the
+  # same catalog of its datasets.
+  expect_s3_class(by_name, "tbl_df")
+  expect_gt(nrow(by_name), 0)
+  expect_identical(sort(by_name$id), sort(by_slug$id))
+  expect_identical(names(by_name), names(by_id))
+})
+
+test_that("each discovered organization id is directly filterable", {
+  skip_unless_live()
+
+  # Every id listed by dg_find_organization() should narrow dg_find_datasets()
+  # to that producer without error and return a positive count.
+  orgs <- dg_find_organization(q = "SNCF", n = 5)
+  for (oid in orgs$id) {
+    res <- dg_find_datasets(organization = oid, n = 5)
+    expect_s3_class(res, "tbl_df")
+    expect_gt(nrow(res), 0)
+  }
+})
+
+test_that("dg_find_topics() returns the expected tibble live", {
+  skip_unless_live()
+
+  topics <- dg_find_topics(q = "environnement", n = 5)
+
+  expect_s3_class(topics, "tbl_df")
+  expect_true(all(
+    c(
+      "id",
+      "name",
+      "slug",
+      "description",
+      "tags",
+      "featured",
+      "n_elements",
+      "n_datasets",
+      "n_dataservices",
+      "n_reuses"
+    ) %in%
+      names(topics)
+  ))
+})
+
+test_that("a discovered topic id is directly filterable live", {
+  skip_unless_live()
+
+  # Any topic surfaced by dg_find_topics() should be addressable as a single-
+  # valued server-side `topic` filter on dg_find_datasets(). Some curated
+  # topics may group only reuses/dataservices (no datasets), so we only demand
+  # a well-formed tibble, not a positive row count.
+  topics <- dg_find_topics(n = 5)
+  for (tid in topics$id) {
+    res <- dg_find_datasets(topic = tid, n = 5)
+    expect_s3_class(res, "tbl_df")
+    expect_true(all(c("id", "title") %in% names(res)))
+  }
+})
+
+test_that("dg_find_topics(elements = TRUE) follows pagination on a large theme live", {
+  skip_unless_live()
+
+  # sift through the catalog for a topic whose declared element count exceeds
+  # a single page (page_size = 100), guaranteeing the next_page crawl runs.
+  # The `n_elements` total comes from the topics/search envelope, so no N+1
+  # crawl is needed just to find a large candidate.
+  topics <- dg_find_topics(n = 100)
+  large <- topics[!is.na(topics$n_elements) & topics$n_elements > 100, ]
+  if (nrow(large) == 0) {
+    testthat::skip(paste(
+      "no topic among the first",
+      nrow(topics),
+      "has more than 100 elements"
+    ))
+  }
+  big <- large[1, ]
+
+  # `elements = TRUE` N+1-crawls the subsection (and its pagination). Search by
+  # the topic's name to surface just that topic; the per-kind breakdown must
+  # sum to at most the declared total (external-link NULL-class entries are
+  # excluded, hence `<=`), and none of the counts may be NA once fetched.
+  elems <- dg_find_topics(q = big$name, n = 1, elements = TRUE)
+  row <- elems[elems$id == big$id, ]
+  expect_equal(nrow(row), 1)
+  expect_false(anyNA(c(
+    row$n_datasets,
+    row$n_dataservices,
+    row$n_reuses
+  )))
+  expect_true(
+    row$n_datasets + row$n_dataservices + row$n_reuses <= row$n_elements
+  )
+})

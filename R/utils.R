@@ -19,6 +19,19 @@ datagouv_search_url <- function() {
   paste0(datagouv_v2_base_url(), "datasets/search/")
 }
 
+# URL of the v2 organizations/search endpoint used to resolve a producer's
+# human-readable name or slug to its stable 24-hex id.
+datagouv_organizations_url <- function() {
+  paste0(datagouv_v2_base_url(), "organizations/search/")
+}
+
+# URL of the v2 topics/search endpoint (themes grouping datasets, reuses,
+# dataservices, ...). Topics use the same pointer-pagination envelope as the
+# organizations endpoint.
+datagouv_topics_url <- function() {
+  paste0(datagouv_v2_base_url(), "topics/search/")
+}
+
 # Build a configured httr2 request against the data.gouv API.
 # Adds a polite user agent, a timeout, retry on transient errors and a
 # friendly error message extracted from the JSON error body.
@@ -115,6 +128,7 @@ fetch_search_page <- function(
   granularity = NULL,
   last_update = NULL,
   producer_type = NULL,
+  topic = NULL,
   schema = NULL
 ) {
   args <- list(page_size = page_size)
@@ -144,6 +158,7 @@ fetch_search_page <- function(
       granularity = granularity,
       last_update = last_update,
       producer_type = producer_type,
+      topic = topic,
       schema = schema
     )
   )
@@ -179,7 +194,7 @@ append_url_params <- function(url, frags) {
 # The v2 search endpoint's latency scales with page_size, so the default (100)
 # keeps individual requests fast and is a good all-rounder for small and
 # medium `n`. But a large or infinite `n` (a full-catalog crawl) at small
-# pages means many round-trips — ~100 requests at page_size 100 for data.gouv's
+# pages means many round-trips -- ~100 requests at page_size 100 for data.gouv's
 # 10,000-row cap. Per-request latency grows roughly linearly with page size, so
 # total wall-clock stays about constant either way; the request count is what a
 # larger page reduces. When the crawl clearly needs more than one default-sized
@@ -229,6 +244,7 @@ fetch_search_all <- function(
   granularity = NULL,
   last_update = NULL,
   producer_type = NULL,
+  topic = NULL,
   schema = NULL
 ) {
   all <- list()
@@ -255,6 +271,7 @@ fetch_search_all <- function(
       granularity = granularity,
       last_update = last_update,
       producer_type = producer_type,
+      topic = topic,
       schema = schema
     )
     items <- body$data %||% list()
@@ -288,17 +305,316 @@ fetch_search_all <- function(
   all
 }
 
+# Fetch a single page of the v2 organizations/search endpoint.
+#
+# Mirrors fetch_search_page() (same request pipeline, pointer pagination and
+# envelope: {data, page, page_size, total, next_page, previous_page, facets}),
+# but for producers instead of datasets.
+fetch_organization_page <- function(
+  url = datagouv_organizations_url(),
+  page_size = 100,
+  q = NULL
+) {
+  args <- list(page_size = page_size)
+  if (!is.null(q)) {
+    args$q <- q
+  }
+  frags <- paste0(
+    names(args),
+    "=",
+    vapply(
+      args,
+      function(v) utils::URLencode(as.character(v), reserved = TRUE),
+      character(1)
+    )
+  )
+  url <- append_url_params(url, frags)
+  httr2::resp_body_json(
+    http_perform(req_data_gouv(httr2::request(url)))
+  )
+}
+
+# Fetch organization objects from the v2 organizations/search endpoint,
+# following pointer-based pagination until `n` are collected or the last page
+# is reached. Mirrors fetch_search_all(); see its docs for the pagination and
+# `n = Inf` notes.
+fetch_organizations_all <- function(
+  url = datagouv_organizations_url(),
+  page_size = 100,
+  q = NULL,
+  n = 20
+) {
+  all <- list()
+  repeat {
+    eff_page <- adaptive_page_size(
+      page_size = page_size,
+      n = n,
+      remaining = n - length(all)
+    )
+    body <- fetch_organization_page(
+      url = url,
+      page_size = eff_page,
+      q = q
+    )
+    items <- body$data %||% list()
+    if (length(items) == 0) {
+      break
+    }
+    take <- items
+    if (!is.infinite(n) && length(all) + length(take) > n) {
+      take <- take[seq_len(n - length(all))]
+    }
+    all <- c(all, take)
+    if (!is.infinite(n) && length(all) >= n) {
+      break
+    }
+    np <- body$next_page
+    if (is.character(np)) {
+      url <- np
+    } else if (is.list(np) && !is.null(np$page)) {
+      url <- replace_url_page(url, np$page)
+    } else {
+      break
+    }
+  }
+  all
+}
+
+# Resolve an `organization` filter value to its stable 24-hex id.
+#
+# `organization` may already be a 24-hex id (returned unchanged, no extra
+# request) or a human-readable slug/name, which is resolved against the v2
+# organizations/search endpoint. Resolution is deliberately strict and
+# deterministic: only an *exact* slug/name match is auto-resolved, so the
+# resulting dataset list is reproducible. If nothing matches exactly, or
+# several organizations tie, the function errors listing the ranked candidates
+# (name, slug, id, dataset count) so the caller can pick the intended one.
+resolve_organization_id <- function(organization) {
+  if (is.null(organization)) {
+    return(NULL)
+  }
+  if (is_dataset_id(organization)) {
+    return(organization)
+  }
+  if (
+    !is.character(organization) ||
+      length(organization) != 1 ||
+      is.na(organization) ||
+      !nzchar(organization)
+  ) {
+    stop(
+      "`organization` must be a 24-hex id, an organization slug or an exact ",
+      "organization name.",
+      call. = FALSE
+    )
+  }
+
+  candidates <- fetch_organizations_all(q = organization, n = 100)
+  if (length(candidates) == 0) {
+    stop(
+      "No organization matched '",
+      organization,
+      "' on data.gouv.fr. ",
+      "Search producers with dg_find_organization() and pass its `id`.",
+      call. = FALSE
+    )
+  }
+
+  match_slug <- vapply(
+    candidates,
+    function(o) identical(o$slug %||% NA_character_, organization),
+    logical(1)
+  )
+  match_name <- vapply(
+    candidates,
+    function(o) identical(o$name %||% NA_character_, organization),
+    logical(1)
+  )
+  hits <- which(match_slug | match_name)
+  if (length(hits) == 1) {
+    return(candidates[[hits]]$id)
+  }
+
+  fmt_candidate <- function(o) {
+    paste0(
+      "  - ",
+      o$name %||% o$slug %||% "<unnamed>",
+      if (!is.null(o$slug)) paste0(" (", o$slug, ")") else "",
+      " -- id ",
+      o$id
+    )
+  }
+  listing <- paste(
+    vapply(candidates, fmt_candidate, character(1)),
+    collapse = "\n"
+  )
+  if (length(hits) == 0) {
+    stop(
+      "No organization named exactly '",
+      organization,
+      "' was found on ",
+      "data.gouv.fr. Did you mean one of these?\n",
+      listing,
+      "\nPass the exact `id` of the intended producer to `organization`.",
+      call. = FALSE
+    )
+  }
+  stop(
+    "Several organizations match '",
+    organization,
+    "' exactly; pass the ",
+    "intended id to disambiguate:\n",
+    listing,
+    call. = FALSE
+  )
+}
+
+# Fetch a single page of the v2 topics/search endpoint.
+#
+# Mirrors fetch_organization_page() (same request pipeline, pointer pagination
+# and envelope: {data, page, page_size, total, next_page, previous_page,
+# facets}), but for themes instead of producers.
+fetch_topic_page <- function(
+  url = datagouv_topics_url(),
+  page_size = 100,
+  q = NULL
+) {
+  args <- list(page_size = page_size)
+  if (!is.null(q)) {
+    args$q <- q
+  }
+  frags <- paste0(
+    names(args),
+    "=",
+    vapply(
+      args,
+      function(v) utils::URLencode(as.character(v), reserved = TRUE),
+      character(1)
+    )
+  )
+  url <- append_url_params(url, frags)
+  httr2::resp_body_json(
+    http_perform(req_data_gouv(httr2::request(url)))
+  )
+}
+
+# Fetch topic objects from the v2 topics/search endpoint, following
+# pointer-based pagination until `n` are collected or the last page is reached.
+# Mirrors fetch_organizations_all(); see its docs for the pagination and
+# `n = Inf` notes.
+fetch_topics_all <- function(
+  url = datagouv_topics_url(),
+  page_size = 100,
+  q = NULL,
+  n = 20
+) {
+  all <- list()
+  repeat {
+    eff_page <- adaptive_page_size(
+      page_size = page_size,
+      n = n,
+      remaining = n - length(all)
+    )
+    body <- fetch_topic_page(
+      url = url,
+      page_size = eff_page,
+      q = q
+    )
+    items <- body$data %||% list()
+    if (length(items) == 0) {
+      break
+    }
+    take <- items
+    if (!is.infinite(n) && length(all) + length(take) > n) {
+      take <- take[seq_len(n - length(all))]
+    }
+    all <- c(all, take)
+    if (!is.infinite(n) && length(all) >= n) {
+      break
+    }
+    np <- body$next_page
+    if (is.character(np)) {
+      url <- np
+    } else if (is.list(np) && !is.null(np$page)) {
+      url <- replace_url_page(url, np$page)
+    } else {
+      break
+    }
+  }
+  all
+}
+
+# Fetch a topic's whole `elements` subsection, following pointer pagination the
+# same way fetch_topics_all() does — the elements endpoint pages via
+# `next_page`, so a single default-sized call can silently truncate (confirmed
+# live on a topic holding 87 elements). Returns the raw `data` list of element
+# items.
+#
+# Confirmed live element shape: each `data` item is
+# `{id, title, description, tags, extras, element}` where the kind lives in the
+# *nested* element object's `class`:
+# - `element$class == "Dataset"` -> element$id is a dataset id;
+# - `element$class == "Reuse"` / `"Dataservice"` -> the analogous kinds;
+# - `element == NULL`/`{}` -> an external-link entry (a topic-curator
+#   annotation), which does NOT correspond to a pull-able object.
+# The item's own `title`/`description`/`extras` are curator annotations, not the
+# underlying element's metadata, so they are not surfaced as element titles.
+fetch_topic_elements <- function(topic_id, page_size = 100) {
+  url <- paste0(
+    datagouv_v2_base_url(),
+    "topics/",
+    topic_id,
+    "/elements/?page_size=",
+    page_size
+  )
+  all <- list()
+  repeat {
+    body <- httr2::resp_body_json(
+      http_perform(req_data_gouv(httr2::request(url)))
+    )
+    items <- body$data %||% list()
+    if (length(items) == 0) {
+      break
+    }
+    all <- c(all, items)
+    np <- body$next_page
+    if (is.character(np)) {
+      url <- np
+    } else {
+      break
+    }
+  }
+  all
+}
+
+# Per-kind element counts for one topic, driving the `elements = TRUE` branch of
+# dg_find_topics(). Only Dataset/Reuse/Dataservice classes count toward the
+# pull-able buckets; NULL-class external-link entries are excluded.
+topic_element_counts <- function(topic_id) {
+  items <- fetch_topic_elements(topic_id)
+  cls <- vapply(
+    items,
+    function(item) (item$element %||% list())$class %||% NA_character_,
+    character(1)
+  )
+  list(
+    n_datasets = sum(cls == "Dataset", na.rm = TRUE),
+    n_dataservices = sum(cls == "Dataservice", na.rm = TRUE),
+    n_reuses = sum(cls == "Reuse", na.rm = TRUE)
+  )
+}
+
 # Fetch the full resource list of a dataset via its v2 resources subsection URL
 # (a `{"rel":"subsection","href":...,"total":N}` pointer that v2 search and v2
 # dataset objects use instead of inlining resources).
 #
 # The subsection is paginated at 50 per page, so the first page never holds the
-# whole list for datasets with many resources — this fully paginates it by
+# whole list for datasets with many resources -- this fully paginates it by
 # following the string `next_page` until NULL, never trusting the first page.
 # When fully paginated it reproduces v1's inline `dataset$resources` list
 # exactly (same ids, same declared order, same resource key sets), making it a
 # behavior-preserving drop-in replacement for v1's direct GET should v1 ever be
-# retired — at the cost of one request per subsection page.
+# retired -- at the cost of one request per subsection page.
 fetch_resource_subsection <- function(subsection) {
   href <- subsection$href
   if (is.null(href)) {
@@ -329,8 +645,8 @@ fetch_resource_subsection <- function(subsection) {
 }
 
 # Fetch a dataset object from the v2 API by its identifier (a direct GET on
-# /api/2/datasets/{id}/). The v2 object does NOT inline resources — `resources`
-# (and `community_resources`) are subsection pointers — but embeds rich
+# /api/2/datasets/{id}/). The v2 object does NOT inline resources -- `resources`
+# (and `community_resources`) are subsection pointers -- but embeds rich
 # per-dataset metadata (`quality`, `metrics`, `organization`, `license`,
 # `frequency`, ...). Used by dg_glimpse() to surface discovery-side health and
 # engagement metadata.
@@ -405,7 +721,7 @@ find_dataset <- function(id) {
     stop(
       "No dataset titled '",
       id,
-      "' was found on data.gouv.fr. Check the name with dg_list_datasets().",
+      "' was found on data.gouv.fr. Check the name with dg_find_datasets().",
       call. = FALSE
     )
   }
@@ -587,7 +903,7 @@ read_json_file <- function(path) {
           ". ",
           "This resource declares `json` but does not contain a table (it is ",
           "likely an API metadata document). Try another resource of the ",
-          "dataset, e.g. via dg_list_datasets() or dg_refetch().",
+          "dataset, e.g. via dg_find_datasets() or dg_refetch().",
           call. = FALSE
         )
       }
@@ -689,8 +1005,8 @@ table_id_from_attr <- function(table) {
   attr(table, "id")
 }
 
-# Normalise a table reference — either a tibble carrying an `id` attribute (as
-# returned by dg_pull_dataset()/dg_refetch()) or a bare composed id string —
+# Normalise a table reference -- either a tibble carrying an `id` attribute (as
+# returned by dg_pull_dataset()/dg_refetch()) or a bare composed id string --
 # into the composed id string. Errors on anything else with a clear message.
 resolve_table_id <- function(x) {
   if (is.data.frame(x)) {

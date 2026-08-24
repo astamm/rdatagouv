@@ -44,13 +44,13 @@ reproducibly. Requests are built on top of the
 
 The examples below hit the live data.gouv.fr API and show real results.
 
-Find datasets matching a topic — `dg_list_datasets()` searches titles and
+Find datasets matching a topic — `dg_find_datasets()` searches titles and
 descriptions server-side:
 
 ```{r}
 library(datagouv)
 
-hits <- dg_list_datasets(q = "vélo", n = 5)
+hits <- dg_find_datasets(q = "vélo", n = 5)
 hits[, c("title", "id", "organization", "quality_score", "views")]
 ```
 
@@ -65,8 +65,33 @@ that carry at least one resource in a given format — e.g. only the more compac
 `parquet` files, which are quicker to download:
 
 ```{r}
-parquet_only <- dg_list_datasets(format = "parquet", n = 5)
+parquet_only <- dg_find_datasets(format = "parquet", n = 5)
 parquet_only$title
+```
+
+You can also narrow a search to a single producer. Pass the producer's exact
+name or slug — it is resolved to its stable id for you — or look producers up
+first with `dg_find_organization()` to see which exist and how their names are
+spelled:
+
+```{r}
+orgs <- dg_find_organization(q = "SNCF")
+orgs[, c("id", "name", "datasets")]
+
+sncf <- dg_find_datasets(organization = "sncf", n = 5)
+sncf$title
+```
+
+You can likewise narrow a search to a curated *theme*. Discover which themes
+exist with `dg_find_topics()` (which also reports how many elements each
+groups), then filter the catalog by a theme's id:
+
+```{r}
+topics <- dg_find_topics(q = "mobilité", n = 3)
+topics[, c("id", "name", "n_elements")]
+
+mobility <- dg_find_datasets(topic = topics$id[1], n = 5)
+mobility$title
 ```
 
 Glimpse a dataset's health and engagement metadata before deciding to pull it.
@@ -126,7 +151,7 @@ delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe,
 ...), so both standard and European-style (semicolon/comma-decimal) files are
 handled without special configuration.
 
-The discovery catalog (`dg_list_datasets()`) is restricted to the official
+The discovery catalog (`dg_find_datasets()`) is restricted to the official
 tabular formats data.gouv.fr itself indexes (`csv`, `csv.gz`, `xls`, `xlsx`,
 `parquet`), so every listed dataset is in principle openable as a table. Use
 the `format` argument to narrow the catalog to datasets with a resource in a

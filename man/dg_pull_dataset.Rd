@@ -33,7 +33,7 @@ and readable with \code{\link[=dg_table_id]{dg_table_id()}}.
 Downloads the first tabular resource of a dataset and parses it into a
 \code{\link[tibble:tibble]{tibble::tibble()}} with \code{format_tibble()}. The dataset is identified by its
 \code{id}, which is the stable, unique identifier returned in the \code{id} column of
-\code{\link[=dg_list_datasets]{dg_list_datasets()}}. For backwards compatibility, an exact title is also
+\code{\link[=dg_find_datasets]{dg_find_datasets()}}. For backwards compatibility, an exact title is also
 accepted and is resolved by searching the platform.
 }
 \details{
