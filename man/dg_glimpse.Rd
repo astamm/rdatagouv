@@ -31,7 +31,7 @@ temporal_coverage, spatial/granularity, access_type, archived, featured.
 \description{
 Surfaces the dataset-level health and engagement metadata that the v2 API
 embeds inline but the v1 fetch path does not expose — the bridge between
-\emph{discover} (\code{\link[=dg_list_datasets]{dg_list_datasets()}}) and \emph{judge} (\code{\link[=dg_schema]{dg_schema()}}'s column
+\emph{discover} (\code{\link[=dg_find_datasets]{dg_find_datasets()}}) and \emph{judge} (\code{\link[=dg_schema]{dg_schema()}}'s column
 documentation). It reports the dataset's \code{quality} score and flags, its
 \code{metrics} (views, downloads, followers, ...) and its context
 (organization, license, frequency, temporal/spatial coverage, access type),

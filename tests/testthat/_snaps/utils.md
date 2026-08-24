@@ -12,7 +12,7 @@
       find_dataset("Does not exist")
     Condition
       Error:
-      ! No dataset titled 'Does not exist' was found on data.gouv.fr. Check the name with dg_list_datasets().
+      ! No dataset titled 'Does not exist' was found on data.gouv.fr. Check the name with dg_find_datasets().
 
 # read_first_parseable_resource() errors when no resource is supported
 
@@ -39,7 +39,7 @@
       ! JSON object is not tabular data: Tibble columns must have compatible sizes.
       * Size 5: Column `links`.
       * Size 10: Column `dataset`.
-      i Only values of size one are recycled.. This resource declares `json` but does not contain a table (it is likely an API metadata document). Try another resource of the dataset, e.g. via dg_list_datasets() or dg_refetch().
+      i Only values of size one are recycled.. This resource declares `json` but does not contain a table (it is likely an API metadata document). Try another resource of the dataset, e.g. via dg_find_datasets() or dg_refetch().
 
 # read_resource() errors on unsupported formats
 

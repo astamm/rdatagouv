@@ -134,6 +134,37 @@ mock_resource <- function(
   )
 }
 
+# A minimal, realistic organization object as returned by the v2
+# organizations/search endpoint. `id` is the stable 24-hex producer id a
+# caller would pass to the `organization` argument of dg_find_datasets().
+mock_organization <- function(
+  id = "534fffb0a3a7292c64a78115",
+  name = "SNCF",
+  slug = "sncf",
+  acronym = NULL,
+  description = NULL,
+  datasets = 183,
+  badges = list(list(kind = "public-service")),
+  business_number_id = NULL
+) {
+  list(
+    id = id,
+    name = name,
+    slug = slug,
+    acronym = acronym,
+    description = description %||% "A mock organization.",
+    metrics = list(datasets = datasets),
+    badges = badges,
+    business_number_id = business_number_id
+  )
+}
+
+# A v2 organizations/search response envelope (same shape as
+# mock_search_envelope()).
+mock_organization_envelope <- function(orgs, next_page = NULL, total = NULL) {
+  mock_search_envelope(orgs, next_page = next_page, total = total)
+}
+
 # A small CSV the mocks can return when "reading" a resource.
 mock_csv_data <- function() {
   data.frame(

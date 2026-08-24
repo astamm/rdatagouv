@@ -1,4 +1,4 @@
-#' List datasets available on data.gouv.fr
+#' Find datasets available on data.gouv.fr
 #'
 #' Collects the datasets published on the data.gouv.fr platform, searching the
 #' catalog via the v2 `datasets/search` endpoint (the same one the web
@@ -40,11 +40,15 @@
 #'   (see `has_schema`). Defaults to `FALSE`. v2 has no boolean "declares any
 #'   schema" server-side filter, so this filters client-side and only works
 #'   reliably when `resources = TRUE` fills `has_schema`.
-#' @param organization Optional data producer, matched server-side by its
-#'   **24-hex `organization` id** (as shown in the `organization` column or on
-#'   the dataset page). Unlike v1, the v2 search API does *not* accept the
-#'   organization slug or name here (a slug yields zero matches). Defaults to
-#'   `NULL`.
+#' @param organization Optional data producer, matched server-side. Pass either
+#'   the producer's **24-hex `organization` id** (as shown in the
+#'   `organization` column of the returned tibble or on the dataset page), or
+#'   its exact `name` or `slug` — a human-readable value is resolved to its id
+#'   automatically via [dg_find_organization()] (only an exact match is
+#'   auto-resolved, so results stay reproducible; an ambiguous or unmatched
+#'   value stops with the candidate list). Note that, unlike v1, the v2 search
+#'   API itself only accepts the id (a raw slug yields zero matches), which is
+#'   why the package resolves names/slugs for you. Defaults to `NULL`.
 #' @param geozone Optional territorial filter, e.g. `"country:fr"` or
 #'   `"fr:commune:75056"`. Defaults to `NULL`.
 #' @param access_type Optional access filter, `"open"` or `"restricted"`.
@@ -76,24 +80,25 @@
 #'
 #' @export
 #' @examplesIf interactive()
-#' datasets <- dg_list_datasets(n = 20)
+#' datasets <- dg_find_datasets(n = 20)
 #' head(datasets)
 #'
 #' # Search server-side instead of downloading the whole catalog.
-#' cycle <- dg_list_datasets(q = "vélo", n = 10)
+#' cycle <- dg_find_datasets(q = "vélo", n = 10)
 #'
 #' # Only datasets that carry at least one parquet resource; the v2 API matches
 #' # multiple formats as a server-side union.
-#' compact <- dg_list_datasets(format = "parquet", n = 10)
+#' compact <- dg_find_datasets(format = "parquet", n = 10)
 #'
 #' # Only datasets with a declared schema (documented variables). Resolving
 #' # `has_schema` exactly needs the per-dataset resource fetch.
-#' documented <- dg_list_datasets(schema_only = TRUE, resources = TRUE, n = 10)
+#' documented <- dg_find_datasets(schema_only = TRUE, resources = TRUE, n = 10)
 #'
-#' # Narrow by producer (server-side id filter) and territory.
-#' fr <- dg_list_datasets(organization = "534fff91a3a7292c64a77f53",
+#' # Narrow by producer and territory. A producer may be given by its 24-hex
+#' # id or by its exact slug/name (resolved for you), and by geozone.
+#' fr <- dg_find_datasets(organization = "sncf",
 #'                        geozone = "country:fr", n = 10)
-dg_list_datasets <- function(
+dg_find_datasets <- function(
   q = NULL,
   n = 1000,
   format = catalog_formats(),
@@ -109,7 +114,7 @@ dg_list_datasets <- function(
   resources = FALSE
 ) {
   filter_args <- list(
-    organization = organization,
+    organization = resolve_organization_id(organization),
     geozone = geozone,
     access_type = access_type,
     license = license,
@@ -220,7 +225,7 @@ dg_list_datasets <- function(
   out
 }
 
-# Column schema of a dg_list_datasets() result, so an empty result still
+# Column schema of a dg_find_datasets() result, so an empty result still
 # carries the full column set with the correct types.
 datagouv_empty_columns <- function() {
   list(

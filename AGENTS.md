@@ -18,7 +18,8 @@ Four workflow steps, each mapping to exported functions:
 
 | Step | Function |
 |------|----------|
-| Find / search the catalog | `dg_list_datasets()` |
+| Find / search the catalog | `dg_find_datasets()` |
+| Find / identify producers | `dg_find_organization()` |
 | Judge documented columns | `dg_schema()` |
 | Download tabular resources | `dg_pull_dataset()` |
 | Summarise table contents | `dg_summary()`, `dg_summarise()` |
@@ -35,7 +36,7 @@ the design doc are historical, not normative. The README and the vignette
 
 ## Public API (8 exports)
 
-- `dg_list_datasets(q = NULL, n = 1000, format = catalog_formats(),
+- `dg_find_datasets(q = NULL, n = 1000, format = catalog_formats(),
   schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL,
   license = NULL, tag = NULL, granularity = NULL, last_update = NULL,
   producer_type = NULL, resources = FALSE)` -> tibble with robust columns
@@ -49,9 +50,14 @@ the design doc are historical, not normative. The README and the vignette
   values as repeated params** (`format=csv&format=parquet`, a server-side
   union; a bare comma-joined value is *not* parsed, so pass a vector);
   `schema_only = TRUE` stays **client-side** (v2 has no "declares any schema"
-  boolean); the filter args (`organization` [24-hex id], `geozone`,
+  boolean); the filter args (`geozone`,
   `access_type`, `license`, `tag`, `granularity`, `last_update`,
-  `producer_type`) are forwarded as server-side filters. **Resource fidelity is
+  `producer_type`) are forwarded as server-side filters. `organization` accepts
+  a 24-hex producer id **or** an organization `name`/`slug`; a name/slug is
+  auto-resolved to its 24-hex id via the v2 `organizations/search` endpoint
+  using an **exact match only** (`resolve_organization_id()`) and errors with
+  the candidate list on zero or multiple exact matches, while a bare 24-hex id
+  is passed straight through without a lookup. **Resource fidelity is
   opt-in**: because v2 search does NOT inline resources, `n_resources`,
   `formats`, `has_table` and `has_schema` are `NA` unless `resources = TRUE`
   (which N+1-fetches each dataset's resources subsection). `id` and `title` are
@@ -63,6 +69,16 @@ the design doc are historical, not normative. The README and the vignette
   the remaining budget for a finite `n`. It stays low because the v2 search
   endpoint's latency scales with page_size and `page_size = 1000` consistently
   trips the 30s timeout in `req_data_gouv()`).
+- `dg_find_organization(q = NULL, n = 20)` -> tibble
+  `id, name, slug, acronym, description, datasets, badges,
+  business_number_id`, listing producers matching `q` from the v2
+  `organizations/search` endpoint (`q` is server-side full-text; default
+  `n = 20`). `datasets` is the org's dataset count coerced to integer,
+  `badges` a comma-joined string; absent fields coerce to `NA` via internal
+  `organization_empty_columns()`. Use it to discover a producer and get its
+  stable 24-hex `id`, which you can pass to `dg_find_datasets(organization =)`.
+  Backed by `fetch_organizations_all()`/`fetch_organization_page()` (same
+  pointer-pagination envelope as `fetch_search_page()`).
 - `dg_glimpse(id, table = NULL)` -> a named list surfacing v2-inline
   dataset-level metadata that the v1 fetch path does not expose:
   `quality` (score + boolean flags), `metrics` (views, resources_downloads,
@@ -89,7 +105,7 @@ the design doc are historical, not normative. The README and the vignette
 - `dg_summary(x, name = NULL)` -> one-row metrics tibble: `dataset, size_kb,
   n_vars, n_numeric, n_non_numeric, n_rows, prop_missing`.
 - `dg_summarise(datasets = NULL, n = 100)` -> metrics over many tables.
-  Accepts a named list of tibbles, a nested list (ZIP), a `dg_list_datasets()`
+  Accepts a named list of tibbles, a nested list (ZIP), a `dg_find_datasets()`
   tibble, a character vector of ids, or `NULL` (first `n` of the catalog).
 
 Note: `format_tibble()` is **not exported** (used internally and in tests).
@@ -105,8 +121,12 @@ Note: `format_tibble()` is **not exported** (used internally and in tests).
   `parse_resource_file`, `read_zip_resource`, `read_one_zip_file`,
   `read_resource`, `download_resource`, `format_tibble`, `compose_table_id` /
   `parse_table_id`, `table_attr` / `table_id_from_attr` / `resolve_table_id`,
-  `%||%`, `uniquify_names`, `is_dataset_id`.
-- `R/dg-list-datasets.R` — `dg_list_datasets()`.
+  `%||%`, `uniquify_names`, `is_dataset_id`, plus the organization-source
+  helpers `datagouv_organizations_url()`, `fetch_organization_page()`,
+  `fetch_organizations_all()` and `resolve_organization_id()`.
+- `R/dg-find-datasets.R` — `dg_find_datasets()`.
+- `R/dg-find-organization.R` — `dg_find_organization()` + internal
+  `organization_empty_columns()`.
 - `R/dg-pull-dataset.R` — `dg_pull_dataset()`.
 - `R/dg-table-id.R` — `dg_table_id()`.
 - `R/dg-refetch.R` — `dg_refetch()` + `parse_table_id` validation.
@@ -134,7 +154,7 @@ parsing so low-level readers stay untouched.
 **Format handling — two lists, deliberately different.**
 - `catalog_formats()` = `c("csv", "csv.gz", "xls", "xlsx", "parquet")` — the
   official tabular formats data.gouv.fr indexes. The **discovery catalog**
-  (`dg_list_datasets()`) is restricted to these so every listed dataset is in
+  (`dg_find_datasets()`) is restricted to these so every listed dataset is in
   principle openable as a table. The API honors a single `format` value per
   query, so `fetch_all_datasets()` queries each requested format separately and
   unions/deduplicates by dataset id.
@@ -181,8 +201,8 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
   every task that involves changes to any R files** (source under `R/`, tests,
   or any other `.R` file). Do this before committing so all code stays
   consistently formatted.
-- Source files use **hyphens**, not underscores (`dg-list-datasets.R`, not
-  `dg_list_datasets.R`).
+- Source files use **hyphens**, not underscores (`dg-find-datasets.R`, not
+  `dg_find_datasets.R`).
 - All HTTP goes through `req_data_gouv()` + `http_perform()` (consistent
   user-agent, timeouts, retries).
 - Tests: testthat edition 3, files in `tests/testthat/`

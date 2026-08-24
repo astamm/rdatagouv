@@ -3,7 +3,7 @@
 #' Downloads the first tabular resource of a dataset and parses it into a
 #' [tibble::tibble()] with `format_tibble()`. The dataset is identified by its
 #' `id`, which is the stable, unique identifier returned in the `id` column of
-#' [dg_list_datasets()]. For backwards compatibility, an exact title is also
+#' [dg_find_datasets()]. For backwards compatibility, an exact title is also
 #' accepted and is resolved by searching the platform.
 #'
 #' By default a single tibble is returned: the first resource that can actually

@@ -97,7 +97,7 @@ than it should be:
 
 | Step | Function |
 |------|----------|
-| Find / search the catalog | `dg_list_datasets()` |
+| Find / search the catalog | `dg_find_datasets()`, `dg_find_organization()` |
 | Judge documented columns | `dg_schema()` |
 | Download tabular resources | `dg_pull_dataset()` |
 | Summarise table contents | `dg_summary()`, `dg_summarise()` |
@@ -109,13 +109,13 @@ tailored to the data.gouv.fr API.
 
 ## Finding datasets
 
-`dg_list_datasets()` returns a tibble with one row per dataset:
+`dg_find_datasets()` returns a tibble with one row per dataset:
 
 ```{r}
 #| live: true
 library(datagouv)
 
-datasets <- dg_list_datasets(n = 20)
+datasets <- dg_find_datasets(n = 20)
 head(datasets)
 ```
 
@@ -137,7 +137,7 @@ request per dataset):
 
 ```{r}
 #| live: true
-cycle <- dg_list_datasets(q = "vélo", n = 10, resources = TRUE)
+cycle <- dg_find_datasets(q = "vélo", n = 10, resources = TRUE)
 cycle[, c("title", "n_resources", "has_table", "has_schema")]
 ```
 
@@ -159,7 +159,7 @@ that column is populated (and the filter has something to act on):
 
 ```{r}
 #| live: true
-documented <- dg_list_datasets(schema_only = TRUE, n = 10, resources = TRUE)
+documented <- dg_find_datasets(schema_only = TRUE, n = 10, resources = TRUE)
 documented[, c("title", "has_schema")]
 ```
 
@@ -171,12 +171,33 @@ lighter files (e.g. `parquet`) that download faster than their CSV twins:
 
 ```{r}
 #| live: true
-parquet <- dg_list_datasets(format = "parquet", n = 10)
+parquet <- dg_find_datasets(format = "parquet", n = 10)
 parquet[, c("title", "formats")]
 ```
 
 Multiple formats can be requested at once; each is queried server-side and the
 results are combined.
+
+### Finding a specific organization's datasets
+
+`dg_find_datasets(organization =)` can address a producer by its 24-hex id, its
+`name`, or its `slug`. `dg_find_organization()` lists the organizations known to
+data.gouv so you can discover which one you want and get its stable id:
+
+```{r}
+#| live: true
+orgs <- dg_find_organization(q = "SNCF")
+orgs[, c("name", "slug", "datasets")]
+```
+
+The slug resolves to the same datasets as the corresponding id — pass either to
+`dg_find_datasets()`:
+
+```{r}
+#| live: true
+sncf <- dg_find_datasets(organization = "sncf", n = 10)
+sncf[, c("title", "organization")]
+```
 
 ## Judging whether a dataset is usable
 
@@ -188,7 +209,7 @@ or a composed table id and returns the documented fields:
 ```{r}
 #| live: true
 # schema_only filters client-side, so request a batch and take the first hit.
-documented <- dg_list_datasets(schema_only = TRUE, n = 100, resources = TRUE)
+documented <- dg_find_datasets(schema_only = TRUE, n = 100, resources = TRUE)
 table_id <- documented$id[!is.na(documented$id)][[1]]
 
 # Pull it, then inspect the schema of the returned table.
@@ -287,7 +308,7 @@ flexible about its input, accepting:
 * a named list of tibbles (each element is a single table),
 * a named list of such lists, as returned by `dg_pull_dataset(all_files = TRUE)`
   (a ZIP may contribute several tables),
-* a tibble from `dg_list_datasets()` (each dataset is downloaded and
+* a tibble from `dg_find_datasets()` (each dataset is downloaded and
   summarised),
 * a character vector of identifiers (or exact titles),
 * or `NULL` to download and summarise the first `n` datasets of the catalog.
@@ -308,7 +329,7 @@ table flows from one step to the next without any intermediate variables:
 ```{r}
 #| live: true
 # Find a dataset, take its first id, pull it into a table and read its schema.
-dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
                  resources = TRUE) |>
   pull(id) |>
   head(1) |>
@@ -324,7 +345,7 @@ in a fresh session, no matter how the catalog changes in the meantime:
 
 ```{r}
 #| live: true
-tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
                         resources = TRUE) |>
   pull(id) |>
   head(1) |>

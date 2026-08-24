@@ -1,4 +1,4 @@
-test_that("dg_list_datasets() returns a tibble with the expected columns", {
+test_that("dg_find_datasets() returns a tibble with the expected columns", {
   local_mocked_bindings(
     fetch_search_all = function(...) {
       list(
@@ -9,7 +9,7 @@ test_that("dg_list_datasets() returns a tibble with the expected columns", {
     }
   )
 
-  out <- dg_list_datasets()
+  out <- dg_find_datasets()
 
   expect_s3_class(out, "tbl_df")
   expect_named(
@@ -42,7 +42,7 @@ test_that("dg_list_datasets() returns a tibble with the expected columns", {
   expect_equal(out$id, c("a1", "b2", "c3"))
 })
 
-test_that("dg_list_datasets() surfaces v2-inline metadata columns", {
+test_that("dg_find_datasets() surfaces v2-inline metadata columns", {
   local_mocked_bindings(
     fetch_search_all = function(...) {
       list(
@@ -68,7 +68,7 @@ test_that("dg_list_datasets() surfaces v2-inline metadata columns", {
     }
   )
 
-  out <- dg_list_datasets()
+  out <- dg_find_datasets()
 
   expect_equal(out$organization, "mairie")
   expect_equal(out$license, "odc-odbl")
@@ -92,7 +92,7 @@ test_that("resource columns are NA when resources = FALSE (default)", {
     }
   )
 
-  out <- dg_list_datasets()
+  out <- dg_find_datasets()
 
   expect_true(is.na(out$n_resources))
   expect_true(is.na(out$formats))
@@ -119,7 +119,7 @@ test_that("resources = TRUE fills the resource columns via the subsection", {
     }
   )
 
-  out <- dg_list_datasets(resources = TRUE)
+  out <- dg_find_datasets(resources = TRUE)
 
   expect_equal(out$n_resources, 2)
   expect_equal(out$formats, "csv, xlsx")
@@ -141,12 +141,12 @@ test_that("resources = TRUE flags resources carrying a schema pointer", {
     fetch_resource_subsection = function(subsection) list(with_schema)
   )
 
-  out <- dg_list_datasets(resources = TRUE)
+  out <- dg_find_datasets(resources = TRUE)
 
   expect_true(out$has_schema)
 })
 
-test_that("dg_list_datasets(schema_only = TRUE) keeps only documented datasets", {
+test_that("dg_find_datasets(schema_only = TRUE) keeps only documented datasets", {
   with_schema <- mock_resource(format = "csv", id = "r1")
   with_schema$schema <- list(name = "etalab/schema-bal", url = NULL)
   no_schema <- mock_resource(format = "csv", id = "r2")
@@ -166,12 +166,12 @@ test_that("dg_list_datasets(schema_only = TRUE) keeps only documented datasets",
     }
   )
 
-  out <- dg_list_datasets(schema_only = TRUE, resources = TRUE)
+  out <- dg_find_datasets(schema_only = TRUE, resources = TRUE)
 
   expect_equal(out$id, "p2")
 })
 
-test_that("dg_list_datasets() forwards filter arguments to the search", {
+test_that("dg_find_datasets() forwards filter arguments to the search", {
   seen <- NULL
   local_mocked_bindings(
     fetch_search_all = function(
@@ -205,10 +205,10 @@ test_that("dg_list_datasets() forwards filter arguments to the search", {
     }
   )
 
-  out <- dg_list_datasets(
+  out <- dg_find_datasets(
     q = "vélo",
     n = 7,
-    organization = "org-1",
+    organization = "534fff91a3a7292c64a77f53",
     geozone = "country:fr",
     access_type = "open",
     license = "lov2",
@@ -221,7 +221,7 @@ test_that("dg_list_datasets() forwards filter arguments to the search", {
   expect_equal(out$title, "Cyclable")
   expect_equal(seen$q, "vélo")
   expect_equal(seen$n, 7)
-  expect_equal(seen$organization, "org-1")
+  expect_equal(seen$organization, "534fff91a3a7292c64a77f53")
   expect_equal(seen$geozone, "country:fr")
   expect_equal(seen$access_type, "open")
   expect_equal(seen$license, "lov2")
@@ -231,7 +231,7 @@ test_that("dg_list_datasets() forwards filter arguments to the search", {
   expect_equal(seen$producer_type, "public-service")
 })
 
-test_that("dg_list_datasets() forwards format as repeated server-side params", {
+test_that("dg_find_datasets() forwards format as repeated server-side params", {
   seen <- NULL
   local_mocked_bindings(
     fetch_search_all = function(format = catalog_formats(), ...) {
@@ -240,13 +240,13 @@ test_that("dg_list_datasets() forwards format as repeated server-side params", {
     }
   )
 
-  out <- dg_list_datasets(format = c("parquet", "csv"), n = 5)
+  out <- dg_find_datasets(format = c("parquet", "csv"), n = 5)
 
   expect_equal(out$title, "Parquet")
   expect_equal(seen, c("parquet", "csv"))
 })
 
-test_that("dg_list_datasets(format = NULL) defaults to the catalog formats", {
+test_that("dg_find_datasets(format = NULL) defaults to the catalog formats", {
   seen <- NULL
   local_mocked_bindings(
     fetch_search_all = function(format = catalog_formats(), ...) {
@@ -255,12 +255,12 @@ test_that("dg_list_datasets(format = NULL) defaults to the catalog formats", {
     }
   )
 
-  dg_list_datasets()
+  dg_find_datasets()
 
   expect_equal(seen, catalog_formats())
 })
 
-test_that("dg_list_datasets() forwards the search query and the limit", {
+test_that("dg_find_datasets() forwards the search query and the limit", {
   seen <- NULL
   local_mocked_bindings(
     fetch_search_all = function(q = NULL, n = 1000, ...) {
@@ -269,19 +269,19 @@ test_that("dg_list_datasets() forwards the search query and the limit", {
     }
   )
 
-  out <- dg_list_datasets(q = "vélo", n = 7)
+  out <- dg_find_datasets(q = "vélo", n = 7)
 
   expect_equal(out$title, "Cyclable")
   expect_equal(seen$q, "vélo")
   expect_equal(seen$n, 7)
 })
 
-test_that("dg_list_datasets() returns an empty tibble when the API is empty", {
+test_that("dg_find_datasets() returns an empty tibble when the API is empty", {
   local_mocked_bindings(
     fetch_search_all = function(...) list()
   )
 
-  out <- dg_list_datasets()
+  out <- dg_find_datasets()
 
   expect_s3_class(out, "tbl_df")
   expect_equal(nrow(out), 0)
@@ -290,7 +290,7 @@ test_that("dg_list_datasets() returns an empty tibble when the API is empty", {
   expect_true("has_schema" %in% names(out))
 })
 
-test_that("dg_list_datasets() coerces missing v2 fields to NA", {
+test_that("dg_find_datasets() coerces missing v2 fields to NA", {
   local_mocked_bindings(
     fetch_search_all = function(...) {
       list(
@@ -305,11 +305,130 @@ test_that("dg_list_datasets() coerces missing v2 fields to NA", {
     }
   )
 
-  out <- dg_list_datasets()
+  out <- dg_find_datasets()
 
   expect_equal(out$title, c("A", "B"))
   expect_equal(out$id, c("a1", "b2"))
   expect_true(is.na(out$quality_score[1]))
   expect_true(is.na(out$organization[2]))
   expect_true(is.na(out$views[2]))
+})
+
+test_that("dg_find_datasets() resolves an exact organization slug to its id", {
+  seen_org <- NULL
+  local_mocked_bindings(
+    fetch_organizations_all = function(...) {
+      list(
+        mock_organization(
+          id = "534fffb0a3a7292c64a78115",
+          name = "SNCF",
+          slug = "sncf"
+        )
+      )
+    },
+    fetch_search_all = function(..., organization = NULL) {
+      seen_org <<- organization
+      list(mock_dataset_v2(title = "Horaires", id = "h1"))
+    }
+  )
+
+  out <- dg_find_datasets(organization = "sncf")
+
+  expect_equal(out$title, "Horaires")
+  # The slug was resolved then forwarded as the 24-hex id.
+  expect_equal(seen_org, "534fffb0a3a7292c64a78115")
+})
+
+test_that("dg_find_datasets() resolves an exact organization name to its id", {
+  seen_org <- NULL
+  local_mocked_bindings(
+    fetch_organizations_all = function(...) {
+      list(
+        mock_organization(
+          id = "534fffb0a3a7292c64a78115",
+          name = "SNCF",
+          slug = "sncf"
+        )
+      )
+    },
+    fetch_search_all = function(..., organization = NULL) {
+      seen_org <<- organization
+      list(mock_dataset_v2(title = "Horaires", id = "h1"))
+    }
+  )
+
+  out <- dg_find_datasets(organization = "SNCF")
+
+  expect_equal(out$title, "Horaires")
+  expect_equal(seen_org, "534fffb0a3a7292c64a78115")
+})
+
+test_that("dg_find_datasets() forwards a 24-hex organization id unchanged", {
+  seen_org <- NULL
+  local_mocked_bindings(
+    fetch_organizations_all = function(...) {
+      stop("a 24-hex id must not trigger a resolution lookup")
+    },
+    fetch_search_all = function(..., organization = NULL) {
+      seen_org <<- organization
+      list(mock_dataset_v2(title = "A", id = "a1"))
+    }
+  )
+
+  out <- dg_find_datasets(organization = "534fffb0a3a7292c64a78115")
+
+  expect_equal(out$title, "A")
+  expect_equal(seen_org, "534fffb0a3a7292c64a78115")
+})
+
+test_that("dg_find_datasets() errors listing candidates when no slug/name matches", {
+  local_mocked_bindings(
+    fetch_organizations_all = function(...) {
+      list(
+        mock_organization(
+          id = "534fffb0a3a7292c64a78115",
+          name = "SNCF",
+          slug = "sncf"
+        ),
+        mock_organization(
+          id = "5d823fd98b4c411e38e820b4",
+          name = "Fluo Grand Est",
+          slug = "fluo-grand-est"
+        )
+      )
+    }
+  )
+
+  expect_error(
+    dg_find_datasets(organization = "wrong-slug"),
+    "No organization named exactly 'wrong-slug'"
+  )
+  expect_error(
+    dg_find_datasets(organization = "wrong-slug"),
+    "534fffb0a3a7292c64a78115"
+  )
+})
+
+test_that("dg_find_datasets() errors when several organizations match exactly", {
+  local_mocked_bindings(
+    fetch_organizations_all = function(...) {
+      list(
+        mock_organization(
+          id = "aaaaaaaaaaaaaaaaaaaaaaaa",
+          name = "Ambiguous",
+          slug = "ambig"
+        ),
+        mock_organization(
+          id = "bbbbbbbbbbbbbbbbbbbbbbbb",
+          name = "Ambiguous",
+          slug = "other"
+        )
+      )
+    }
+  )
+
+  expect_error(
+    dg_find_datasets(organization = "Ambiguous"),
+    "Several organizations match 'Ambiguous' exactly"
+  )
 })

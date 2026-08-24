@@ -125,3 +125,60 @@ test_that("a refetched ZIP member matches a direct read of that file", {
 
   expect_identical(tbl, direct)
 })
+
+# A stable, current producer used for the live organization-resolution tests.
+# SNCF (id 534fffb0a3a7292c64a78115) publishes many datasets as both `SNCF`
+# (name) and `sncf` (slug); these are exact matches, so resolution is
+# unambiguous. Update the id if the producer ever changes.
+live_org_id <- "534fffb0a3a7292c64a78115"
+
+test_that("dg_find_organization() returns the expected tibble live", {
+  skip_unless_live()
+
+  orgs <- dg_find_organization(q = "SNCF", n = 5)
+
+  expect_s3_class(orgs, "tbl_df")
+  expect_true(all(
+    c(
+      "id",
+      "name",
+      "slug",
+      "acronym",
+      "description",
+      "datasets",
+      "badges",
+      "business_number_id"
+    ) %in%
+      names(orgs)
+  ))
+  # SNCF is a large producer and must surface when searched by its name.
+  expect_true(live_org_id %in% orgs$id)
+})
+
+test_that("dg_find_datasets(organization =) resolves a name and a slug live", {
+  skip_unless_live()
+
+  by_name <- dg_find_datasets(organization = "SNCF", n = 5)
+  by_slug <- dg_find_datasets(organization = "sncf", n = 5)
+  by_id <- dg_find_datasets(organization = live_org_id, n = 5)
+
+  # All three spellings address the same producer, so they must return the
+  # same catalog of its datasets.
+  expect_s3_class(by_name, "tbl_df")
+  expect_gt(nrow(by_name), 0)
+  expect_identical(sort(by_name$id), sort(by_slug$id))
+  expect_identical(names(by_name), names(by_id))
+})
+
+test_that("each discovered organization id is directly filterable", {
+  skip_unless_live()
+
+  # Every id listed by dg_find_organization() should narrow dg_find_datasets()
+  # to that producer without error and return a positive count.
+  orgs <- dg_find_organization(q = "SNCF", n = 5)
+  for (oid in orgs$id) {
+    res <- dg_find_datasets(organization = oid, n = 5)
+    expect_s3_class(res, "tbl_df")
+    expect_gt(nrow(res), 0)
+  }
+})

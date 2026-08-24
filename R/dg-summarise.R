@@ -2,15 +2,15 @@
 #'
 #' Applies [dg_summary()] to a collection of tables and combines the resulting
 #' metrics into a single tibble. If `datasets` is `NULL`, the first `n` datasets
-#' returned by [dg_list_datasets()] are downloaded and summarised.
+#' returned by [dg_find_datasets()] are downloaded and summarised.
 #'
 #' @param datasets Either a named list of tibbles (each element is a single
 #'   table, named after it), a named list of such lists (as returned by
 #'   [dg_pull_dataset()], where a ZIP may contribute several tables), a tibble
-#'   from [dg_list_datasets()] (identified by its `id` column; each dataset is
+#'   from [dg_find_datasets()] (identified by its `id` column; each dataset is
 #'   downloaded and summarised), a character vector of dataset identifiers (or
 #'   exact titles), or `NULL` (the default) to use the first `n` datasets from
-#'   [dg_list_datasets()].
+#'   [dg_find_datasets()].
 #' @param n Number of datasets to summarise when `datasets` is `NULL`.
 #'   Defaults to `100`.
 #'
@@ -27,14 +27,14 @@
 #' dg_summarise()
 dg_summarise <- function(datasets = NULL, n = 100) {
   if (is.null(datasets)) {
-    catalog <- dg_list_datasets(n = n)
+    catalog <- dg_find_datasets(n = n)
     # Label each downloaded dataset with its title (disambiguating any title
     # shared by several datasets by appending its id), but address the download
     # by the stable, unique identifier.
     datasets <- uniquify_names(stats::setNames(catalog$id, catalog$title))
     datasets <- lapply(datasets, dg_pull_dataset)
   } else if (is.data.frame(datasets) && "id" %in% names(datasets)) {
-    # A tibble from dg_list_datasets(): download each id, labelled by title.
+    # A tibble from dg_find_datasets(): download each id, labelled by title.
     catalog <- datasets
     datasets <- uniquify_names(stats::setNames(catalog$id, catalog$title))
     datasets <- lapply(datasets, dg_pull_dataset)
