@@ -33,18 +33,45 @@ currently behaves; exploratory/optional and superseded-alternative sections in
 the design doc are historical, not normative. The README and the vignette
 `vignettes/datagouv.qmd` document usage for end users.
 
-## Public API (7 exports)
+## Public API (8 exports)
 
 - `dg_list_datasets(q = NULL, n = 1000, format = catalog_formats(),
-  schema_only = FALSE)` -> tibble with columns `title, id, description, slug,
-  n_resources, formats, has_table, has_schema`. `q` is server-side full-text
-  search; `n = Inf` fetches the whole catalog; `format` narrows to datasets
-  holding a resource in one of the given formats (queried server-side one
-  format at a time, then unioned and de-duplicated by id — the API honors only
-  a single `format` value per query, so passing several is *not* an OR on the
-  server); `schema_only = TRUE` keeps only datasets declaring a schema.
-  `fetch_all_datasets()`/`fetch_datasets_page()` page at `page_size = 1000` by
-  default (up from 100).
+  schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL,
+  license = NULL, tag = NULL, granularity = NULL, last_update = NULL,
+  producer_type = NULL, resources = FALSE)` -> tibble with robust columns
+  `title, id, description, slug, organization, license, quality_score,
+  quality_flags, views, resources_downloads, access_type, frequency,
+  spatial_granularity, temporal_start, temporal_end, archived, featured` plus
+  the resource-derived `n_resources, formats, has_table, has_schema`. `q` is
+  server-side full-text search; `n = Inf` fetches as much as the API allows
+  (**capped at 10,000** by data.gouv); `format` narrows to datasets holding a
+  resource in one of the given formats — the v2 API matches **multiple `format`
+  values as repeated params** (`format=csv&format=parquet`, a server-side
+  union; a bare comma-joined value is *not* parsed, so pass a vector);
+  `schema_only = TRUE` stays **client-side** (v2 has no "declares any schema"
+  boolean); the filter args (`organization` [24-hex id], `geozone`,
+  `access_type`, `license`, `tag`, `granularity`, `last_update`,
+  `producer_type`) are forwarded as server-side filters. **Resource fidelity is
+  opt-in**: because v2 search does NOT inline resources, `n_resources`,
+  `formats`, `has_table` and `has_schema` are `NA` unless `resources = TRUE`
+  (which N+1-fetches each dataset's resources subsection). `id` and `title` are
+  always non-`NA` (contract with `dg_summarise()`). Backed by
+  `fetch_search_all()`/`fetch_search_page()` on the v2 `datasets/search`
+  endpoint (string `next_page` pointer pagination; `fetch_search_all()` uses
+  `adaptive_page_size()` — default `page_size = 100`, scaled up to ~250 for
+  large/`Inf` `n` to cut round-trips on a full catalog crawl, and clamped to
+  the remaining budget for a finite `n`. It stays low because the v2 search
+  endpoint's latency scales with page_size and `page_size = 1000` consistently
+  trips the 30s timeout in `req_data_gouv()`).
+- `dg_glimpse(id, table = NULL)` -> a named list surfacing v2-inline
+  dataset-level metadata that the v1 fetch path does not expose:
+  `quality` (score + boolean flags), `metrics` (views, resources_downloads,
+  followers, discussions, reuses, dataservices) and `context`
+  (organization, license, frequency, temporal/spatial coverage, access_type,
+  archived, featured). `id` may be a dataset id (24-hex), a composed table id
+  or a pulled table (its `id` attribute is read); `table = TRUE` also includes
+  the resource list via `fetch_resource_subsection(id)` (N+1). Uses internal
+  `fetch_dataset_v2(id)`.
 - `dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE)` -> a **single
   tibble** (the first parseable resource; a ZIP yields its first parseable
   file). `all_files = TRUE` returns a named list (one element per ZIP file).

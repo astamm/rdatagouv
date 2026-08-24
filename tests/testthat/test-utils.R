@@ -66,45 +66,6 @@ test_that("download_resource() routes through req_data_gouv() hardening", {
   unlink(path)
 })
 
-test_that("fetch_datasets_page() parses the JSON response", {
-  local_mock_req_perform(function(req, ...) {
-    fake_json_response(
-      '{"data": [{"title": "A"}], "next_page": null, "total": 1}'
-    )
-  })
-
-  body <- fetch_datasets_page(page = 1, page_size = 20, format = "csv")
-
-  expect_equal(body$total, 1)
-  expect_equal(body$data[[1]]$title, "A")
-})
-
-test_that("fetch_datasets_page() forwards the search query", {
-  seen_query <- NULL
-  local_mock_req_perform(function(req, ...) {
-    seen_query <<- httr2::url_parse(req$url)$query$q
-    fake_json_response('{"data": [], "next_page": null, "total": 0}')
-  })
-
-  fetch_datasets_page(page = 1, page_size = 20, q = "vélo", format = "csv")
-
-  expect_equal(seen_query, "vélo")
-})
-
-test_that("fetch_datasets_page() requests a single format server-side", {
-  seen <- NULL
-  local_mock_req_perform(function(req, ...) {
-    # `format` is a single value per page: the API filters one format at a time
-    # and fetch_all_datasets() unions across formats.
-    seen <<- httr2::url_parse(req$url)$query$format
-    fake_json_response('{"data": [], "next_page": null, "total": 0}')
-  })
-
-  fetch_datasets_page(page = 1, page_size = 20, format = "csv")
-
-  expect_equal(seen, "csv")
-})
-
 test_that("catalog_formats() is the official data.gouv tabular set", {
   expect_equal(catalog_formats(), c("csv", "csv.gz", "xls", "xlsx", "parquet"))
   # Every catalog format must be directly parseable (no JSON/TSV/TXT here).
@@ -128,158 +89,335 @@ test_that("resource_has_schema() detects a schema pointer by name or url", {
   expect_false(resource_has_schema(none))
 })
 
-test_that("fetch_all_datasets() stops once n datasets are collected", {
-  # Simulate a server that honours page_size: each call returns at most
-  # page_size items from a shared (large) pool, each with a unique id.
-  titles <- letters[1:20]
-  requested_sizes <- integer()
-  formats_seen <- character()
-  local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      requested_sizes <<- c(requested_sizes, page_size)
-      formats_seen <<- c(formats_seen, format)
-      start <- (page - 1) * page_size + 1
-      end <- min(page * page_size, length(titles))
-      list(
-        data = Map(
-          mock_dataset,
-          title = titles[start:end],
-          id = paste0("id", start:end)
-        ),
-        next_page = if (end < length(titles)) paste0("page", page + 1) else NULL
-      )
-    }
-  )
+# fetch_search_page() -- v2 datasets/search -------------------------------------
 
-  out <- fetch_all_datasets(page_size = 100, n = 5, format = "csv")
+test_that("fetch_search_page() builds repeated format params server-side", {
+  seen <- NULL
+  local_mock_req_perform(function(req, ...) {
+    seen <<- req$url
+    fake_json_response('{"data": [], "total": 0, "next_page": null}')
+  })
 
-  expect_length(out, 5)
-  expect_equal(
-    unname(vapply(out, function(x) x$title, character(1))),
-    letters[1:5]
-  )
-  # The first request is capped at n (5), and no further page is fetched.
-  expect_equal(requested_sizes, 5)
-  expect_equal(formats_seen, "csv")
+  fetch_search_page(format = c("csv", "parquet"))
+
+  # Both formats must appear as repeated query params (a bare comma-join is not
+  # honoured server-side). httr2::url_parse() collapses repeated params to the
+  # last value, so inspect the raw query string.
+  query <- sub("^[^?]*\\?", "", seen)
+  expect_true(grepl("format=csv", query, fixed = TRUE))
+  expect_true(grepl("format=parquet", query, fixed = TRUE))
 })
 
-test_that("fetch_all_datasets() fetches all pages when n is Inf", {
-  titles <- letters[1:7]
-  local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      start <- (page - 1) * page_size + 1
-      end <- min(page * page_size, length(titles))
-      list(
-        data = Map(
-          mock_dataset,
-          title = titles[start:end],
-          id = paste0("id", start:end)
-        ),
-        next_page = if (end < length(titles)) paste0("page", page + 1) else NULL
-      )
-    }
-  )
-
-  out <- fetch_all_datasets(page_size = 3, n = Inf, format = "csv")
-
-  expect_length(out, 7)
-  expect_equal(
-    unname(vapply(out, function(x) x$title, character(1))),
-    letters[1:7]
-  )
-})
-
-test_that("fetch_all_datasets() honors the search query", {
+test_that("fetch_search_page() forwards filter args as single query params", {
   seen <- list()
-  local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      seen <<- c(seen, list(q))
-      list(data = list(mock_dataset(title = "A")), next_page = NULL)
-    }
+  local_mock_req_perform(function(req, ...) {
+    seen <<- httr2::url_parse(req$url)$query
+    fake_json_response('{"data": [], "total": 0, "next_page": null}')
+  })
+
+  fetch_search_page(
+    q = "vélo",
+    organization = "org-1",
+    geozone = "country:fr",
+    license = "lov2"
   )
 
-  fetch_all_datasets(page_size = 100, q = "vélo", n = 1000, format = "csv")
-
-  expect_equal(seen, list("vélo"))
+  expect_equal(seen$q, "vélo")
+  expect_equal(seen$organization, "org-1")
+  expect_equal(seen$geozone, "country:fr")
+  expect_equal(seen$license, "lov2")
 })
 
-test_that("fetch_all_datasets() pages until there is no next page", {
+test_that("fetch_search_page() omits NULL filters", {
+  seen <- list()
+  local_mock_req_perform(function(req, ...) {
+    seen <<- httr2::url_parse(req$url)$query
+    fake_json_response('{"data": [], "total": 0, "next_page": null}')
+  })
+
+  fetch_search_page(q = "vélo")
+
+  expect_equal(seen$q, "vélo")
+  expect_null(seen$organization)
+  expect_null(seen$geozone)
+})
+
+# fetch_search_all() -- v2 pointer-based pagination ------------------------------
+
+test_that("fetch_search_all() follows a string next_page until NULL", {
   pages <- list(
-    list(data = list(mock_dataset(title = "A", id = "a")), next_page = "page2"),
-    list(data = list(mock_dataset(title = "B", id = "b")), next_page = NULL)
-  )
-  local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      pages[[page]]
-    }
-  )
-
-  out <- fetch_all_datasets(format = "csv")
-
-  expect_length(out, 2)
-  expect_equal(vapply(out, function(x) x$title, character(1)), c("A", "B"))
-})
-
-test_that("fetch_all_datasets() stops on an empty page", {
-  local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      list(data = list(), next_page = NULL)
-    }
-  )
-
-  out <- fetch_all_datasets(format = "csv")
-
-  expect_length(out, 0)
-})
-
-test_that("fetch_all_datasets() unions multiple formats and deduplicates by id", {
-  # csv query yields dataset x1 (csv only) and shared (csv+xlsx); xlsx query
-  # yields shared and x2 (xlsx only). The shared dataset has a different id from
-  # x2 but the same data under a different format.
-  by_format <- list(
-    csv = list(
-      mock_dataset(title = "Only CSV", id = "x1"),
-      mock_dataset(title = "Both", id = "shared")
+    mock_search_envelope(
+      list(mock_dataset_v2(title = "A", id = "a")),
+      next_page = "https://x/?page=2"
     ),
-    xlsx = list(
-      mock_dataset(title = "Both", id = "shared"),
-      mock_dataset(title = "Only XLSX", id = "x2")
+    mock_search_envelope(
+      list(mock_dataset_v2(title = "B", id = "b")),
+      next_page = NULL
     )
   )
-  formats <- character()
+  page_calls <- 0L
   local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      formats <<- c(formats, format)
+    fetch_search_page = function(url = datagouv_search_url(), ...) {
+      page_calls <<- page_calls + 1L
+      pages[[page_calls]]
+    }
+  )
+
+  out <- fetch_search_all()
+  books <- vapply(out, function(x) x$id, character(1))
+
+  expect_equal(books, c("a", "b"))
+  expect_equal(page_calls, 2L)
+})
+
+test_that("fetch_search_all() respects the v1 object-shaped next_page", {
+  # Transition fallback: some endpoints may still report next_page as an object
+  # carrying the next page number, not a URL string.
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), ...) {
+      if (grepl("page=2", url, fixed = TRUE)) {
+        list(
+          data = list(mock_dataset_v2(title = "B", id = "b")),
+          next_page = NULL
+        )
+      } else {
+        list(
+          data = list(mock_dataset_v2(title = "A", id = "a")),
+          next_page = list(page = 2)
+        )
+      }
+    }
+  )
+
+  out <- fetch_search_all()
+
+  expect_equal(vapply(out, function(x) x$id, character(1)), c("a", "b"))
+})
+
+test_that("fetch_search_all() stops when n datasets are collected", {
+  called <- 0L
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), ...) {
+      called <<- called + 1L
       list(
-        data = switch(format, csv = by_format$csv, xlsx = by_format$xlsx),
+        data = list(
+          mock_dataset_v2(title = "A", id = "a"),
+          mock_dataset_v2(title = "B", id = "b"),
+          mock_dataset_v2(title = "C", id = "c")
+        ),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  out <- fetch_search_all(n = 2)
+
+  expect_length(out, 2)
+  expect_equal(called, 1L)
+})
+
+test_that("fetch_search_all() clamps page_size down to a finite n", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      list(
+        data = lapply(seq_len(page_size), function(i) {
+          mock_dataset_v2(title = paste0("A", i), id = sprintf("id-%d", i))
+        }),
         next_page = NULL
       )
     }
   )
 
-  out <- fetch_all_datasets(n = 100, format = c("csv", "xlsx"))
+  fetch_search_all(n = 3, page_size = 100)
 
-  # Both formats are queried, and the shared dataset is returned only once.
-  expect_equal(formats, c("csv", "xlsx"))
-  expect_length(out, 3)
-  expect_equal(
-    vapply(out, function(x) x$id, character(1)),
-    c("x1", "shared", "x2")
-  )
+  # A finite `n` below the page size must shrink the request down to `n`, never
+  # ask for a full page_size worth of rows.
+  expect_equal(requested[[1]], 3)
 })
 
-test_that("fetch_all_datasets() defaults to the catalog formats", {
-  formats <- character()
+test_that("fetch_search_all() shrinks page_size as the remaining budget runs down", {
+  requested <- NULL
   local_mocked_bindings(
-    fetch_datasets_page = function(page, page_size, q = NULL, format) {
-      formats <<- c(formats, format)
-      list(data = list(mock_dataset(title = "A")), next_page = NULL)
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      # Ignore the page size: always serve a fixed 600 new datasets per page so
+      # the collection has room to grow over multiple pages.
+      list(
+        data = lapply(seq_len(600), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
     }
   )
 
-  fetch_all_datasets(n = 1000)
+  fetch_search_all(n = 1000, page_size = 1000)
 
-  expect_setequal(formats, catalog_formats())
+  # The first page asks for the full page_size; once 600 are collected the next
+  # request asks for exactly the remaining 400, not a full page of 1000.
+  expect_equal(requested, c(1000, 400))
+})
+
+test_that("fetch_search_all() scales page_size up for a large finite n", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      list(
+        data = lapply(seq_len(250), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  # n above the default page_size (100) must scale the request up to the
+  # ~250 large-page cap rather than crawl at tiny pages.
+  fetch_search_all(n = 1000, page_size = 100)
+
+  # 250 + 250 + 250 + 250 = 1000: four scaled-up pages, not ten 100-row ones.
+  expect_equal(requested, c(250, 250, 250, 250))
+})
+
+test_that("fetch_search_all() scales page_size up for an infinite n", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      if (length(requested) >= 2) {
+        return(list(data = list(), next_page = NULL))
+      }
+      list(
+        data = lapply(seq_len(page_size), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  fetch_search_all(n = Inf, page_size = 100)
+
+  # An infinite crawl never clamps, so it adopts the ~250 large-page cap.
+  expect_equal(requested, c(250, 250))
+})
+
+test_that("fetch_search_all() clamps the adaptive page_size on the final stretch", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      list(
+        data = lapply(seq_len(page_size), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  # A large finite n scales to 250, but the last page must shrink to exactly
+  # the remaining budget (300 = 550 - 250) instead of over-fetching.
+  fetch_search_all(n = 550, page_size = 100)
+
+  expect_equal(requested, c(250, 250, 50))
+})
+
+test_that("fetch_search_all() stops on an empty page", {
+  local_mocked_bindings(
+    fetch_search_page = function(...) {
+      list(data = list(), next_page = "https://x/?page=2")
+    }
+  )
+
+  out <- fetch_search_all()
+
+  expect_length(out, 0)
+})
+
+test_that("fetch_search_all() deduplicates by id", {
+  local_mocked_bindings(
+    fetch_search_page = function(...) {
+      mock_search_envelope(list(
+        mock_dataset_v2(title = "A", id = "a"),
+        mock_dataset_v2(title = "A'", id = "a")
+      ))
+    }
+  )
+
+  out <- fetch_search_all()
+
+  expect_length(out, 1)
+})
+
+# fetch_resource_subsection() -- v2 resources subsection -------------------------
+
+test_that("fetch_resource_subsection() fully paginates the subsection", {
+  subsection <- list(
+    rel = "subsection",
+    href = "https://x/api/2/datasets/d1/resources/?page=1&page_size=50",
+    total = 106
+  )
+  page1 <- list(a = 1:50)
+  page2 <- list(a = 51:100)
+  page3 <- list(a = 101:106)
+  local_mocked_bindings(
+    http_perform = function(req) {
+      url <- req$url
+      if (grepl("page=2", url, fixed = TRUE)) {
+        return(fake_json_response(
+          '{"data": [{"id":"r51"},{"id":"r52"}], "next_page": "https://x/?page=3"}'
+        ))
+      }
+      if (grepl("page=3", url, fixed = TRUE)) {
+        return(fake_json_response(
+          '{"data": [{"id":"r101"}], "next_page": null}'
+        ))
+      }
+      fake_json_response(
+        '{"data": [{"id":"r1"},{"id":"r2"}], "next_page": "https://x/api/2/datasets/d1/resources/?page=2"}'
+      )
+    }
+  )
+
+  out <- fetch_resource_subsection(subsection)
+
+  expect_length(out, 5)
+  expect_equal(
+    vapply(out, function(r) r$id, character(1)),
+    c("r1", "r2", "r51", "r52", "r101")
+  )
+})
+
+test_that("fetch_resource_subsection() returns an empty list for an empty subsection", {
+  subsection <- list(
+    rel = "subsection",
+    href = "https://x/resources/",
+    total = 0
+  )
+  local_mocked_bindings(
+    http_perform = function(req) {
+      fake_json_response('{"data": [], "total": 0, "next_page": null}')
+    }
+  )
+
+  out <- fetch_resource_subsection(subsection)
+
+  expect_length(out, 0)
+})
+
+test_that("fetch_resource_subsection() errors without an href", {
+  expect_snapshot(
+    error = TRUE,
+    fetch_resource_subsection(list(rel = "subsection"))
+  )
 })
 
 test_that("find_dataset() returns the exact-matching title", {

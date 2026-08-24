@@ -4,12 +4,23 @@ Reframed primary goal: *let students/data scientists find a dataset matching
 their interests, judge whether it is usable, fetch it, and re-fetch the exact
 same table reproducibly.*
 
-Current public API: `dg_list_datasets(q, n, format, schema_only)`,
-`dg_pull_dataset(id, all_files, remove_na)`, `dg_refetch(x, remove_na)`,
-`dg_table_id(x)`, `dg_schema(x)`, `dg_summary(x, name)`,
+Current public API: `dg_list_datasets(q, n, format, schema_only, organization,
+geozone, access_type, license, tag, granularity, last_update, producer_type,
+resources)`, `dg_pull_dataset(id, all_files, remove_na)`,
+`dg_refetch(x, remove_na)`, `dg_table_id(x)`, `dg_schema(x)`,
+`dg_glimpse(id, table)`, `dg_summary(x, name)`,
 `dg_summarise(datasets, n)`. (All functions share the `dg_*` prefix;
 `dg_download_many()` was removed — its role is covered by
 `dg_pull_dataset()` + `dg_summarise()`.)
+
+> **2026-08 v2 switch:** `dg_list_datasets()` now queries the v2
+> `datasets/search` API (pointer-based string `next_page` pagination, rich
+> inline metadata, multiple `format` values as repeated params). v2 does not
+> inline a dataset's resources, so `n_resources`/`formats`/`has_table`/
+> `has_schema` are `NA` unless `resources = TRUE` (N+1 per-dataset fetch of the
+> resources subsection). `dg_glimpse()` exposes v2-only dataset metadata.
+> Pull/refetch/schema/summary remain on v1. See AGENTS.md for the authoritative
+> description.
 
 ## Target flow
 
@@ -114,7 +125,7 @@ an `id` attribute nor a bare id string; `parse_table_id()` rejects malformed ids
 table. Fix: keep the `resources` metadata and derive a compact availability
 summary.
 
-New columns on the returned tibble:
+New columns on the returned tibble (resource-derived):
 
 - `n_resources` — number of resources (integer; `0` when none).
 - `formats` — comma-joined, de-duplicated, uppercase formats of the dataset's
@@ -122,6 +133,16 @@ New columns on the returned tibble:
 - `has_table` — logical: `TRUE` if any resource is directly parseable (non-ZIP
   supported format). A ZIP is a *maybe*, so it is shown under `formats` but does
   not by itself set `has_table`.
+- `has_schema` — logical: `TRUE` if at least one resource carries a pointer to a
+  declared data schema.
+
+> **Current behavior note (v2):** v2 search no longer inlines a dataset's
+> resources, so these four derived columns are computed only when the caller
+> passes `resources = TRUE` (an N+1 fetch of each dataset's resources
+> subsection); otherwise they are `NA`. `schema_only` filters client-side on
+> `has_schema`, so it only selects reliably with `resources = TRUE`. The v2
+> migration also added the inline metadata columns and server-side filters
+> described in the note to the first "Discovery improvement 1" section above.
 
 Adding these makes `dg_list_datasets(q = "vélo", n = 20)` immediately answer
 "which of these can I actually open?" before spending a download.
@@ -134,12 +155,20 @@ smallest advertised `filesize` (`prefer_lightest_file()`), so `dg_pull_dataset()
 heavier `data.xlsx` twin. Resources with distinct names keep their declared
 order, so distinct tables are never silently swapped.
 
-Note: `fetch_datasets_page` requests a **single** `format` value per query (the
-API honors only one, so passing several is *not* an OR). `fetch_all_datasets()`
-queries each requested format separately and unions/de-duplicates by dataset id,
-and `dg_list_datasets(format = ...)` lets the caller choose which formats to
-keep (defaults to the full tabular set). The resource-level formats are still
-surfaced as the `formats` column.
+Note (post-v2 migration): the discovery catalog now runs on the v2
+`datasets/search` API, which accepts **multiple formats as repeated query
+parameters** in a single call (`format=csv&format=parquet`, a server-side
+union) and pages via the pointer-based string `next_page`. Because v2 search
+does not inline a dataset's resources, the resource-derived columns
+(`n_resources`, `formats`, `has_table`, `has_schema`) are `NA` unless the caller
+passes `resources = TRUE`, which opts into a per-dataset fetch of the resources
+subsection (one extra request per dataset) so those columns are computed
+exactly. The catalog additionally surfaces v2-inline columns (`organization`,
+`license`, `quality_score`, `quality_flags`, `views`, `resources_downloads`,
+`access_type`, `frequency`, `spatial_granularity`, `temporal_start`/`end`,
+`archived`, `featured`) and new server-side filters (`geozone`, `license`,
+`tag`, `granularity`, `last_update`, `access_type`, `producer_type`, and
+`organization` — matched by 24-hex id only).
 
 ## Discovery improvement 2: summarise a search result set
 
@@ -222,11 +251,12 @@ Implications for this package:
 
 | File | Change |
 |------|--------|
-| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. |
-| `R/dg-pull-dataset.R` | `dg_pull_dataset()` returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. |
+| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. |
+| `R/dg-pull-dataset.R` | `dg_pull_dataset()` returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. (Stays on v1.) |
 | `R/dg-table-id.R` (new) | Exported `dg_table_id(x)` reads the `id` attribute. |
 | `R/dg-summary.R` / `R/dg-summarise.R` | `dg_summary()` needs no metadata-column exclusion (id is an attribute); `dg_summarise()` accepts a `dg_list_datasets()` tibble. |
-| `R/dg-list-datasets.R` | Add `n_resources`, `formats`, `has_table`, `has_schema` columns, and the `format` argument (server-side per-format filtering, unioned and de-duplicated by id). |
+| `R/dg-list-datasets.R` | Add `n_resources`, `formats`, `has_table`, `has_schema` columns, and the `format` argument (server-side per-format filtering, unioned and de-duplicated by id). **v2 switch:** rework onto `fetch_search_all()` over `datasets/search`; new server-side filter args (`organization`, `geozone`, `access_type`, `license`, `tag`, `granularity`, `last_update`, `producer_type`); new inline columns; resource columns `NA` unless `resources = TRUE`. |
+| `R/dg-glimpse.R` (new) | Exported `dg_glimpse(id, table = NULL)` surfaces v2-inline dataset metadata (`quality`, `metrics`, `context`, plus `resources` when `table = TRUE`) via `fetch_dataset_v2()` + `fetch_resource_subsection()`. |
 | `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. |
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
 | `R/datagouv-package.R` / NAMESPACE | Document/export the new functions. |
@@ -255,3 +285,13 @@ Implications for this package:
 8. **Live integration tests** *(implemented)*: `tests/test-live-api.R` proves the composed
    URI addressing (incl. a file inside a multi-file ZIP) against the real API, gated behind
    `DATAGOUV_LIVE=1`.
+9. **v2 discovery switch** *(implemented)*: `dg_list_datasets()` moves from v1 `datasets` to
+   the v2 `datasets/search` API (repeated-format params, string `next_page` pagination, rich
+   inline metadata); new server-side filter args and inline columns; resource-derived columns
+   become `NA` unless `resources = TRUE`; new export `dg_glimpse()` surfaces v2-only
+   dataset metadata. Pull/refetch/schema/summary remain on v1.
+   *(Page-size tuning: the v2 search endpoint's latency scales with `page_size` — a
+   `page_size = 1000` page consistently tripped the 30s `req_data_gouv()` timeout — so the
+   crawl pages at `page_size = 100` by default and scales adaptively to ~250 for large/`Inf`
+   `n`, clamping the final page to the remaining budget. Kept out of `n = Inf`'s path so a
+   full 10,000-row crawl is ~40 requests instead of ~100.)*

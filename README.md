@@ -39,31 +39,94 @@ and descriptions server-side:
 library(datagouv)
 
 hits <- dg_list_datasets(q = "vélo", n = 5)
-hits[, c("title", "formats", "n_resources", "has_table", "has_schema")]
+hits[, c("title", "id", "organization", "quality_score", "views")]
 #> # A tibble: 5 × 5
-#>   title                                 formats n_resources has_table has_schema
-#>   <chr>                                 <chr>         <int> <lgl>     <lgl>     
-#> 1 Stations du réseau vélo libre-servic… csv, g…           9 TRUE      FALSE     
-#> 2 Comptages vélo à Nantes par Place au… csv, j…           2 TRUE      FALSE     
-#> 3 Arceau vélo                           arcgis…          16 TRUE      FALSE     
-#> 4 Stationnements vélo                   csv               1 TRUE      TRUE      
-#> 5 Prime vélo                            csv, j…           2 TRUE      FALSE
+#>   title                                   id    organization quality_score views
+#>   <chr>                                   <chr> <chr>                <dbl> <int>
+#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7131
+#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7939
+#> 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2251
+#> 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16104
+#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8552
 ```
 
-`id` is the stable identifier you use to download; `has_schema` tells
-you whether the dataset declares per-column documentation (see below).
-You can restrict the catalog to datasets that carry at least one
-resource in a given format — e.g. only the more compact `parquet` files,
-which are quicker to download:
+`id` is the stable identifier you use to download; `quality_score` and
+`views` are among the rich per-dataset metadata the v2 search API embeds
+inline (see `license`, `access_type`, `frequency`,
+`temporal_start`/`end` and `featured` too). Because v2 search does not
+inline a dataset’s resources, the resource-based columns `n_resources`,
+`formats`, `has_table` and `has_schema` are `NA` by default; pass
+`resources = TRUE` to opt into the per-dataset resource fetch and fill
+them exactly. You can restrict the catalog to datasets that carry at
+least one resource in a given format — e.g. only the more compact
+`parquet` files, which are quicker to download:
 
 ``` r
 parquet_only <- dg_list_datasets(format = "parquet", n = 5)
-parquet_only$formats
-#> [1] "csv, json, ld+json, n3, parquet, rdf+xml, turtle, vnd.openxmlformats-officedocument.spreadsheetml.sheet"           
-#> [2] "csv, csv.gz, geojson, parquet"                                                                                     
-#> [3] "parquet"                                                                                                           
-#> [4] "csv, gpx+xml, json, ld+json, n3, octet-stream, parquet, plain, rdf+xml, turtle, vnd.google-earth.kml+xml, xls, zip"
-#> [5] "parquet"
+parquet_only$title
+#> [1] "Bases statistiques communale, départementale et régionale de la délinquance enregistrée par la police et la gendarmerie nationales "
+#> [2] "Géolocalisation des établissements du répertoire SIRENE-pour les études statistiques"                                               
+#> [3] "Bureaux de vote et adresses de leurs électeurs"                                                                                     
+#> [4] "Base Sirene des entreprises et de leurs établissements (SIREN, SIRET)"                                                              
+#> [5] "Données sur la localisation et l’accès de la population aux équipements"
+```
+
+Glimpse a dataset’s health and engagement metadata before deciding to
+pull it. `dg_glimpse()` surfaces the v2-inline `quality` score and
+flags, `metrics` (views, downloads, followers, …) and context that the
+fetch path does not expose:
+
+``` r
+g <- dg_glimpse("6a6be5976a05df136d48fb7a")
+g$quality
+#> $score
+#> [1] 0.5555556
+#> 
+#> $flags
+#> $flags$license
+#> [1] TRUE
+#> 
+#> $flags$temporal_coverage
+#> [1] FALSE
+#> 
+#> $flags$spatial
+#> [1] FALSE
+#> 
+#> $flags$update_frequency
+#> [1] FALSE
+#> 
+#> $flags$dataset_description_quality
+#> [1] TRUE
+#> 
+#> $flags$has_resources
+#> [1] TRUE
+#> 
+#> $flags$has_open_format
+#> [1] TRUE
+#> 
+#> $flags$all_resources_available
+#> [1] TRUE
+#> 
+#> $flags$resources_documentation
+#> [1] TRUE
+g$metrics
+#> $views
+#> [1] 537
+#> 
+#> $resources_downloads
+#> [1] 38
+#> 
+#> $followers
+#> [1] 0
+#> 
+#> $discussions
+#> [1] 0
+#> 
+#> $reuses
+#> [1] 0
+#> 
+#> $dataservices
+#> [1] 2
 ```
 
 Download a dataset and inspect it. The result is a single table whose
@@ -147,7 +210,10 @@ The discovery catalog (`dg_list_datasets()`) is restricted to the
 official tabular formats data.gouv.fr itself indexes (`csv`, `csv.gz`,
 `xls`, `xlsx`, `parquet`), so every listed dataset is in principle
 openable as a table. Use the `format` argument to narrow the catalog to
-datasets with a resource in a specific format. Direct pulls additionally
+datasets with a resource in a specific format (the v2 search API matches
+several formats as a server-side union). The exact
+`n_resources`/`formats`/`has_table`/`has_schema` resource columns are
+populated by passing `resources = TRUE`. Direct pulls additionally
 accept `tsv`, `txt` and `json` resources.
 
 See the

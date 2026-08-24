@@ -130,13 +130,14 @@ worth pulling:
 * `has_schema` is `TRUE` when at least one resource declares a data schema,
   i.e. when per-variable documentation is available via `dg_schema()`.
 
-By default `dg_list_datasets()` returns the first `n` datasets of the catalog,
-which is both slow and fragile when done exhaustively. Prefer a server-side
-search with `q`:
+The search endpoint does not inline each dataset's resources, so the
+resource-based columns `n_resources`, `formats`, `has_table` and `has_schema`
+are `NA` unless you opt in with `resources = TRUE` (which costs one extra
+request per dataset):
 
 ```{r}
 #| live: true
-cycle <- dg_list_datasets(q = "vélo", n = 10)
+cycle <- dg_list_datasets(q = "vélo", n = 10, resources = TRUE)
 cycle[, c("title", "n_resources", "has_table", "has_schema")]
 ```
 
@@ -152,12 +153,14 @@ list of tables.
 
 Because descriptions live in schemas and only a fraction of datasets declare
 one, `dg_schema()` only helps on a subset of the catalog. You can target that
-subset directly:
+subset directly. v2 has no boolean "declares a schema" server-side filter, so
+`schema_only` filters client-side on `has_schema` — pass `resources = TRUE` so
+that column is populated (and the filter has something to act on):
 
 ```{r}
 #| live: true
-documented <- dg_list_datasets(schema_only = TRUE, n = 10)
-documented[, c("title", "n_resources", "has_table", "has_schema")]
+documented <- dg_list_datasets(schema_only = TRUE, n = 10, resources = TRUE)
+documented[, c("title", "has_schema")]
 ```
 
 ### Restricting to specific formats
@@ -185,7 +188,7 @@ or a composed table id and returns the documented fields:
 ```{r}
 #| live: true
 # schema_only filters client-side, so request a batch and take the first hit.
-documented <- dg_list_datasets(schema_only = TRUE, n = 100)
+documented <- dg_list_datasets(schema_only = TRUE, n = 100, resources = TRUE)
 table_id <- documented$id[!is.na(documented$id)][[1]]
 
 # Pull it, then inspect the schema of the returned table.
@@ -305,7 +308,8 @@ table flows from one step to the next without any intermediate variables:
 ```{r}
 #| live: true
 # Find a dataset, take its first id, pull it into a table and read its schema.
-dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
+dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+                 resources = TRUE) |>
   pull(id) |>
   head(1) |>
   dg_pull_dataset() |>
@@ -320,7 +324,8 @@ in a fresh session, no matter how the catalog changes in the meantime:
 
 ```{r}
 #| live: true
-tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
+tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+                        resources = TRUE) |>
   pull(id) |>
   head(1) |>
   dg_pull_dataset()
