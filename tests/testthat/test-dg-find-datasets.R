@@ -171,6 +171,42 @@ test_that("dg_find_datasets(schema_only = TRUE) keeps only documented datasets",
   expect_equal(out$id, "p2")
 })
 
+test_that("schema_only = TRUE forces resources = TRUE and filters", {
+  with_schema <- mock_resource(format = "csv", id = "r1")
+  with_schema$schema <- list(name = "etalab/schema-bal", url = NULL)
+  local_mocked_bindings(
+    fetch_search_all = function(...) {
+      list(
+        mock_dataset_v2(title = "Plain", id = "p1"),
+        mock_dataset_v2(title = "Named", id = "p2")
+      )
+    },
+    fetch_resource_subsection = function(subsection) {
+      if (grepl("p1", subsection$href, fixed = TRUE)) {
+        list()
+      } else {
+        list(with_schema)
+      }
+    }
+  )
+
+  out <- dg_find_datasets(schema_only = TRUE, resources = FALSE)
+
+  # The resource fetch ran (not a silent no-op on has_schema = NA) and the
+  # client-side filter actually applied.
+  expect_equal(out$id, "p2")
+  expect_false(is.na(out$has_schema))
+})
+
+test_that("schema_only = TRUE announces the forced resource fetch", {
+  local_mocked_bindings(
+    fetch_search_all = function(...) list(),
+    fetch_resource_subsection = function(subsection) list()
+  )
+
+  expect_snapshot(dg_find_datasets(schema_only = TRUE, resources = FALSE))
+})
+
 test_that("dg_find_datasets() forwards filter arguments to the search", {
   seen <- NULL
   local_mocked_bindings(

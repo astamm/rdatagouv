@@ -37,8 +37,11 @@ tabular formats (\code{csv}, \code{csv.gz}, \code{xls}, \code{xlsx}, \code{parqu
 
 \item{schema_only}{Whether to keep only datasets that declare a data schema
 (see \code{has_schema}). Defaults to \code{FALSE}. v2 has no boolean "declares any
-schema" server-side filter, so this filters client-side and only works
-reliably when \code{resources = TRUE} fills \code{has_schema}.}
+schema" server-side filter, so this filters client-side on \code{has_schema},
+which itself needs the per-dataset resource fetch. When \code{schema_only} is
+set without \code{resources = TRUE}, this function forces \code{resources = TRUE}
+(with an informative message about the extra requests) so the filter
+actually runs.}
 
 \item{organization}{Optional data producer, matched server-side. Pass either
 the producer's \strong{24-hex \code{organization} id} (as shown in the
@@ -97,7 +100,8 @@ values \code{"public-service"}, \code{"local-authority"}, \code{"company"},
 \item{resources}{Whether to fetch each dataset's resources subsection
 (one extra request per dataset) so the exact \code{n_resources}, \code{formats},
 \code{has_table} and \code{has_schema} columns can be computed. Defaults to
-\code{FALSE}, in which case those columns are \code{NA}.}
+\code{FALSE}, in which case those columns are \code{NA}. Automatically forced to
+\code{TRUE} when \code{schema_only = TRUE} (see \code{schema_only}).}
 }
 \value{
 A \code{\link[tibble:tibble]{tibble::tibble()}} with one row per matching dataset. The
@@ -108,7 +112,9 @@ stable, unique dataset identifier used to address a dataset with
 formats found among them), \code{has_table} (whether at least one resource is
 in a format this package can parse) and \code{has_schema} (whether at least one
 resource carries a pointer to a declared data schema, whose per-variable
-documentation is exposed by \code{\link[=dg_schema]{dg_schema()}}); these are \code{NA} otherwise.
+documentation is exposed by \code{\link[=dg_schema]{dg_schema()}}); these are \code{NA} when
+\code{resources = FALSE} (the default) unless \code{schema_only = TRUE}, which forces
+the fetch so \code{has_schema} is filled and the filter can run.
 }
 \description{
 Collects the datasets published on the data.gouv.fr platform, searching the
@@ -150,9 +156,10 @@ cycle <- dg_find_datasets(q = "vélo", n = 10)
 # multiple formats as a server-side union.
 compact <- dg_find_datasets(format = "parquet", n = 10)
 
-# Only datasets with a declared schema (documented variables). Resolving
-# `has_schema` exactly needs the per-dataset resource fetch.
-documented <- dg_find_datasets(schema_only = TRUE, resources = TRUE, n = 10)
+# Only datasets with a declared schema (documented variables). `schema_only`
+# forces the per-dataset resource fetch itself (~30s for n = 1000), so
+# `resources = TRUE` is optional here.
+documented <- dg_find_datasets(schema_only = TRUE, n = 10)
 
 # Narrow by producer and territory. A producer may be given by its 24-hex
 # id or by its exact slug/name (resolved for you), and by geozone.
