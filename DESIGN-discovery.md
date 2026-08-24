@@ -21,6 +21,18 @@ resources)`, `dg_pull_dataset(id, all_files, remove_na)`,
 > resources subsection). `dg_glimpse()` exposes v2-only dataset metadata.
 > Pull/refetch/schema/summary remain on v1. See AGENTS.md for the authoritative
 > description.
+>
+> **Implemented (2026-08): filter-argument validation.** The closed-vocabulary
+> server-side filters of `dg_find_datasets()` (`access_type`, `license`,
+> `granularity`, `last_update`, `producer_type`) are now validated client-side
+> by `validate_filter_args()`, which errors with the exhaustive list of valid
+> options on an unknown value (replacing a cryptic server error for
+> `producer_type`, silent zero hits for `license`/`granularity`/`access_type`,
+> and a silently-ignored filter for `last_update`). `geozone` (an open-ended
+> territory code, format documented only) and `tag` (open vocabulary) are not
+> enumerated or validated. The exhaustive option sets live in the
+> `dg_*_values` constants in `R/dg-find-datasets.R` and are mirrored in the
+> roxygen docs.
 
 ## Target flow
 

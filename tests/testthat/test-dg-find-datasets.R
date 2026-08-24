@@ -231,6 +231,118 @@ test_that("dg_find_datasets() forwards filter arguments to the search", {
   expect_equal(seen$producer_type, "public-service")
 })
 
+test_that("closed-vocabulary filter args accept every valid value", {
+  for (value in dg_access_type_values) {
+    expect_silent(validate_filter_args(value, NULL, NULL, NULL, NULL))
+  }
+  for (value in dg_producer_type_values) {
+    expect_silent(validate_filter_args(NULL, NULL, NULL, NULL, value))
+  }
+  for (value in dg_last_update_values) {
+    expect_silent(validate_filter_args(NULL, NULL, NULL, value, NULL))
+  }
+  for (value in dg_license_values) {
+    expect_silent(validate_filter_args(NULL, value, NULL, NULL, NULL))
+  }
+  for (value in dg_granularity_values) {
+    expect_silent(validate_filter_args(NULL, NULL, value, NULL, NULL))
+  }
+})
+
+test_that("closed-vocabulary filter args reject an invalid value with the list", {
+  bad <- list(
+    access_type = "bogus",
+    license = "bogus",
+    granularity = "bogus",
+    last_update = "bogus",
+    producer_type = "bogus"
+  )
+  for (nm in names(bad)) {
+    args <- list(NULL, NULL, NULL, NULL, NULL)
+    names(args) <- c(
+      "access_type",
+      "license",
+      "granularity",
+      "last_update",
+      "producer_type"
+    )
+    args[[nm]] <- bad[[nm]]
+    err <- tryCatch(
+      do.call(validate_filter_args, args),
+      error = identity
+    )
+    expect_s3_class(err, "datagouv_invalid_filter")
+    # The message names the offending argument and points at every valid option
+    # (cli reformats the list, so only check it surfaces the diagnostic).
+    expect_match(err$message, nm, fixed = TRUE)
+    expect_match(err$message, "Valid options are:", fixed = TRUE)
+  }
+})
+
+test_that("dg_find_datasets() errors on an invalid filter value", {
+  local_mocked_bindings(fetch_search_all = function(...) list())
+  expect_error(
+    dg_find_datasets(producer_type = "bogus"),
+    class = "datagouv_invalid_filter"
+  )
+  expect_error(
+    dg_find_datasets(license = "bogus"),
+    class = "datagouv_invalid_filter"
+  )
+  expect_error(
+    dg_find_datasets(granularity = "bogus"),
+    class = "datagouv_invalid_filter"
+  )
+})
+
+test_that("closed-vocabulary filter args reject NULL via single-value check", {
+  # NA and length > 1 are invalid for these single-valued server-side filters.
+  for (nm in c(
+    "access_type",
+    "license",
+    "granularity",
+    "last_update",
+    "producer_type"
+  )) {
+    args <- list(NULL, NULL, NULL, NULL, NULL)
+    names(args) <- c(
+      "access_type",
+      "license",
+      "granularity",
+      "last_update",
+      "producer_type"
+    )
+    args[[nm]] <- c("lov2", "cc-by")
+    expect_error(
+      do.call(validate_filter_args, args),
+      class = "datagouv_invalid_filter"
+    )
+  }
+  expect_error(
+    validate_filter_args(NA_character_, NULL, NULL, NULL, NULL),
+    class = "datagouv_invalid_filter"
+  )
+})
+
+test_that("filter arg validation keeps NULL (no filter) passing through", {
+  expect_silent(validate_filter_args(NULL, NULL, NULL, NULL, NULL))
+})
+
+test_that("geozone and tag are not validated", {
+  # geozone is a free territory code and tag an open vocabulary: neither
+  # should be rejected by validation, only forwarded to the server.
+  seen <- NULL
+  local_mocked_bindings(
+    fetch_search_all = function(geozone = NULL, tag = NULL, ...) {
+      seen <<- list(geozone = geozone, tag = tag)
+      list()
+    }
+  )
+  out <- dg_find_datasets(geozone = "country-group:ue", tag = "mobilite")
+  expect_equal(seen$geozone, "country-group:ue")
+  expect_equal(seen$tag, "mobilite")
+})
+
 test_that("dg_find_datasets() forwards format as repeated server-side params", {
   seen <- NULL
   local_mocked_bindings(

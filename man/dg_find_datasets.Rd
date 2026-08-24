@@ -49,26 +49,41 @@ value stops with the candidate list). Note that, unlike v1, the v2 search
 API itself only accepts the id (a raw slug yields zero matches), which is
 why the package resolves names/slugs for you. Defaults to \code{NULL}.}
 
-\item{geozone}{Optional territorial filter, e.g. \code{"country:fr"} or
-\code{"fr:commune:75056"}. Defaults to \code{NULL}.}
+\item{geozone}{Optional territorial filter, passed as a territory code of
+the form \code{"<scope>:<code>"}, e.g. \code{"country:fr"}, \code{"country-group:ue"},
+\code{"country-subset:fr:metro"}, \code{"fr:region:..."}, \code{"fr:departement:974"},
+\code{"fr:epci:..."}, \code{"fr:commune:75056"}, \code{"fr:arrondissement:..."},
+\code{"fr:canton:..."}, \code{"fr:collectivite:..."}, \code{"fr:iris:..."} or \code{"poi:..."},
+or the bare \code{"country"}/\code{"country-group"}/\code{"country-subset"} scope with an
+omitted code for pan-national groupings. Accepted territory codes are
+open-ended (any INSEE code for the relevant scope), so this argument is not
+enumerated; only the format is validated. Defaults to \code{NULL}.}
 
-\item{access_type}{Optional access filter, \code{"open"} or \code{"restricted"}.
-Defaults to \code{NULL}.}
-
-\item{license}{Optional license filter (a license slug, e.g. \code{"lov2"} or
-\code{"odc-odbl"}). Defaults to \code{NULL}.}
-
-\item{tag}{Optional tag filter, e.g. \code{"mobilite"}. Defaults to \code{NULL}.}
-
-\item{granularity}{Optional spatial granularity filter, e.g. \code{"fr:commune"}.
-Defaults to \code{NULL}.}
-
-\item{last_update}{Optional update-recency filter:
-\code{"last_30_days"}, \code{"last_12_months"} or \code{"last_3_years"}. Defaults to
+\item{access_type}{Optional access filter. One of \code{"open"} (freely
+downloadable) or \code{"restricted"} (access requires approval). Defaults to
 \code{NULL}.}
 
-\item{producer_type}{Optional producer-type filter (a facet value, e.g.
-\code{"public-service"} or \code{"local-authority"}). Defaults to \code{NULL}.}
+\item{license}{Optional license filter, one of the exhaustive license slugs
+\code{"lov2"}, \code{"notspecified"}, \code{"fr-lo"}, \code{"odc-odbl"}, \code{"other-at"},
+\code{"cc-by"}, \code{"other-pd"}, \code{"cc-by-sa"}, \code{"other-open"}, \code{"odc-by"},
+\code{"cc-zero"}, \code{"odc-pddl"}. Defaults to \code{NULL}.}
+
+\item{tag}{Optional tag filter. Tags form an open vocabulary (dynamic
+facets), so any free-form tag such as \code{"mobilite"} is accepted and is not
+enumerated or validated. Defaults to \code{NULL}.}
+
+\item{granularity}{Optional spatial granularity filter, one of the
+exhaustive values \code{"other"}, \code{"fr:commune"}, \code{"country"}, \code{"fr:epci"},
+\code{"fr:departement"}, \code{"poi"}, \code{"fr:region"}, \code{"fr:canton"},
+\code{"country-group"}, \code{"country-subset"}, \code{"fr:collectivite"}, \code{"fr:iris"},
+\code{"fr:arrondissement"}. Defaults to \code{NULL}.}
+
+\item{last_update}{Optional update-recency filter, one of \code{"last_30_days"},
+\code{"last_12_months"} or \code{"last_3_years"}. Defaults to \code{NULL}.}
+
+\item{producer_type}{Optional producer-type filter, one of the exhaustive
+values \code{"public-service"}, \code{"local-authority"}, \code{"company"},
+\code{"not-specified"}, \code{"user"} or \code{"association"}. Defaults to \code{NULL}.}
 
 \item{resources}{Whether to fetch each dataset's resources subsection
 (one extra request per dataset) so the exact \code{n_resources}, \code{formats},

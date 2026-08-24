@@ -1,5 +1,15 @@
 # datagouv 0.0.0.9000
 
+- `dg_find_datasets()` now validates its closed-vocabulary filter arguments
+  (`access_type`, `license`, `granularity`, `last_update`, `producer_type`)
+  before they reach the server, erroring with the exhaustive list of valid
+  options on an unknown value. This replaces three silent/cryptic failure
+  modes of the v2 search endpoint: an invalid `producer_type` returned a
+  cryptic server validation error, an invalid `license`/`granularity`/
+  `access_type` silently returned zero hits, and an invalid `last_update` was
+  silently ignored. The roxygen docs now enumerate the full option set for
+  each closed-vocabulary filter (and document the territory-code format for
+  `geozone`, whose codes are open-ended).
 - `dg_list_datasets()` is renamed to `dg_find_datasets()` for a verb-first API
   that pairs with the other discovery functions. The old name is removed
   without a deprecation shim (the package has never been released).

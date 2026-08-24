@@ -49,20 +49,35 @@
 #'   value stops with the candidate list). Note that, unlike v1, the v2 search
 #'   API itself only accepts the id (a raw slug yields zero matches), which is
 #'   why the package resolves names/slugs for you. Defaults to `NULL`.
-#' @param geozone Optional territorial filter, e.g. `"country:fr"` or
-#'   `"fr:commune:75056"`. Defaults to `NULL`.
-#' @param access_type Optional access filter, `"open"` or `"restricted"`.
-#'   Defaults to `NULL`.
-#' @param license Optional license filter (a license slug, e.g. `"lov2"` or
-#'   `"odc-odbl"`). Defaults to `NULL`.
-#' @param tag Optional tag filter, e.g. `"mobilite"`. Defaults to `NULL`.
-#' @param granularity Optional spatial granularity filter, e.g. `"fr:commune"`.
-#'   Defaults to `NULL`.
-#' @param last_update Optional update-recency filter:
-#'   `"last_30_days"`, `"last_12_months"` or `"last_3_years"`. Defaults to
+#' @param geozone Optional territorial filter, passed as a territory code of
+#'   the form `"<scope>:<code>"`, e.g. `"country:fr"`, `"country-group:ue"`,
+#'   `"country-subset:fr:metro"`, `"fr:region:..."`, `"fr:departement:974"`,
+#'   `"fr:epci:..."`, `"fr:commune:75056"`, `"fr:arrondissement:..."`,
+#'   `"fr:canton:..."`, `"fr:collectivite:..."`, `"fr:iris:..."` or `"poi:..."`,
+#'   or the bare `"country"`/`"country-group"`/`"country-subset"` scope with an
+#'   omitted code for pan-national groupings. Accepted territory codes are
+#'   open-ended (any INSEE code for the relevant scope), so this argument is not
+#'   enumerated; only the format is validated. Defaults to `NULL`.
+#' @param access_type Optional access filter. One of `"open"` (freely
+#'   downloadable) or `"restricted"` (access requires approval). Defaults to
 #'   `NULL`.
-#' @param producer_type Optional producer-type filter (a facet value, e.g.
-#'   `"public-service"` or `"local-authority"`). Defaults to `NULL`.
+#' @param license Optional license filter, one of the exhaustive license slugs
+#'   `"lov2"`, `"notspecified"`, `"fr-lo"`, `"odc-odbl"`, `"other-at"`,
+#'   `"cc-by"`, `"other-pd"`, `"cc-by-sa"`, `"other-open"`, `"odc-by"`,
+#'   `"cc-zero"`, `"odc-pddl"`. Defaults to `NULL`.
+#' @param tag Optional tag filter. Tags form an open vocabulary (dynamic
+#'   facets), so any free-form tag such as `"mobilite"` is accepted and is not
+#'   enumerated or validated. Defaults to `NULL`.
+#' @param granularity Optional spatial granularity filter, one of the
+#'   exhaustive values `"other"`, `"fr:commune"`, `"country"`, `"fr:epci"`,
+#'   `"fr:departement"`, `"poi"`, `"fr:region"`, `"fr:canton"`,
+#'   `"country-group"`, `"country-subset"`, `"fr:collectivite"`, `"fr:iris"`,
+#'   `"fr:arrondissement"`. Defaults to `NULL`.
+#' @param last_update Optional update-recency filter, one of `"last_30_days"`,
+#'   `"last_12_months"` or `"last_3_years"`. Defaults to `NULL`.
+#' @param producer_type Optional producer-type filter, one of the exhaustive
+#'   values `"public-service"`, `"local-authority"`, `"company"`,
+#'   `"not-specified"`, `"user"` or `"association"`. Defaults to `NULL`.
 #' @param resources Whether to fetch each dataset's resources subsection
 #'   (one extra request per dataset) so the exact `n_resources`, `formats`,
 #'   `has_table` and `has_schema` columns can be computed. Defaults to
@@ -113,6 +128,13 @@ dg_find_datasets <- function(
   producer_type = NULL,
   resources = FALSE
 ) {
+  validate_filter_args(
+    access_type = access_type,
+    license = license,
+    granularity = granularity,
+    last_update = last_update,
+    producer_type = producer_type
+  )
   filter_args <- list(
     organization = resolve_organization_id(organization),
     geozone = geozone,
@@ -251,4 +273,119 @@ datagouv_empty_columns <- function() {
     has_table = logical(),
     has_schema = logical()
   )
+}
+
+# Exhaustive option values for the closed-vocabulary server-side filters of
+# dg_find_datasets(), as exposed by the v2 datasets/search `facets` field and
+# verified live against the API. Keep these in sync with the roxygen @param
+# docs above.
+#
+# access_type: how much of a dataset is publicly reachable.
+dg_access_type_values <- c("open", "restricted")
+
+# producer_type: the kind of organization publishing the dataset.
+dg_producer_type_values <- c(
+  "public-service",
+  "local-authority",
+  "company",
+  "not-specified",
+  "user",
+  "association"
+)
+
+# last_update: how recently the dataset was updated (relative to now).
+dg_last_update_values <- c("last_30_days", "last_12_months", "last_3_years")
+
+# license: the license slug attached to the dataset.
+dg_license_values <- c(
+  "lov2",
+  "notspecified",
+  "fr-lo",
+  "odc-odbl",
+  "other-at",
+  "cc-by",
+  "other-pd",
+  "cc-by-sa",
+  "other-open",
+  "odc-by",
+  "cc-zero",
+  "odc-pddl"
+)
+
+# granularity: the finest spatial granularity of the dataset's geography.
+dg_granularity_values <- c(
+  "other",
+  "fr:commune",
+  "country",
+  "fr:epci",
+  "fr:departement",
+  "poi",
+  "fr:region",
+  "fr:canton",
+  "country-group",
+  "country-subset",
+  "fr:collectivite",
+  "fr:iris",
+  "fr:arrondissement"
+)
+
+# The closed-vocabulary filters of dg_find_datasets() and their exhaustive
+# valid values. Each is a single-valued server-side filter: NULL (no filter)
+# is the only other acceptable value; NA or a vector of length > 1 is invalid.
+# tag and geozone are deliberately absent: tag is an open vocabulary (dynamic
+# facets) and geozone is a free territory code (see validate_filter_args()).
+dg_filter_vocabularies <- list(
+  access_type = dg_access_type_values,
+  license = dg_license_values,
+  granularity = dg_granularity_values,
+  last_update = dg_last_update_values,
+  producer_type = dg_producer_type_values
+)
+
+# Validate the closed-vocabulary filter arguments of dg_find_datasets() before
+# they reach the server, replacing three footguns the v2 search endpoint
+# otherwise produces on a bad value:
+#   * producer_type with an invalid value -> cryptic server validation error;
+#   * license/granularity/access_type with an invalid value -> silently 0 hits;
+#   * last_update with an invalid value -> silently ignored (full catalog).
+# Each argument must be NULL (no filter) or a single valid value. On a problem
+# it stops with the exhaustive list of valid options so users can self-correct.
+# geozone (a free territory code, e.g. "country:fr", "fr:departement:974",
+# "fr:commune:75056", "country-group:ue") and tag (an open vocabulary) are not
+# validated here.
+validate_filter_args <- function(
+  access_type,
+  license,
+  granularity,
+  last_update,
+  producer_type
+) {
+  args <- list(
+    access_type = access_type,
+    license = license,
+    granularity = granularity,
+    last_update = last_update,
+    producer_type = producer_type
+  )
+  for (nm in names(args)) {
+    value <- args[[nm]]
+    if (is.null(value)) {
+      next
+    }
+    valid <- dg_filter_vocabularies[[nm]]
+    if (is.character(value) && length(value) == 1 && value %in% valid) {
+      next
+    }
+    if (length(value) > 1) {
+      cli::cli_abort(
+        "`{nm}` must be a single value, not a vector.",
+        class = "datagouv_invalid_filter"
+      )
+    }
+    cli::cli_abort(
+      "Unknown `{nm}` value \"{value}\". Valid options are: {valid}.",
+      class = "datagouv_invalid_filter"
+    )
+  }
+  invisible(NULL)
 }

@@ -243,6 +243,18 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
   the vignette under `articles`.
 - Regenerate docs with `devtools::document()`; verify with `devtools::test()`
   and `devtools::check()`.
+- **Keep docs in sync on every change.** At the end of each task, audit the
+  package-level docs and fill in relevant files to reflect the changes made —
+  whether a function or feature was added, removed, or changed signature.
+  Cover at minimum: vignettes (`vignettes/datagouv.qmd`), pkgdown-related
+  files (`_pkgdown.yml`, `.github/workflows/pkgdown.yaml`), `DESCRIPTION`,
+  `NEWS.md`, `DESIGN-discovery.md`, and the `README.qmd`/`README.md` pair
+  (regenerate `README.md` from `README.qmd` with `devtools::build_readme()`).
+  And check function-level roxygen-generated docs: update the roxygen comments
+  in the source files under `R/` and run `devtools::document()` to regenerate
+  the `.Rd` files under `man/`. Do this on every task, not only when a doc
+  update is explicitly requested, so the documentation never drifts from the
+  code.
 
 ## R-hub CI troubleshooting (as of 2026-08-21)
 
