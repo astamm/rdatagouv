@@ -5,8 +5,12 @@
 Find a dataset on data.gouv.fr, judge whether it is usable, and pull its
 tabular resources into tidy tables.
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  : List datasets available on data.gouv.fr
+- [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  : Find datasets available on data.gouv.fr
+- [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md)
+  : Search for organizations (data producers) on data.gouv.fr
+- [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+  : Find topics (themes) on data.gouv.fr
 - [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
   : Glimpse the metadata of a dataset on data.gouv.fr
 - [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)

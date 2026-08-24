@@ -48,7 +48,7 @@ workflow:
 
 | Step | Function |
 |----|----|
-| Find / search the catalog | [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md) |
+| Find / search the catalog | [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md), [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md), [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) |
 | Judge documented columns | [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md) |
 | Download tabular resources | [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) |
 | Summarise table contents | [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md), [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) |
@@ -60,14 +60,14 @@ but tailored to the data.gouv.fr API.
 
 ## Finding datasets
 
-[`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
 returns a tibble with one row per dataset:
 
 ``` r
 
 library(datagouv)
 
-datasets <- dg_list_datasets(n = 20)
+datasets <- dg_find_datasets(n = 20)
 head(datasets)
 ```
 
@@ -105,7 +105,7 @@ costs one extra request per dataset):
 
 ``` r
 
-cycle <- dg_list_datasets(q = "vélo", n = 10, resources = TRUE)
+cycle <- dg_find_datasets(q = "vélo", n = 10, resources = TRUE)
 cycle[, c("title", "n_resources", "has_table", "has_schema")]
 ```
 
@@ -145,7 +145,7 @@ something to act on):
 
 ``` r
 
-documented <- dg_list_datasets(schema_only = TRUE, n = 10, resources = TRUE)
+documented <- dg_find_datasets(schema_only = TRUE, n = 10, resources = TRUE)
 documented[, c("title", "has_schema")]
 ```
 
@@ -161,7 +161,7 @@ twins:
 
 ``` r
 
-parquet <- dg_list_datasets(format = "parquet", n = 10)
+parquet <- dg_find_datasets(format = "parquet", n = 10)
 parquet[, c("title", "formats")]
 ```
 
@@ -182,6 +182,120 @@ parquet[, c("title", "formats")]
 Multiple formats can be requested at once; each is queried server-side
 and the results are combined.
 
+### Finding a specific organization’s datasets
+
+`dg_find_datasets(organization =)` can address a producer by its 24-hex
+id, its `name`, or its `slug`.
+[`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md)
+lists the organizations known to data.gouv so you can discover which one
+you want and get its stable id:
+
+``` r
+
+orgs <- dg_find_organization(q = "SNCF")
+orgs[, c("name", "slug", "datasets")]
+```
+
+    # A tibble: 17 × 3
+       name                                                      slug       datasets
+       <chr>                                                     <chr>         <int>
+     1 SNCF                                                      sncf            183
+     2 Île-de-France Mobilités                                   ile-de-fr…       97
+     3 Fluo Grand Est                                            fluo-gran…       50
+     4 AlertesRER                                                alertesrer        1
+     5 Etablissement public d'aménagement Bordeaux Euratlantique etablisse…        1
+     6 SFERIS                                                    sferis            1
+     7 Mairie de St NICOLAS DE REDON                             mairie-de…        1
+     8 Isomaps                                                   isomaps           0
+     9 SNCF Connect                                              sncf-conn…        0
+    10 Fleury-sur-Orne                                           fleury-su…       37
+    11 SNCF Gares & Connexions                                   sncf-gare…        0
+    12 Toucan Toco                                               toucan-to…        0
+    13 Tictactrip                                                tictactrip        0
+    14 viaTransit                                                viatransit        0
+    15 MaxRail                                                   maxrail           0
+    16 Kombo                                                     kombo             0
+    17 Trayn                                                     trayn             0
+
+The slug resolves to the same datasets as the corresponding id — pass
+either to
+[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md):
+
+``` r
+
+sncf <- dg_find_datasets(organization = "sncf", n = 10)
+sncf[, c("title", "organization")]
+```
+
+    # A tibble: 10 × 2
+       title                                                 organization
+       <chr>                                                 <chr>
+     1 HORAIRES SNCF                                         sncf
+     2 Fichier de formes des voies du Réseau Ferré National  sncf
+     3 Horaires des gares                                    sncf
+     4 Liste des gares                                       sncf
+     5 Fichier de formes des lignes du Réseau Ferré National sncf
+     6 Fréquentation en gares                                sncf
+     7 Gares de voyageurs                                    sncf
+     8 Points de vente SNCF                                  sncf
+     9 Liste des passages à niveau                           sncf
+    10 Tarifs TGV INOUI et OUIGO                             sncf        
+
+### Finding datasets grouped under a theme
+
+Beyond producers, data.gouv curates datasets into *themes* (topics) such
+as “Mobilité”, “Environnement” or “Énergie”.
+[`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+lists these themes — including how many elements each groups — so you
+can discover one and get its stable 24-hex id:
+
+``` r
+
+topics <- dg_find_topics(q = "mobilité", n = 5)
+topics[, c("name", "n_elements")]
+```
+
+    # A tibble: 5 × 2
+      name                                                                n_elements
+      <chr>                                                                    <int>
+    1 Indicateurs du tableau de bord des mobilités durables                       27
+    2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
+    3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
+    4 Véhicules électriques                                                       27
+    5 Lutte contre la vacance des logements                                        8
+
+Pass a theme’s id to `dg_find_datasets(topic =)` to narrow a catalog
+search to datasets grouped under it (the same single-valued server-side
+filter that `organization`/`geozone` use; it takes a topic id, not a
+name/slug):
+
+``` r
+
+mobility <- dg_find_datasets(topic = topics$id[1], n = 10)
+mobility[, c("title", "organization")]
+```
+
+    # A tibble: 10 × 2
+       title                                                            organization
+       <chr>                                                            <chr>
+     1 "Nombre de places de stationnement vélo "                        ecolab-1
+     2 "Flux domicile-travail selon le mode de transport principal uti… ecolab-1
+     3 "Distance domicile-travail moyenne, selon le mode de déplacemen… ecolab-1
+     4 "Nombre de stations de transports en commun selon le type de ré… ecolab-1
+     5 "Nombre de flux domicile-travail"                                ecolab-1
+     6 "Nombre de places de stationnement vélo pour 1000 hab."          ecolab-1
+     7 "Linéaire d'aménagements cyclables"                              ecolab-1
+     8 "Part des flux domicile-travail"                                 ecolab-1
+     9 "Nombre de points de recharge pour véhicules électriques ouvert… ecolab-1
+    10 "Part des ménages disposant au moins d’une voiture (taux de mot… ecolab-1    
+
+By default
+[`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+reports `n_elements` — the theme’s declared total element count
+(datasets, reuses, dataservices, …). To see how that total breaks down
+by kind, pass `elements = TRUE` (costing one extra request per topic);
+the `n_datasets`/`n_dataservices`/`n_reuses` columns are `NA` otherwise.
+
 ## Judging whether a dataset is usable
 
 The judged usefulness of a dataset hinges on whether the columns mean
@@ -194,7 +308,7 @@ returns the documented fields:
 ``` r
 
 # schema_only filters client-side, so request a batch and take the first hit.
-documented <- dg_list_datasets(schema_only = TRUE, n = 100, resources = TRUE)
+documented <- dg_find_datasets(schema_only = TRUE, n = 100, resources = TRUE)
 table_id <- documented$id[!is.na(documented$id)][[1]]
 
 # Pull it, then inspect the schema of the returned table.
@@ -408,7 +522,7 @@ to a collection of tables. It is flexible about its input, accepting:
   `dg_pull_dataset(all_files = TRUE)` (a ZIP may contribute several
   tables),
 - a tibble from
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
   (each dataset is downloaded and summarised),
 - a character vector of identifiers (or exact titles),
 - or `NULL` to download and summarise the first `n` datasets of the
@@ -438,7 +552,7 @@ variables:
 ``` r
 
 # Find a dataset, take its first id, pull it into a table and read its schema.
-dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
                  resources = TRUE) |>
   pull(id) |>
   head(1) |>
@@ -490,7 +604,7 @@ how the catalog changes in the meantime:
 
 ``` r
 
-tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
                         resources = TRUE) |>
   pull(id) |>
   head(1) |>

@@ -14,17 +14,31 @@ covered by
 [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) +
 [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md).)
 
-> **2026-08 v2 switch:**
-> [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-> now queries the v2 `datasets/search` API (pointer-based string
-> `next_page` pagination, rich inline metadata, multiple `format` values
-> as repeated params). v2 does not inline a dataset’s resources, so
+> **2026-08 v2 switch:** `dg_list_datasets()` now queries the v2
+> `datasets/search` API (pointer-based string `next_page` pagination,
+> rich inline metadata, multiple `format` values as repeated params). v2
+> does not inline a dataset’s resources, so
 > `n_resources`/`formats`/`has_table`/ `has_schema` are `NA` unless
 > `resources = TRUE` (N+1 per-dataset fetch of the resources
 > subsection).
 > [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
 > exposes v2-only dataset metadata. Pull/refetch/schema/summary remain
 > on v1. See AGENTS.md for the authoritative description.
+>
+> **Implemented (2026-08): filter-argument validation.** The
+> closed-vocabulary server-side filters of
+> [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+> (`access_type`, `license`, `granularity`, `last_update`,
+> `producer_type`) are now validated client-side by
+> `validate_filter_args()`, which errors with the exhaustive list of
+> valid options on an unknown value (replacing a cryptic server error
+> for `producer_type`, silent zero hits for
+> `license`/`granularity`/`access_type`, and a silently-ignored filter
+> for `last_update`). `geozone` (an open-ended territory code, format
+> documented only) and `tag` (open vocabulary) are not enumerated or
+> validated. The exhaustive option sets live in the `dg_*_values`
+> constants in `R/dg-find-datasets.R` and are mirrored in the roxygen
+> docs.
 
 ## Target flow
 
@@ -137,11 +151,10 @@ clear message.
 
 ## Discovery improvement 1: usable-at-a-glance search
 
-[`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-currently keeps only title/id/description/slug and **discards
-`resources`**, so students can’t tell whether a hit holds a real table.
-Fix: keep the `resources` metadata and derive a compact availability
-summary.
+`dg_list_datasets()` currently keeps only title/id/description/slug and
+**discards `resources`**, so students can’t tell whether a hit holds a
+real table. Fix: keep the `resources` metadata and derive a compact
+availability summary.
 
 New columns on the returned tibble (resource-derived):
 
@@ -201,8 +214,7 @@ Close the preview loop so students can see rows/variables/missingness
 across all matching datasets.
 
 **[`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
-gains an accepted input:** a data-frame returned by
-[`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+gains an accepted input:** a data-frame returned by `dg_list_datasets()`
 (recognized by its `id` column, which is already present). Then
 `dg_summarise(dg_list_datasets(q = "vélo"))` pulls and summarizes every
 hit in one call. Character-vector and named-list inputs keep working.
@@ -286,11 +298,13 @@ Implications for this package:
 
 | File | Change |
 |----|----|
-| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. |
+| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. **Topics:** `datagouv_topics_url()`; thread `topic` through `fetch_search_page()`/`fetch_search_all()`; topics crawler `fetch_topic_page()` / `fetch_topics_all()` (clone of the organizations crawler), `fetch_topic_elements()` (paginated elements subsection, nested `element$class` classifier), `topic_element_counts()`. |
 | `R/dg-pull-dataset.R` | [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. (Stays on v1.) |
 | `R/dg-table-id.R` (new) | Exported `dg_table_id(x)` reads the `id` attribute. |
-| `R/dg-summary.R` / `R/dg-summarise.R` | [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md) needs no metadata-column exclusion (id is an attribute); [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) accepts a [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md) tibble. |
+| `R/dg-summary.R` / `R/dg-summarise.R` | [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md) needs no metadata-column exclusion (id is an attribute); [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) accepts a `dg_list_datasets()` tibble. |
 | `R/dg-list-datasets.R` | Add `n_resources`, `formats`, `has_table`, `has_schema` columns, and the `format` argument (server-side per-format filtering, unioned and de-duplicated by id). **v2 switch:** rework onto `fetch_search_all()` over `datasets/search`; new server-side filter args (`organization`, `geozone`, `access_type`, `license`, `tag`, `granularity`, `last_update`, `producer_type`); new inline columns; resource columns `NA` unless `resources = TRUE`. |
+| `R/dg-find-datasets.R` (formerly `dg-list-datasets.R`) | Renamed verb-first. Adds the `topic` server-side filter (a 24-hex topic id, open vocabulary like `tag`/`geozone`, deliberately not validated and not name/slug-resolved). |
+| `R/dg-find-topics.R` (new) | Exported `dg_find_topics(q, n, elements)` mirroring [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md): tibble `{id, name, slug, description, tags, featured, n_elements}` plus `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE` (N+1 per-topic fetch, counting nested `element$class`); external-link (NULL-class) entries excluded. |
 | `R/dg-glimpse.R` (new) | Exported `dg_glimpse(id, table = NULL)` surfaces v2-inline dataset metadata (`quality`, `metrics`, `context`, plus `resources` when `table = TRUE`) via `fetch_dataset_v2()` + `fetch_resource_subsection()`. |
 | `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. |
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
@@ -306,8 +320,7 @@ Implications for this package:
 1.  **Baseline only** *(implemented)*: composed ID +
     [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md) +
     tests.
-2.  **Search surfacing** *(implemented)*:
-    [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+2.  **Search surfacing** *(implemented)*: `dg_list_datasets()`
     availability columns + tests.
 3.  **Preview loop** *(implemented)*:
     [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
@@ -337,13 +350,11 @@ Implications for this package:
 8.  **Live integration tests** *(implemented)*: `tests/test-live-api.R`
     proves the composed URI addressing (incl. a file inside a multi-file
     ZIP) against the real API, gated behind `DATAGOUV_LIVE=1`.
-9.  **v2 discovery switch** *(implemented)*:
-    [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-    moves from v1 `datasets` to the v2 `datasets/search` API
-    (repeated-format params, string `next_page` pagination, rich inline
-    metadata); new server-side filter args and inline columns;
-    resource-derived columns become `NA` unless `resources = TRUE`; new
-    export
+9.  **v2 discovery switch** *(implemented)*: `dg_list_datasets()` moves
+    from v1 `datasets` to the v2 `datasets/search` API (repeated-format
+    params, string `next_page` pagination, rich inline metadata); new
+    server-side filter args and inline columns; resource-derived columns
+    become `NA` unless `resources = TRUE`; new export
     [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
     surfaces v2-only dataset metadata. Pull/refetch/schema/summary
     remain on v1. *(Page-size tuning: the v2 search endpoint’s latency
@@ -353,3 +364,12 @@ Implications for this package:
     large/`Inf` `n`, clamping the final page to the remaining budget.
     Kept out of `n = Inf`’s path so a full 10,000-row crawl is ~40
     requests instead of ~100.)*
+10. **Topic support** *(implemented)*:
+    [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+    (topics/search crawler + `${id}` → `elements/` classifier for the
+    per-kind N+1 breakdown) and the `topic =` filter on
+    [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+    Topics reuse the exact pointer-pagination envelope of organizations,
+    so no new pagination machinery. Element kind lives in the nested
+    `element$class`; NULL-class entries are curator external links and
+    never counted.

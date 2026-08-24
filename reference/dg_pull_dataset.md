@@ -4,7 +4,7 @@ Downloads the first tabular resource of a dataset and parses it into a
 [`tibble::tibble()`](https://tibble.tidyverse.org/reference/tibble.html)
 with `format_tibble()`. The dataset is identified by its `id`, which is
 the stable, unique identifier returned in the `id` column of
-[`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md).
+[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
 For backwards compatibility, an exact title is also accepted and is
 resolved by searching the platform.
 

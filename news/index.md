@@ -2,22 +2,71 @@
 
 ## datagouv 0.0.0.9000
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  now talks to the v2 `datasets/search` API instead of the v1 `datasets`
-  endpoint. In v2, multiple `format` values are sent as repeated query
-  parameters (a server-side union) in a single call, pagination follows
-  the pointer-based string `next_page`, and the API returns much richer
-  per-dataset metadata inline. The return tibble therefore adds new
-  columns: `organization`, `license`, `quality_score`, `quality_flags`,
-  `views`, `resources_downloads`, `access_type`, `frequency`,
-  `spatial_granularity`, `temporal_start`, `temporal_end`, `archived`
-  and `featured`.
+- New export `dg_find_topics(q = NULL, n = 20, elements = FALSE)`
+  queries the v2 `topics/search` endpoint and returns a tibble of
+  `{id, name, slug, description, tags, featured, n_elements}` (plus
+  `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE`) for
+  the curated themes grouping datasets, reuses and dataservices. Use it
+  to discover a theme and get its stable 24-hex `id`. The per-kind
+  counts require one extra request per topic (an N+1 crawl), so
+  `n_elements` is always the topic’s declared total while the breakdown
+  defaults to `NA`.
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  gains new server-side filter arguments: `organization` (a 24-hex
-  producer id — v2 does not accept a slug or name here), `geozone`,
-  `access_type`, `license`, `tag`, `granularity`, `last_update` and
-  `producer_type`.
+- [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  gains a `topic` filter: pass the 24-hex id of a theme (found via
+  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md))
+  to return only datasets grouped under that topic. Matched server-side
+  as a single-valued filter, echoing how `organization`/`geozone` narrow
+  the catalog. Like `tag`/`geozone`, topic ids form an open vocabulary,
+  so the argument is not enumerated or validated; a human-readable topic
+  name/slug is not auto-resolved (see
+  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)).
+
+- [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  now validates its closed-vocabulary filter arguments (`access_type`,
+  `license`, `granularity`, `last_update`, `producer_type`) before they
+  reach the server, erroring with the exhaustive list of valid options
+  on an unknown value. This replaces three silent/cryptic failure modes
+  of the v2 search endpoint: an invalid `producer_type` returned a
+  cryptic server validation error, an invalid `license`/`granularity`/
+  `access_type` silently returned zero hits, and an invalid
+  `last_update` was silently ignored. The roxygen docs now enumerate the
+  full option set for each closed-vocabulary filter (and document the
+  territory-code format for `geozone`, whose codes are open-ended).
+
+- `dg_list_datasets()` is renamed to
+  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  for a verb-first API that pairs with the other discovery functions.
+  The old name is removed without a deprecation shim (the package has
+  never been released).
+
+- New export `dg_find_organization(q = NULL, n = 20)` queries the v2
+  `organizations/search` endpoint and returns a tibble of
+  `{id, name, slug, acronym, description, datasets, badges, business_number_id}`
+  for matching producers. Use it to discover an organization and get its
+  stable 24-hex `id`.
+
+- `dg_find_datasets(organization =)` now accepts an organization’s
+  `name` or `slug` as well as a 24-hex id. Names and slugs are resolved
+  to their id via the organizations endpoint using an exact match; if
+  zero or several organizations match, the call errors and lists the
+  candidates so you can disambiguate. A bare 24-hex id is passed
+  straight through without a lookup.
+
+- `dg_list_datasets()` now talks to the v2 `datasets/search` API instead
+  of the v1 `datasets` endpoint. In v2, multiple `format` values are
+  sent as repeated query parameters (a server-side union) in a single
+  call, pagination follows the pointer-based string `next_page`, and the
+  API returns much richer per-dataset metadata inline. The return tibble
+  therefore adds new columns: `organization`, `license`,
+  `quality_score`, `quality_flags`, `views`, `resources_downloads`,
+  `access_type`, `frequency`, `spatial_granularity`, `temporal_start`,
+  `temporal_end`, `archived` and `featured`.
+
+- `dg_list_datasets()` gains new server-side filter arguments:
+  `organization` (a 24-hex producer id — v2 does not accept a slug or
+  name here), `geozone`, `access_type`, `license`, `tag`, `granularity`,
+  `last_update` and `producer_type`.
 
 - Because v2 search does **not** inline a dataset’s resources, the
   resource-derived columns `n_resources`, `formats`, `has_table` and
@@ -71,21 +120,21 @@
   then
   [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)).
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  gains a `format` argument to keep only datasets that have a resource
-  in one of the requested formats (defaults to the full set of tabular
-  formats). The API filters a single format per query, so the requested
-  formats are queried server-side one by one and the results are
-  combined and de-duplicated by dataset id. This also fixes a latent bug
-  where the multi-format request was effectively honoured as `csv` only.
+- `dg_list_datasets()` gains a `format` argument to keep only datasets
+  that have a resource in one of the requested formats (defaults to the
+  full set of tabular formats). The API filters a single format per
+  query, so the requested formats are queried server-side one by one and
+  the results are combined and de-duplicated by dataset id. This also
+  fixes a latent bug where the multi-format request was effectively
+  honoured as `csv` only.
 
 - The v2 discovery crawl scales its page size adaptively:
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  requests small, fast pages (`page_size = 100`) by default, but a large
-  or infinite `n` (e.g. a full-catalog `n = Inf` crawl) automatically
-  scales each page up to ~250 and clamps the final page to the remaining
-  budget. This keeps individual requests well under the client timeout
-  while cutting a full 10,000-row crawl to ~40 requests.
+  `dg_list_datasets()` requests small, fast pages (`page_size = 100`) by
+  default, but a large or infinite `n` (e.g. a full-catalog `n = Inf`
+  crawl) automatically scales each page up to ~250 and clamps the final
+  page to the remaining budget. This keeps individual requests well
+  under the client timeout while cutting a full 10,000-row crawl to ~40
+  requests.
 
 - [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
   now prefer the lightest advertised file when a dataset offers the
@@ -96,9 +145,8 @@
 
 - Initial development version.
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  lists all datasets available on data.gouv.fr and returns a tibble with
-  `title`, `id`, `description` and `slug`.
+- `dg_list_datasets()` lists all datasets available on data.gouv.fr and
+  returns a tibble with `title`, `id`, `description` and `slug`.
 
 - `format_tibble()` converts a data frame to a tibble and can drop rows
   containing missing values.
@@ -135,14 +183,13 @@
   re-fetches a single table from its composed `id`, reproducibly
   returning the same table across calls.
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  now also reports `n_resources` (file count), `formats` (distinct file
-  formats) and `has_table` (whether a resource can be parsed to a table)
-  for each dataset.
+- `dg_list_datasets()` now also reports `n_resources` (file count),
+  `formats` (distinct file formats) and `has_table` (whether a resource
+  can be parsed to a table) for each dataset.
 
 - `summarise_datasets()` accepts a tibble returned by
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  (identified by its `id` column) and summarises the matching datasets.
+  `dg_list_datasets()` (identified by its `id` column) and summarises
+  the matching datasets.
 
 - [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
   returns the documented column metadata (`name`, `title`,
@@ -167,16 +214,14 @@
   now accept either a table (its `id` attribute is read automatically)
   or a composed id string.
 
-- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-  now reports `has_schema` (whether at least one resource carries a
-  pointer to a declared data schema) and gains a `schema_only` argument
-  to keep only schema-documented datasets.
+- `dg_list_datasets()` now reports `has_schema` (whether at least one
+  resource carries a pointer to a declared data schema) and gains a
+  `schema_only` argument to keep only schema-documented datasets.
 
-- The discovery catalog
-  ([`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md))
-  is now restricted to data.gouv’s official tabular formats (`csv`,
-  `csv.gz`, `xls`, `xlsx`, `parquet`) so every listed dataset is in
-  principle openable as a table.
+- The discovery catalog (`dg_list_datasets()`) is now restricted to
+  data.gouv’s official tabular formats (`csv`, `csv.gz`, `xls`, `xlsx`,
+  `parquet`) so every listed dataset is in principle openable as a
+  table.
 
 - `supported_formats()` now also parses `xls` (legacy Excel) and
   `parquet` resources; `nanoparquet` is a new hard dependency.

@@ -18,7 +18,9 @@ Four workflow steps, each mapping to exported functions:
 
 | Step | Function |
 |----|----|
-| Find / search the catalog | [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md) |
+| Find / search the catalog | [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md) |
+| Find / identify producers | [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md) |
+| Find / identify themes | [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) |
 | Judge documented columns | [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md) |
 | Download tabular resources | [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) |
 | Summarise table contents | [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md), [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) |
@@ -27,16 +29,22 @@ Four workflow steps, each mapping to exported functions:
 The design rationale and full history live in `DESIGN-discovery.md`
 (top-level, ignored by R CMD build). Treat that file as a
 proposal/decision log: its `*(implemented)*` phasing markers and change
-map reflect status, but the “Core design concepts”, [Public
-API](#public-api-7-exports) and architecture sections of *this*
-AGENTS.md are the source of truth for how the package currently behaves;
-exploratory/optional and superseded-alternative sections in the design
-doc are historical, not normative. The README and the vignette
-`vignettes/datagouv.qmd` document usage for end users.
+map reflect status, but the `TOPIC-SUPPORT-SKETCH.md` (top-level) is a
+related decision log that sketched and confirmed the topic-support work
+([`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) +
+the `topic` filter on
+[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md));
+like `DESIGN-discovery.md` it is also Rbuildignore’d so it never trips
+`R CMD check`. Both logs track status/decisions, but the “Core design
+concepts”, [Public API](#public-api-7-exports) and architecture sections
+of *this* AGENTS.md are the source of truth for how the package
+currently behaves; exploratory/optional and superseded-alternative
+sections in the design doc are historical, not normative. The README and
+the vignette `vignettes/datagouv.qmd` document usage for end users.
 
-## Public API (8 exports)
+## Public API (10 exports)
 
-- `dg_list_datasets(q = NULL, n = 1000, format = catalog_formats(), schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL, license = NULL, tag = NULL, granularity = NULL, last_update = NULL, producer_type = NULL, resources = FALSE)`
+- `dg_find_datasets(q = NULL, n = 1000, format = catalog_formats(), schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL, license = NULL, tag = NULL, topic = NULL, granularity = NULL, last_update = NULL, producer_type = NULL, resources = FALSE)`
   -\> tibble with robust columns
   `title, id, description, slug, organization, license, quality_score, quality_flags, views, resources_downloads, access_type, frequency, spatial_granularity, temporal_start, temporal_end, archived, featured`
   plus the resource-derived
@@ -48,10 +56,22 @@ doc are historical, not normative. The README and the vignette
   (`format=csv&format=parquet`, a server-side union; a bare comma-joined
   value is *not* parsed, so pass a vector); `schema_only = TRUE` stays
   **client-side** (v2 has no “declares any schema” boolean); the filter
-  args (`organization` \[24-hex id\], `geozone`, `access_type`,
-  `license`, `tag`, `granularity`, `last_update`, `producer_type`) are
-  forwarded as server-side filters. **Resource fidelity is opt-in**:
-  because v2 search does NOT inline resources, `n_resources`, `formats`,
+  args (`geozone`, `access_type`, `license`, `tag`, `topic`,
+  `granularity`, `last_update`, `producer_type`) are forwarded as
+  server-side filters. `organization` accepts a 24-hex producer id
+  **or** an organization `name`/`slug`; a name/slug is auto-resolved to
+  its 24-hex id via the v2 `organizations/search` endpoint using an
+  **exact match only** (`resolve_organization_id()`) and errors with the
+  candidate list on zero or multiple exact matches, while a bare 24-hex
+  id is passed straight through without a lookup. `topic` accepts the
+  **24-hex id of a theme** (found via
+  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md));
+  like `tag`/`geozone` it is an open vocabulary, so it is **not
+  validated or name/slug-resolved** (unlike `organization`) — discover
+  the id with
+  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+  and pass it directly. **Resource fidelity is opt-in**: because v2
+  search does NOT inline resources, `n_resources`, `formats`,
   `has_table` and `has_schema` are `NA` unless `resources = TRUE` (which
   N+1-fetches each dataset’s resources subsection). `id` and `title` are
   always non-`NA` (contract with
@@ -64,6 +84,31 @@ doc are historical, not normative. The README and the vignette
   budget for a finite `n`. It stays low because the v2 search endpoint’s
   latency scales with page_size and `page_size = 1000` consistently
   trips the 30s timeout in `req_data_gouv()`).
+- `dg_find_organization(q = NULL, n = 20)` -\> tibble
+  `id, name, slug, acronym, description, datasets, badges, business_number_id`,
+  listing producers matching `q` from the v2 `organizations/search`
+  endpoint (`q` is server-side full-text; default `n = 20`). `datasets`
+  is the org’s dataset count coerced to integer, `badges` a comma-joined
+  string; absent fields coerce to `NA` via internal
+  `organization_empty_columns()`. Use it to discover a producer and get
+  its stable 24-hex `id`, which you can pass to
+  `dg_find_datasets(organization =)`. Backed by
+  `fetch_organizations_all()`/`fetch_organization_page()` (same
+  pointer-pagination envelope as `fetch_search_page()`).
+- `dg_find_topics(q = NULL, n = 20, elements = FALSE)` -\> tibble
+  `id, name, slug, description, tags, featured, n_elements` plus
+  `n_datasets, n_dataservices, n_reuses`, listing themes matching `q`
+  from the v2 `topics/search` endpoint (`q` is server-side full-text;
+  default `n = 20`). `n_elements` is always the topic’s declared
+  `elements$total`; the per-kind breakdown is `NA` unless
+  `elements = TRUE`, which N+1-fetches each topic’s
+  `topics/<id>/elements/` subsection and counts the **nested
+  `element$class`** (Dataset/Reuse/Dataservice); external-link
+  (NULL-class) entries are excluded. Use it to discover a theme and get
+  its stable 24-hex `id`, which you pass to `dg_find_datasets(topic =)`.
+  Backed by `fetch_topics_all()`/ `fetch_topic_page()` (same
+  pointer-pagination envelope as organizations), plus
+  `fetch_topic_elements()`/`topic_element_counts()`.
 - `dg_glimpse(id, table = NULL)` -\> a named list surfacing v2-inline
   dataset-level metadata that the v1 fetch path does not expose:
   `quality` (score + boolean flags), `metrics` (views,
@@ -94,7 +139,7 @@ doc are historical, not normative. The README and the vignette
   `dataset, size_kb, n_vars, n_numeric, n_non_numeric, n_rows, prop_missing`.
 - `dg_summarise(datasets = NULL, n = 100)` -\> metrics over many tables.
   Accepts a named list of tibbles, a nested list (ZIP), a
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
   tibble, a character vector of ids, or `NULL` (first `n` of the
   catalog).
 
@@ -112,9 +157,20 @@ tests).
   `read_zip_resource`, `read_one_zip_file`, `read_resource`,
   `download_resource`, `format_tibble`, `compose_table_id` /
   `parse_table_id`, `table_attr` / `table_id_from_attr` /
-  `resolve_table_id`, `%||%`, `uniquify_names`, `is_dataset_id`.
-- `R/dg-list-datasets.R` —
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md).
+  `resolve_table_id`, `%||%`, `uniquify_names`, `is_dataset_id`, plus
+  the organization-source helpers `datagouv_organizations_url()`,
+  `fetch_organization_page()`, `fetch_organizations_all()` and
+  `resolve_organization_id()`, and the topic-source helpers
+  `datagouv_topics_url()`, `fetch_topic_page()`, `fetch_topics_all()`,
+  `fetch_topic_elements()` and `topic_element_counts()`.
+- `R/dg-find-datasets.R` —
+  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+- `R/dg-find-organization.R` —
+  [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md) +
+  internal `organization_empty_columns()`.
+- `R/dg-find-topics.R` —
+  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) +
+  internal `topic_empty_columns()`.
 - `R/dg-pull-dataset.R` —
   [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md).
 - `R/dg-table-id.R` —
@@ -160,7 +216,7 @@ readers stay untouched.
 `catalog_formats()` = `c("csv", "csv.gz", "xls", "xlsx", "parquet")` —
 the official tabular formats data.gouv.fr indexes. The **discovery
 catalog**
-([`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md))
+([`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md))
 is restricted to these so every listed dataset is in principle openable
 as a table. The API honors a single `format` value per query, so
 `fetch_all_datasets()` queries each requested format separately and
@@ -217,8 +273,8 @@ resources 404 on the tabular service).
   end of every task that involves changes to any R files** (source under
   `R/`, tests, or any other `.R` file). Do this before committing so all
   code stays consistently formatted.
-- Source files use **hyphens**, not underscores (`dg-list-datasets.R`,
-  not `dg_list_datasets.R`).
+- Source files use **hyphens**, not underscores (`dg-find-datasets.R`,
+  not `dg_find_datasets.R`).
 - All HTTP goes through `req_data_gouv()` + `http_perform()` (consistent
   user-agent, timeouts, retries).
 - Tests: testthat edition 3, files in `tests/testthat/` (`test-dg-*.R`,
@@ -260,6 +316,20 @@ resources 404 on the tabular service).
   registers the vignette under `articles`.
 - Regenerate docs with `devtools::document()`; verify with
   `devtools::test()` and `devtools::check()`.
+- **Keep docs in sync on every change.** At the end of each task, audit
+  the package-level docs and fill in relevant files to reflect the
+  changes made — whether a function or feature was added, removed, or
+  changed signature. Cover at minimum: vignettes
+  (`vignettes/datagouv.qmd`), pkgdown-related files (`_pkgdown.yml`,
+  `.github/workflows/pkgdown.yaml`), `DESCRIPTION`, `NEWS.md`,
+  `DESIGN-discovery.md`, and the `README.qmd`/`README.md` pair
+  (regenerate `README.md` from `README.qmd` with
+  `devtools::build_readme()`). And check function-level
+  roxygen-generated docs: update the roxygen comments in the source
+  files under `R/` and run `devtools::document()` to regenerate the
+  `.Rd` files under `man/`. Do this on every task, not only when a doc
+  update is explicitly requested, so the documentation never drifts from
+  the code.
 
 ## R-hub CI troubleshooting (as of 2026-08-21)
 

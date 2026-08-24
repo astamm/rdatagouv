@@ -3,7 +3,7 @@
 Surfaces the dataset-level health and engagement metadata that the v2
 API embeds inline but the v1 fetch path does not expose — the bridge
 between *discover*
-([`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md))
+([`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md))
 and *judge*
 ([`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)'s
 column documentation). It reports the dataset's `quality` score and

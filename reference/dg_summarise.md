@@ -5,7 +5,7 @@ Applies
 to a collection of tables and combines the resulting metrics into a
 single tibble. If `datasets` is `NULL`, the first `n` datasets returned
 by
-[`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
 are downloaded and summarised.
 
 ## Usage
@@ -22,11 +22,11 @@ dg_summarise(datasets = NULL, n = 100)
   after it), a named list of such lists (as returned by
   [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md),
   where a ZIP may contribute several tables), a tibble from
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
   (identified by its `id` column; each dataset is downloaded and
   summarised), a character vector of dataset identifiers (or exact
   titles), or `NULL` (the default) to use the first `n` datasets from
-  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md).
+  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
 
 - n:
 
