@@ -28,3 +28,7 @@ Authors:
 - Pierre Gloaguen <pierre.gloaguen@univ-ubs.fr>
 
 - Arthur Leroy <arthur.leroy@inrae.fr>
+
+- Mahendra Mariadassou <mahendra.mariadassou@inrae.fr>
+
+- Jean-François Rey <jean-francois.rey@inrae.fr>

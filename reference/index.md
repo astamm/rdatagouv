@@ -7,6 +7,8 @@ tabular resources into tidy tables.
 
 - [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
   : List datasets available on data.gouv.fr
+- [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
+  : Glimpse the metadata of a dataset on data.gouv.fr
 - [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
   : Download a dataset from data.gouv.fr
 - [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)

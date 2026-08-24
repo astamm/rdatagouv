@@ -2,6 +2,39 @@
 
 ## datagouv 0.0.0.9000
 
+- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+  now talks to the v2 `datasets/search` API instead of the v1 `datasets`
+  endpoint. In v2, multiple `format` values are sent as repeated query
+  parameters (a server-side union) in a single call, pagination follows
+  the pointer-based string `next_page`, and the API returns much richer
+  per-dataset metadata inline. The return tibble therefore adds new
+  columns: `organization`, `license`, `quality_score`, `quality_flags`,
+  `views`, `resources_downloads`, `access_type`, `frequency`,
+  `spatial_granularity`, `temporal_start`, `temporal_end`, `archived`
+  and `featured`.
+
+- [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+  gains new server-side filter arguments: `organization` (a 24-hex
+  producer id — v2 does not accept a slug or name here), `geozone`,
+  `access_type`, `license`, `tag`, `granularity`, `last_update` and
+  `producer_type`.
+
+- Because v2 search does **not** inline a dataset’s resources, the
+  resource-derived columns `n_resources`, `formats`, `has_table` and
+  `has_schema` are now `NA` by default. Pass `resources = TRUE` to opt
+  into a per-dataset fetch of each resources subsection (one extra
+  request per dataset) so those columns are computed exactly.
+  `schema_only` still filters client-side on `has_schema`, so it only
+  selects reliably when `resources = TRUE`.
+
+- New export `dg_glimpse(id, table = NULL)` surfaces the v2-inline
+  dataset metadata that the v1 pull path does not expose: `quality`
+  (score + flags), `metrics` (views, downloads, followers, discussions,
+  reuses, dataservices) and `context` (organization, license, frequency,
+  temporal/spatial coverage, access_type, archived, featured).
+  `table = TRUE` additionally returns the per-resource list via the
+  dataset’s resources subsection.
+
 - Tables pulled with
   [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
   are now addressed by a proper URI instead of a `::`-composed id: the
@@ -46,9 +79,13 @@
   combined and de-duplicated by dataset id. This also fixes a latent bug
   where the multi-format request was effectively honoured as `csv` only.
 
-- `fetch_all_datasets()` now pages at `page_size = 1000` by default (up
-  from 100), cutting the number of requests for a full-catalog crawl
-  roughly tenfold.
+- The v2 discovery crawl scales its page size adaptively:
+  [`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
+  requests small, fast pages (`page_size = 100`) by default, but a large
+  or infinite `n` (e.g. a full-catalog `n = Inf` crawl) automatically
+  scales each page up to ~250 and clamps the final page to the remaining
+  budget. This keeps individual requests well under the client timeout
+  while cutting a full 10,000-row crawl to ~40 requests.
 
 - [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
   now prefer the lightest advertised file when a dataset offers the

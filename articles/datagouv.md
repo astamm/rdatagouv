@@ -71,15 +71,19 @@ datasets <- dg_list_datasets(n = 20)
 head(datasets)
 ```
 
-    # A tibble: 6 × 8
-      title         id    description slug  n_resources formats has_table has_schema
-      <chr>         <chr> <chr>       <chr>       <int> <chr>   <lgl>     <lgl>
-    1 Entreprises … 6a8b… "Recenseme… entr…           6 csv, j… TRUE      FALSE
-    2 Tarifs des p… 6a8a… "Les prix … tari…           3 csv, h… TRUE      FALSE
-    3 Matrice ouve… 6a89… "Ce jeu de… matr…          15 csv, j… TRUE      FALSE
-    4 Informations… 6a89… "Version p… info…           3 csv, j… TRUE      FALSE
-    5 Jeu de tests… 6a89… "Ce jeu de… jeu-…           4 csv, j… TRUE      FALSE
-    6 Registre Bou… 6a89… "Ce jeu de… regi…           2 csv, t… TRUE      FALSE     
+    # A tibble: 6 × 21
+      title id    description slug  organization license quality_score quality_flags
+      <chr> <chr> <chr>       <chr> <chr>        <chr>           <dbl> <chr>
+    1 "Rép… 5c34… "*Mise à j… repe… ministere-d… lov2            1     license, tem…
+    2 "Bas… 5369… "Pour chaq… base… ministere-d… fr-lo           1     license, tem…
+    3 "Ser… 5369… "La Base d… serv… premier-min… fr-lo           1     license, tem…
+    4 "Fic… 605d… "Les fichi… fich… ministeres-… lov2            0.556 license, upd…
+    5 "Don… 5e7e… "**Dans un… donn… sante-publi… lov2            0.889 license, spa…
+    6 "Bas… 621d… "Visualise… base… ministere-d… lov2            1     license, tem…
+    # ℹ 13 more variables: views <int>, resources_downloads <int>,
+    #   access_type <chr>, frequency <chr>, spatial_granularity <chr>,
+    #   temporal_start <chr>, temporal_end <chr>, archived <lgl>, featured <lgl>,
+    #   n_resources <int>, formats <chr>, has_table <lgl>, has_schema <lgl>
 
 The columns are chosen to help you decide, at a glance, whether a
 dataset is worth pulling:
@@ -94,30 +98,30 @@ dataset is worth pulling:
   schema, i.e. when per-variable documentation is available via
   [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md).
 
-By default
-[`dg_list_datasets()`](https://astamm.github.io/datagouv/reference/dg_list_datasets.md)
-returns the first `n` datasets of the catalog, which is both slow and
-fragile when done exhaustively. Prefer a server-side search with `q`:
+The search endpoint does not inline each dataset’s resources, so the
+resource-based columns `n_resources`, `formats`, `has_table` and
+`has_schema` are `NA` unless you opt in with `resources = TRUE` (which
+costs one extra request per dataset):
 
 ``` r
 
-cycle <- dg_list_datasets(q = "vélo", n = 10)
+cycle <- dg_list_datasets(q = "vélo", n = 10, resources = TRUE)
 cycle[, c("title", "n_resources", "has_table", "has_schema")]
 ```
 
     # A tibble: 10 × 4
        title                                        n_resources has_table has_schema
        <chr>                                              <int> <lgl>     <lgl>
-     1 Stations du réseau vélo libre-service C.vélo           9 TRUE      FALSE
-     2 Comptages vélo à Nantes par Place au Vélo -…           2 TRUE      FALSE
-     3 Arceau vélo                                           16 TRUE      FALSE
-     4 Primes « vélo »                                        2 TRUE      FALSE
-     5 Stationnement vélo                                     1 TRUE      FALSE
-     6 Prime vélo                                             2 TRUE      FALSE
-     7 Arceau vélo                                            7 TRUE      FALSE
-     8 Stationnement vélo                                     4 TRUE      FALSE
-     9 Stationnements vélo                                    1 TRUE      TRUE
-    10 Perche à vélo                                          8 TRUE      FALSE     
+     1 "Statistiques de subventions d’achat de vél…           2 TRUE      FALSE
+     2 "Fréquentation mesurée dans les Parkings Vé…           2 TRUE      FALSE
+     3 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
+     4 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+     5 "Plan Vélo 2021-2026"                                  4 TRUE      FALSE
+     6 "Aménagements vélo en Île-de-France"                  21 TRUE      FALSE
+     7 "Comptages vélo et piétons"                            5 TRUE      FALSE
+     8 "Stationnement vélo en Île-de-France"                  8 TRUE      FALSE
+     9 "Stationnement vélo en Île-de-France"                  8 TRUE      FALSE
+    10 "Aménagements vélo en Île-de-France"                  24 TRUE      FALSE     
 
 The discovery catalog is **restricted to data.gouv’s official tabular
 formats** (`csv`, `csv.gz`, `xls`, `xlsx`, `parquet`), so every listed
@@ -134,17 +138,19 @@ Because descriptions live in schemas and only a fraction of datasets
 declare one,
 [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
 only helps on a subset of the catalog. You can target that subset
-directly:
+directly. v2 has no boolean “declares a schema” server-side filter, so
+`schema_only` filters client-side on `has_schema` — pass
+`resources = TRUE` so that column is populated (and the filter has
+something to act on):
 
 ``` r
 
-documented <- dg_list_datasets(schema_only = TRUE, n = 10)
-documented[, c("title", "n_resources", "has_table", "has_schema")]
+documented <- dg_list_datasets(schema_only = TRUE, n = 10, resources = TRUE)
+documented[, c("title", "has_schema")]
 ```
 
-    # A tibble: 0 × 4
-    # ℹ 4 variables: title <chr>, n_resources <int>, has_table <lgl>,
-    #   has_schema <lgl>
+    # A tibble: 0 × 2
+    # ℹ 2 variables: title <chr>, has_schema <lgl>
 
 ### Restricting to specific formats
 
@@ -162,16 +168,16 @@ parquet[, c("title", "formats")]
     # A tibble: 10 × 2
        title                                                                 formats
        <chr>                                                                 <chr>
-     1 "Agenda 2030 de la Ville de Fleury-sur-Orne"                          csv, j…
-     2 "Bibliothèques publiques"                                             csv, c…
-     3 "Brevets d'invention Francais 1981 - 2026 "                           parquet
-     4 "BAL - Base Adresses Locales - Bourges - 18033"                       csv, g…
-     5 "Profil sociodémographique des bureaux de vote — France métropolitai… parquet
-     6 "Subventions de la Ville de Bourges en 2025"                          csv, j…
-     7 "Budget Ville de Bourges - 2026 - BP"                                 csv, j…
-     8 "Demandes de valeurs foncières 2014-2020 PACA"                        csv, p…
-     9 "DVF-2019-Region-Sud"                                                 csv, p…
-    10 "Habitats à destination du grand âge (hors accueil familial) en Maye… csv, g…
+     1 "Bases statistiques communale, départementale et régionale de la dél… <NA>
+     2 "Géolocalisation des établissements du répertoire SIRENE-pour les ét… <NA>
+     3 "Bureaux de vote et adresses de leurs électeurs"                      <NA>
+     4 "Base Sirene des entreprises et de leurs établissements (SIREN, SIRE… <NA>
+     5 "Données sur la localisation et l’accès de la population aux équipem… <NA>
+     6 "Base sur la qualité et la sécurité des soins (anciennement Scope Sa… <NA>
+     7 "Données des élections agrégées"                                      <NA>
+     8 "Paris 2024 - Sites de compétition"                                   <NA>
+     9 "Agrégation des fichiers des personnes décédées"                      <NA>
+    10 "Données financières détaillées des entreprises (format parquet)"     <NA>   
 
 Multiple formats can be requested at once; each is queried server-side
 and the results are combined.
@@ -188,19 +194,26 @@ returns the documented fields:
 ``` r
 
 # schema_only filters client-side, so request a batch and take the first hit.
-documented <- dg_list_datasets(schema_only = TRUE, n = 100)
+documented <- dg_list_datasets(schema_only = TRUE, n = 100, resources = TRUE)
 table_id <- documented$id[!is.na(documented$id)][[1]]
 
 # Pull it, then inspect the schema of the returned table.
 tbl <- dg_pull_dataset(table_id)
 ```
 
-    Rows: 1 Columns: 75
+    Warning: One or more parsing issues, call `problems()` on your data frame for details,
+    e.g.:
+      dat <- vroom(...)
+      problems(dat)
+
+    Rows: 224488 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr  (2): nom, naf
-    dbl (72): sirenDeclarant, sirenCouvert, cj, annee, nbVP, nbVPEL, nbVPH2, nbV...
-    lgl  (1): zone
+    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
+    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
+    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
+    dttm  (2): last_modified, created_at
+    date  (1): date_maj
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -214,14 +227,14 @@ head(schema)
 ```
 
     # A tibble: 6 × 5
-      name           title description                                 type  example
-      <chr>          <chr> <chr>                                       <chr> <chr>
-    1 sirenDeclarant <NA>  Numéro SIREN de la personne morale déclara… stri… 130025…
-    2 sirenCouvert   <NA>  Numéro SIREN couvert sous la déclaration d… stri… 130025…
-    3 nom            <NA>  Dénomination officielle de la personne mor… stri… Direct…
-    4 naf            <NA>  Code d'activité principale exercée.         stri… 47.72B
-    5 cj             <NA>  Catégorie juridique Insee.                  stri… 5710
-    6 annee          <NA>  Année concernée par les données rapportées. year  2021   
+      name                title description                            type  example
+      <chr>               <chr> <chr>                                  <chr> <chr>
+    1 nom_amenageur       <NA>  La dénomination sociale du nom de l'a… stri… Sociét…
+    2 siren_amenageur     <NA>  Le numero SIREN de l'aménageur issue … stri… 130025…
+    3 contact_amenageur   <NA>  Adresse courriel de l'aménageur. Favo… stri… contac…
+    4 nom_operateur       <NA>  La dénomination sociale de l'opérateu… stri… Sociét…
+    5 contact_operateur   <NA>  Adresse courriel de l'opérateur. Favo… stri… contac…
+    6 telephone_operateur <NA>  Numéro de téléphone permettant de con… stri… 011111…
 
 The result is a tibble with one row per column and the columns `name`,
 `title`, `description`, `type` and `example`, together with the schema’s
@@ -425,38 +438,45 @@ variables:
 ``` r
 
 # Find a dataset, take its first id, pull it into a table and read its schema.
-dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
+dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+                 resources = TRUE) |>
   pull(id) |>
   head(1) |>
   dg_pull_dataset() |>
   dg_schema()
 ```
 
-    Rows: 527 Columns: 36
+    Warning: One or more parsing issues, call `problems()` on your data frame for details,
+    e.g.:
+      dat <- vroom(...)
+      problems(dat)
+
+    Rows: 224488 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr   (1): url_sdirve
-    dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
-    lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
-    date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
+    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
+    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
+    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
+    dttm  (2): last_modified, created_at
+    date  (1): date_maj
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
-    # A tibble: 36 × 5
-       name                         title description                  type  example
-       <chr>                        <chr> <chr>                        <chr> <chr>
-     1 date_realisation_diagnostic  <NA>  Date de réalisation du diag… date  2021-0…
-     2 date_adoption_sdirve         <NA>  Date d'adoption du schéma d… date  2021-0…
-     3 date_objectifs               <NA>  Date fixée pour l'atteinte … date  2023-0…
-     4 code_commune_insee           <NA>  Code INSEE de chacune des c… stri… 23150
-     5 code_iris_insee              <NA>  Code de chaque IRIS couvert… stri… 2A0040…
-     6 existant_nb_pdc_intervalle_1 <NA>  Diagnostic - Nombre de poin… inte… 12
-     7 existant_nb_pdc_intervalle_2 <NA>  Diagnostic - Nombre de poin… inte… 12
-     8 existant_nb_pdc_intervalle_3 <NA>  Diagnostic - Nombre de poin… inte… 12
-     9 existant_nb_pdc_intervalle_4 <NA>  Diagnostic - Nombre de poin… inte… 12
-    10 existant_nb_moyen_recharges  <NA>  Diagnostic - Nombre moyen d… numb… 89
-    # ℹ 26 more rows
+    # A tibble: 40 × 5
+       name                  title description                         type  example
+       <chr>                 <chr> <chr>                               <chr> <chr>
+     1 nom_amenageur         <NA>  "La dénomination sociale du nom de… stri… Sociét…
+     2 siren_amenageur       <NA>  "Le numero SIREN de l'aménageur is… stri… 130025…
+     3 contact_amenageur     <NA>  "Adresse courriel de l'aménageur. … stri… contac…
+     4 nom_operateur         <NA>  "La dénomination sociale de l'opér… stri… Sociét…
+     5 contact_operateur     <NA>  "Adresse courriel de l'opérateur. … stri… contac…
+     6 telephone_operateur   <NA>  "Numéro de téléphone permettant de… stri… 011111…
+     7 nom_enseigne          <NA>  "Le nom commercial du réseau."      stri… Réseau…
+     8 id_station_itinerance <NA>  "L'identifiant de la station déliv… stri… FRA68P…
+     9 id_station_local      <NA>  "Identifiant de la station utilisé… stri… 01F2KM…
+    10 nom_station           <NA>  "Le nom de la station."             stri… Picpus…
+    # ℹ 30 more rows
 
 [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
 always returns a single tibble (a ZIP yields its first parseable file),
@@ -470,19 +490,26 @@ how the catalog changes in the meantime:
 
 ``` r
 
-tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
+tbl <- dg_list_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
+                        resources = TRUE) |>
   pull(id) |>
   head(1) |>
   dg_pull_dataset()
 ```
 
-    Rows: 527 Columns: 36
+    Warning: One or more parsing issues, call `problems()` on your data frame for details,
+    e.g.:
+      dat <- vroom(...)
+      problems(dat)
+
+    Rows: 224488 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr   (1): url_sdirve
-    dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
-    lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
-    date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
+    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
+    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
+    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
+    dttm  (2): last_modified, created_at
+    date  (1): date_maj
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -494,13 +521,19 @@ tbl_id <- dg_table_id(tbl)
 again <- dg_refetch(tbl_id)
 ```
 
-    Rows: 527 Columns: 36
+    Warning: One or more parsing issues, call `problems()` on your data frame for details,
+    e.g.:
+      dat <- vroom(...)
+      problems(dat)
+
+    Rows: 224488 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
-    chr   (1): url_sdirve
-    dbl  (20): code_commune_insee, code_iris_insee, existant_nb_pdc_intervalle_1...
-    lgl  (12): objectifs_nb_pdc_usage_residentiel_intervalle_1, objectifs_nb_pdc...
-    date  (3): date_realisation_diagnostic, date_adoption_sdirve, date_objectifs
+    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
+    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
+    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
+    dttm  (2): last_modified, created_at
+    date  (1): date_maj
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.

@@ -37,7 +37,10 @@
 <div id="design-proposal--discovery-first-refresh" class="section level1">
 
 <p>Reframed primary goal: <em>let students/data scientists find a dataset matching their interests, judge whether it is usable, fetch it, and re-fetch the exact same table reproducibly.</em></p>
-<p>Current public API: <code>dg_list_datasets(q, n, format, schema_only)</code>, <code>dg_pull_dataset(id, all_files, remove_na)</code>, <code>dg_refetch(x, remove_na)</code>, <code>dg_table_id(x)</code>, <code>dg_schema(x)</code>, <code>dg_summary(x, name)</code>, <code>dg_summarise(datasets, n)</code>. (All functions share the <code>dg_*</code> prefix; <code>dg_download_many()</code> was removed — its role is covered by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> + <code><a href="reference/dg_summarise.html">dg_summarise()</a></code>.)</p>
+<p>Current public API: <code>dg_list_datasets(q, n, format, schema_only, organization, geozone, access_type, license, tag, granularity, last_update, producer_type, resources)</code>, <code>dg_pull_dataset(id, all_files, remove_na)</code>, <code>dg_refetch(x, remove_na)</code>, <code>dg_table_id(x)</code>, <code>dg_schema(x)</code>, <code>dg_glimpse(id, table)</code>, <code>dg_summary(x, name)</code>, <code>dg_summarise(datasets, n)</code>. (All functions share the <code>dg_*</code> prefix; <code>dg_download_many()</code> was removed — its role is covered by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> + <code><a href="reference/dg_summarise.html">dg_summarise()</a></code>.)</p>
+<blockquote>
+<p><strong>2026-08 v2 switch:</strong> <code><a href="reference/dg_list_datasets.html">dg_list_datasets()</a></code> now queries the v2 <code>datasets/search</code> API (pointer-based string <code>next_page</code> pagination, rich inline metadata, multiple <code>format</code> values as repeated params). v2 does not inline a dataset’s resources, so <code>n_resources</code>/<code>formats</code>/<code>has_table</code>/ <code>has_schema</code> are <code>NA</code> unless <code>resources = TRUE</code> (N+1 per-dataset fetch of the resources subsection). <code><a href="reference/dg_glimpse.html">dg_glimpse()</a></code> exposes v2-only dataset metadata. Pull/refetch/schema/summary remain on v1. See AGENTS.md for the authoritative description.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="target-flow">Target flow<a class="anchor" aria-label="anchor" href="#target-flow"></a></h2>
 <pre class="mermaid"><code>flowchart LR
@@ -82,16 +85,21 @@
 <div class="section level2">
 <h2 id="discovery-improvement-1-usable-at-a-glance-search">Discovery improvement 1: usable-at-a-glance search<a class="anchor" aria-label="anchor" href="#discovery-improvement-1-usable-at-a-glance-search"></a></h2>
 <p><code><a href="reference/dg_list_datasets.html">dg_list_datasets()</a></code> currently keeps only title/id/description/slug and <strong>discards <code>resources</code></strong>, so students can’t tell whether a hit holds a real table. Fix: keep the <code>resources</code> metadata and derive a compact availability summary.</p>
-<p>New columns on the returned tibble:</p>
+<p>New columns on the returned tibble (resource-derived):</p>
 <ul><li>
 <code>n_resources</code> — number of resources (integer; <code>0</code> when none).</li>
 <li>
 <code>formats</code> — comma-joined, de-duplicated, uppercase formats of the dataset’s resources, e.g. <code>"CSV, ZIP"</code>, or <code>"—"</code> when none. (Reuse <code>supported_formats()</code>.)</li>
 <li>
 <code>has_table</code> — logical: <code>TRUE</code> if any resource is directly parseable (non-ZIP supported format). A ZIP is a <em>maybe</em>, so it is shown under <code>formats</code> but does not by itself set <code>has_table</code>.</li>
-</ul><p>Adding these makes <code>dg_list_datasets(q = "vélo", n = 20)</code> immediately answer “which of these can I actually open?” before spending a download.</p>
+<li>
+<code>has_schema</code> — logical: <code>TRUE</code> if at least one resource carries a pointer to a declared data schema.</li>
+</ul><blockquote>
+<p><strong>Current behavior note (v2):</strong> v2 search no longer inlines a dataset’s resources, so these four derived columns are computed only when the caller passes <code>resources = TRUE</code> (an N+1 fetch of each dataset’s resources subsection); otherwise they are <code>NA</code>. <code>schema_only</code> filters client-side on <code>has_schema</code>, so it only selects reliably with <code>resources = TRUE</code>. The v2 migration also added the inline metadata columns and server-side filters described in the note to the first “Discovery improvement 1” section above.</p>
+</blockquote>
+<p>Adding these makes <code>dg_list_datasets(q = "vélo", n = 20)</code> immediately answer “which of these can I actually open?” before spending a download.</p>
 <p><strong>Lightest-file preference (pull side).</strong> When a dataset offers the <em>same table</em> in several formats (same base file name, different extension), the pull path (<code>read_first_parseable_resource()</code>) reduces those candidates to the one with the smallest advertised <code>filesize</code> (<code>prefer_lightest_file()</code>), so <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code>/ <code><a href="reference/dg_refetch.html">dg_refetch()</a></code> download the lighter copy — e.g. a <code>data.csv</code> rather than a heavier <code>data.xlsx</code> twin. Resources with distinct names keep their declared order, so distinct tables are never silently swapped.</p>
-<p>Note: <code>fetch_datasets_page</code> requests a <strong>single</strong> <code>format</code> value per query (the API honors only one, so passing several is <em>not</em> an OR). <code>fetch_all_datasets()</code> queries each requested format separately and unions/de-duplicates by dataset id, and <code>dg_list_datasets(format = ...)</code> lets the caller choose which formats to keep (defaults to the full tabular set). The resource-level formats are still surfaced as the <code>formats</code> column.</p>
+<p>Note (post-v2 migration): the discovery catalog now runs on the v2 <code>datasets/search</code> API, which accepts <strong>multiple formats as repeated query parameters</strong> in a single call (<code>format=csv&amp;format=parquet</code>, a server-side union) and pages via the pointer-based string <code>next_page</code>. Because v2 search does not inline a dataset’s resources, the resource-derived columns (<code>n_resources</code>, <code>formats</code>, <code>has_table</code>, <code>has_schema</code>) are <code>NA</code> unless the caller passes <code>resources = TRUE</code>, which opts into a per-dataset fetch of the resources subsection (one extra request per dataset) so those columns are computed exactly. The catalog additionally surfaces v2-inline columns (<code>organization</code>, <code>license</code>, <code>quality_score</code>, <code>quality_flags</code>, <code>views</code>, <code>resources_downloads</code>, <code>access_type</code>, <code>frequency</code>, <code>spatial_granularity</code>, <code>temporal_start</code>/<code>end</code>, <code>archived</code>, <code>featured</code>) and new server-side filters (<code>geozone</code>, <code>license</code>, <code>tag</code>, <code>granularity</code>, <code>last_update</code>, <code>access_type</code>, <code>producer_type</code>, and <code>organization</code> — matched by 24-hex id only).</p>
 </div>
 <div class="section level2">
 <h2 id="discovery-improvement-2-summarise-a-search-result-set">Discovery improvement 2: summarise a search result set<a class="anchor" aria-label="anchor" href="#discovery-improvement-2-summarise-a-search-result-set"></a></h2>
@@ -152,10 +160,10 @@
 <th>Change</th>
 </tr></thead><tbody><tr><td><code>R/utils.R</code></td>
 <td>
-<code>read_zip_resource()</code> unchanged; add <code>read_one_zip_file(zip, file)</code>; id helpers <code>compose_table_id()</code> / <code>parse_table_id()</code>, <code>table_attr()</code> / <code>table_id_from_attr()</code> / <code>resolve_table_id()</code>; <code>prefer_lightest_file()</code> reduces same-data multi-format candidates to the lightest copy.</td>
+<code>read_zip_resource()</code> unchanged; add <code>read_one_zip_file(zip, file)</code>; id helpers <code>compose_table_id()</code> / <code>parse_table_id()</code>, <code>table_attr()</code> / <code>table_id_from_attr()</code> / <code>resolve_table_id()</code>; <code>prefer_lightest_file()</code> reduces same-data multi-format candidates to the lightest copy. <strong>v2 switch:</strong> add <code>datagouv_v2_base_url()</code> / <code>datagouv_search_url()</code>, <code>fetch_search_page()</code> (repeated <code>format</code> params + new filter args), <code>fetch_search_all()</code> (string <code>next_page</code> pagination with v1-object fallback), <code>fetch_resource_subsection()</code> (fully paginated), <code>fetch_dataset_v2()</code>, <code>append_url_params()</code>, <code>replace_url_page()</code>.</td>
 </tr><tr><td><code>R/dg-pull-dataset.R</code></td>
 <td>
-<code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> returns a single tibble (first parseable file of a ZIP) with the <code>id</code> as an attribute; <code>all_files = TRUE</code> returns a named list, each element carrying its own id.</td>
+<code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> returns a single tibble (first parseable file of a ZIP) with the <code>id</code> as an attribute; <code>all_files = TRUE</code> returns a named list, each element carrying its own id. (Stays on v1.)</td>
 </tr><tr><td>
 <code>R/dg-table-id.R</code> (new)</td>
 <td>Exported <code>dg_table_id(x)</code> reads the <code>id</code> attribute.</td>
@@ -165,7 +173,10 @@
 <td>
 <code><a href="reference/dg_summary.html">dg_summary()</a></code> needs no metadata-column exclusion (id is an attribute); <code><a href="reference/dg_summarise.html">dg_summarise()</a></code> accepts a <code><a href="reference/dg_list_datasets.html">dg_list_datasets()</a></code> tibble.</td>
 </tr><tr><td><code>R/dg-list-datasets.R</code></td>
-<td>Add <code>n_resources</code>, <code>formats</code>, <code>has_table</code>, <code>has_schema</code> columns, and the <code>format</code> argument (server-side per-format filtering, unioned and de-duplicated by id).</td>
+<td>Add <code>n_resources</code>, <code>formats</code>, <code>has_table</code>, <code>has_schema</code> columns, and the <code>format</code> argument (server-side per-format filtering, unioned and de-duplicated by id). <strong>v2 switch:</strong> rework onto <code>fetch_search_all()</code> over <code>datasets/search</code>; new server-side filter args (<code>organization</code>, <code>geozone</code>, <code>access_type</code>, <code>license</code>, <code>tag</code>, <code>granularity</code>, <code>last_update</code>, <code>producer_type</code>); new inline columns; resource columns <code>NA</code> unless <code>resources = TRUE</code>.</td>
+</tr><tr><td>
+<code>R/dg-glimpse.R</code> (new)</td>
+<td>Exported <code>dg_glimpse(id, table = NULL)</code> surfaces v2-inline dataset metadata (<code>quality</code>, <code>metrics</code>, <code>context</code>, plus <code>resources</code> when <code>table = TRUE</code>) via <code>fetch_dataset_v2()</code> + <code>fetch_resource_subsection()</code>.</td>
 </tr><tr><td>
 <code>R/dg-refetch.R</code> (new)</td>
 <td>
@@ -202,6 +213,9 @@
 <strong>API cleanup</strong> <em>(implemented)</em>: <code>get_summary()</code>/<code>summarise_datasets()</code> renamed to <code><a href="reference/dg_summary.html">dg_summary()</a></code>/<code><a href="reference/dg_summarise.html">dg_summarise()</a></code> for a uniform <code>dg_*</code> prefix; <code>dg_download_many()</code> removed (covered by <code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> + <code><a href="reference/dg_summarise.html">dg_summarise()</a></code>); each public function split into its own <code>R/dg-*.R</code> file (<code>format_tibble()</code> moved to <code>utils.R</code>).</li>
 <li>
 <strong>Live integration tests</strong> <em>(implemented)</em>: <code>tests/test-live-api.R</code> proves the composed URI addressing (incl. a file inside a multi-file ZIP) against the real API, gated behind <code>DATAGOUV_LIVE=1</code>.</li>
+<li>
+<strong>v2 discovery switch</strong> <em>(implemented)</em>: <code><a href="reference/dg_list_datasets.html">dg_list_datasets()</a></code> moves from v1 <code>datasets</code> to the v2 <code>datasets/search</code> API (repeated-format params, string <code>next_page</code> pagination, rich inline metadata); new server-side filter args and inline columns; resource-derived columns become <code>NA</code> unless <code>resources = TRUE</code>; new export <code><a href="reference/dg_glimpse.html">dg_glimpse()</a></code> surfaces v2-only dataset metadata. Pull/refetch/schema/summary remain on v1. <em>(Page-size tuning: the v2 search endpoint’s latency scales with <code>page_size</code> — a <code>page_size = 1000</code> page consistently tripped the 30s <code>req_data_gouv()</code> timeout — so the crawl pages at <code>page_size = 100</code> by default and scales adaptively to ~250 for large/<code>Inf</code> <code>n</code>, clamping the final page to the remaining budget. Kept out of <code>n = Inf</code>’s path so a full 10,000-row crawl is ~40 requests instead of ~100.)</em>
+</li>
 </ol></div>
 </div>
 
