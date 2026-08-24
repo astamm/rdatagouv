@@ -38,8 +38,11 @@
 #'   tabular formats (`csv`, `csv.gz`, `xls`, `xlsx`, `parquet`).
 #' @param schema_only Whether to keep only datasets that declare a data schema
 #'   (see `has_schema`). Defaults to `FALSE`. v2 has no boolean "declares any
-#'   schema" server-side filter, so this filters client-side and only works
-#'   reliably when `resources = TRUE` fills `has_schema`.
+#'   schema" server-side filter, so this filters client-side on `has_schema`,
+#'   which itself needs the per-dataset resource fetch. When `schema_only` is
+#'   set without `resources = TRUE`, this function forces `resources = TRUE`
+#'   (with an informative message about the extra requests) so the filter
+#'   actually runs.
 #' @param organization Optional data producer, matched server-side. Pass either
 #'   the producer's **24-hex `organization` id** (as shown in the
 #'   `organization` column of the returned tibble or on the dataset page), or
@@ -88,7 +91,8 @@
 #' @param resources Whether to fetch each dataset's resources subsection
 #'   (one extra request per dataset) so the exact `n_resources`, `formats`,
 #'   `has_table` and `has_schema` columns can be computed. Defaults to
-#'   `FALSE`, in which case those columns are `NA`.
+#'   `FALSE`, in which case those columns are `NA`. Automatically forced to
+#'   `TRUE` when `schema_only = TRUE` (see `schema_only`).
 #'
 #' @return A [tibble::tibble()] with one row per matching dataset. The
 #'   `title` and `id` columns are always non-`NA`; the `id` column holds the
@@ -98,7 +102,9 @@
 #'   formats found among them), `has_table` (whether at least one resource is
 #'   in a format this package can parse) and `has_schema` (whether at least one
 #'   resource carries a pointer to a declared data schema, whose per-variable
-#'   documentation is exposed by [dg_schema()]); these are `NA` otherwise.
+#'   documentation is exposed by [dg_schema()]); these are `NA` when
+#'   `resources = FALSE` (the default) unless `schema_only = TRUE`, which forces
+#'   the fetch so `has_schema` is filled and the filter can run.
 #'
 #' @export
 #' @examplesIf interactive()
@@ -112,9 +118,10 @@
 #' # multiple formats as a server-side union.
 #' compact <- dg_find_datasets(format = "parquet", n = 10)
 #'
-#' # Only datasets with a declared schema (documented variables). Resolving
-#' # `has_schema` exactly needs the per-dataset resource fetch.
-#' documented <- dg_find_datasets(schema_only = TRUE, resources = TRUE, n = 10)
+#' # Only datasets with a declared schema (documented variables). `schema_only`
+#' # forces the per-dataset resource fetch itself (~30s for n = 1000), so
+#' # `resources = TRUE` is optional here.
+#' documented <- dg_find_datasets(schema_only = TRUE, n = 10)
 #'
 #' # Narrow by producer and territory. A producer may be given by its 24-hex
 #' # id or by its exact slug/name (resolved for you), and by geozone.
@@ -147,6 +154,20 @@ dg_find_datasets <- function(
     last_update = last_update,
     producer_type = producer_type
   )
+
+  # `schema_only` filters client-side on `has_schema`, which v2 only makes
+  # available through the per-dataset resource fetch. Forcing `resources = TRUE`
+  # (with a note about the N+1 crawl) lets the user's declared intent work
+  # instead of silently returning an unfiltered catalog with has_schema = NA.
+  if (isTRUE(schema_only) && !isTRUE(resources)) {
+    cli::cli_inform(
+      "Forcing `resources = TRUE` because `schema_only = TRUE` selects on \\
+       `has_schema`, which needs the per-dataset resource fetch.",
+      class = "datagouv_forced_resources"
+    )
+    resources <- TRUE
+  }
+
   filter_args <- list(
     organization = resolve_organization_id(organization),
     geozone = geozone,

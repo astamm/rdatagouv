@@ -55,7 +55,9 @@ the design doc are historical, not normative. The README and the vignette
   values as repeated params** (`format=csv&format=parquet`, a server-side
   union; a bare comma-joined value is *not* parsed, so pass a vector);
   `schema_only = TRUE` stays **client-side** (v2 has no "declares any schema"
-  boolean); the filter args (`geozone`,
+  boolean) and now **forces `resources = TRUE`** with an informative message —
+  calling it with the default `resources = FALSE` used to silently return the
+  unfiltered catalog with `has_schema = NA` (a no-op filter); the filter args (`geozone`,
   `access_type`, `license`, `tag`, `topic`, `granularity`, `last_update`,
   `producer_type`) are forwarded as server-side filters. `organization` accepts
   a 24-hex producer id **or** an organization `name`/`slug`; a name/slug is

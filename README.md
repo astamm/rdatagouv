@@ -57,9 +57,11 @@ inline (see `license`, `access_type`, `frequency`,
 inline a dataset’s resources, the resource-based columns `n_resources`,
 `formats`, `has_table` and `has_schema` are `NA` by default; pass
 `resources = TRUE` to opt into the per-dataset resource fetch and fill
-them exactly. You can restrict the catalog to datasets that carry at
-least one resource in a given format — e.g. only the more compact
-`parquet` files, which are quicker to download:
+them exactly. `schema_only = TRUE` forces that fetch (and tells you
+about it) so the filter works out of the box. You can restrict the
+catalog to datasets that carry at least one resource in a given format —
+e.g. only the more compact `parquet` files, which are quicker to
+download:
 
 ``` r
 parquet_only <- dg_find_datasets(format = "parquet", n = 5)
