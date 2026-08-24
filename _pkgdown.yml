@@ -8,6 +8,7 @@ reference:
     tabular resources into tidy tables.
   contents:
   - dg_list_datasets
+  - dg_glimpse
   - dg_pull_dataset
   - dg_table_id
   - dg_refetch

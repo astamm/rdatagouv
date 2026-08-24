@@ -49,6 +49,40 @@ live_zip_uri <- function(file = live_zip_member) {
   )
 }
 
+test_that("the v2 datasets/search endpoint has the expected envelope", {
+  skip_unless_live()
+
+  body <- getFromNamespace("fetch_search_page", "datagouv")(
+    q = "vélo",
+    page_size = 1
+  )
+
+  expect_true(is.list(body$data))
+  expect_true(is.numeric(body$total))
+  # v2 pagination is pointer-based: next_page is a URL string (or NULL), never
+  # the v1 object shape.
+  expect_true(is.null(body$next_page) || is.character(body$next_page))
+  expect_true(is.list(body$facets))
+})
+
+test_that("v2 organization and geozone filters narrow the total", {
+  skip_unless_live()
+
+  unfiltered <- getFromNamespace("fetch_search_page", "datagouv")(page_size = 1)
+  # A current, live producer: "Ministère de l'intérieur". (The v2 API matches
+  # `organization` by its 24-hex id; a slug is not accepted.)
+  narrowed <- getFromNamespace("fetch_search_page", "datagouv")(
+    organization = "534fff91a3a7292c64a77f53",
+    page_size = 1
+  )
+
+  # A genuine narrowing, not merely non-increasing: the filter selects a
+  # specific producer, so it must return a positive count strictly below the
+  # unfiltered catalog.
+  expect_gt(narrowed$total, 0)
+  expect_lt(narrowed$total, unfiltered$total)
+})
+
 test_that("a file inside a ZIP is addressable live via its composed URI", {
   skip_unless_live()
 

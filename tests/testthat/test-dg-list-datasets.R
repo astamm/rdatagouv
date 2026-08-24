@@ -1,15 +1,10 @@
 test_that("dg_list_datasets() returns a tibble with the expected columns", {
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
+    fetch_search_all = function(...) {
       list(
-        mock_dataset(title = "A", id = "a1"),
-        mock_dataset(title = "B", id = "b2"),
-        mock_dataset(title = "C", id = "c3")
+        mock_dataset_v2(title = "A", id = "a1"),
+        mock_dataset_v2(title = "B", id = "b2"),
+        mock_dataset_v2(title = "C", id = "c3")
       )
     }
   )
@@ -24,6 +19,19 @@ test_that("dg_list_datasets() returns a tibble with the expected columns", {
       "id",
       "description",
       "slug",
+      "organization",
+      "license",
+      "quality_score",
+      "quality_flags",
+      "views",
+      "resources_downloads",
+      "access_type",
+      "frequency",
+      "spatial_granularity",
+      "temporal_start",
+      "temporal_end",
+      "archived",
+      "featured",
       "n_resources",
       "formats",
       "has_table",
@@ -34,32 +42,27 @@ test_that("dg_list_datasets() returns a tibble with the expected columns", {
   expect_equal(out$id, c("a1", "b2", "c3"))
 })
 
-test_that("dg_list_datasets() derives resource columns", {
+test_that("dg_list_datasets() surfaces v2-inline metadata columns", {
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
+    fetch_search_all = function(...) {
       list(
-        mock_dataset(
+        mock_dataset_v2(
           title = "A",
           id = "a1",
-          resources = list(
-            mock_resource(format = "csv", id = "r1"),
-            mock_resource(format = "XLSX", id = "r2")
-          )
-        ),
-        mock_dataset(
-          title = "Doc only",
-          id = "b2",
-          resources = list(mock_resource(format = "pdf", id = "r3"))
-        ),
-        mock_dataset(
-          title = "No resource",
-          id = "c3",
-          resources = list()
+          organization = list(id = "o1", slug = "mairie", name = "Mairie"),
+          license = "odc-odbl",
+          quality = list(
+            score = 0.9,
+            license = TRUE,
+            spatial = FALSE,
+            update_frequency = TRUE
+          ),
+          metrics = list(views = 123, resources_downloads = 45),
+          access_type = "restricted",
+          frequency = "annual",
+          spatial = list(granularity = "fr:epci"),
+          temporal_coverage = list(start = "2019", end = "2022"),
+          archived = TRUE
         )
       )
     }
@@ -67,141 +70,173 @@ test_that("dg_list_datasets() derives resource columns", {
 
   out <- dg_list_datasets()
 
-  expect_equal(out$n_resources, c(2, 1, 0))
-  expect_equal(out$formats, c("csv, xlsx", "pdf", ""))
-  expect_equal(out$has_table, c(TRUE, FALSE, FALSE))
+  expect_equal(out$organization, "mairie")
+  expect_equal(out$license, "odc-odbl")
+  expect_equal(out$quality_score, 0.9)
+  expect_equal(out$quality_flags, "license, update_frequency")
+  expect_equal(out$views, 123)
+  expect_equal(out$resources_downloads, 45)
+  expect_equal(out$access_type, "restricted")
+  expect_equal(out$frequency, "annual")
+  expect_equal(out$spatial_granularity, "fr:epci")
+  expect_equal(out$temporal_start, "2019")
+  expect_equal(out$temporal_end, "2022")
+  expect_true(out$archived)
+  expect_false(out$featured)
 })
 
-test_that("dg_list_datasets() flags resources carrying a schema pointer", {
-  no_schema <- mock_resource(format = "csv", id = "r1")
-  with_schema <- mock_resource(format = "csv", id = "r2")
-  with_schema$schema <- list(
-    name = "etalab/schema-bal",
-    url = NULL,
-    version = NULL
-  )
-  with_url <- mock_resource(format = "csv", id = "r3")
-  with_url$schema <- list(name = NULL, url = "https://example.org/schema.json")
-
+test_that("resource columns are NA when resources = FALSE (default)", {
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
-      list(
-        mock_dataset(title = "Plain", id = "p1", resources = list(no_schema)),
-        mock_dataset(title = "Named", id = "p2", resources = list(with_schema)),
-        mock_dataset(title = "URL", id = "p3", resources = list(with_url))
-      )
+    fetch_search_all = function(...) {
+      list(mock_dataset_v2(title = "A", id = "a1"))
     }
   )
 
   out <- dg_list_datasets()
 
-  expect_equal(out$has_schema, c(FALSE, TRUE, TRUE))
+  expect_true(is.na(out$n_resources))
+  expect_true(is.na(out$formats))
+  expect_true(is.na(out$has_table))
+  expect_true(is.na(out$has_schema))
 })
 
-test_that("dg_list_datasets(schema_only = TRUE) keeps only documented datasets", {
-  no_schema <- mock_resource(format = "csv", id = "r1")
-  with_schema <- mock_resource(format = "csv", id = "r2")
+test_that("resources = TRUE fills the resource columns via the subsection", {
+  subsection_url <- "https://x/api/2/datasets/a1/resources/"
+  local_mocked_bindings(
+    fetch_search_all = function(...) {
+      list(mock_dataset_v2(
+        title = "A",
+        id = "a1",
+        resources_href = subsection_url
+      ))
+    },
+    fetch_resource_subsection = function(subsection) {
+      expect_equal(subsection$href, subsection_url)
+      list(
+        mock_resource(format = "csv", id = "r1"),
+        mock_resource(format = "XLSX", id = "r2")
+      )
+    }
+  )
+
+  out <- dg_list_datasets(resources = TRUE)
+
+  expect_equal(out$n_resources, 2)
+  expect_equal(out$formats, "csv, xlsx")
+  expect_true(out$has_table)
+  expect_false(out$has_schema)
+})
+
+test_that("resources = TRUE flags resources carrying a schema pointer", {
+  with_schema <- mock_resource(format = "csv", id = "r1")
   with_schema$schema <- list(
     name = "etalab/schema-bal",
     url = NULL,
     version = NULL
   )
-
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
+    fetch_search_all = function(...) {
+      list(mock_dataset_v2(title = "A", id = "a1"))
+    },
+    fetch_resource_subsection = function(subsection) list(with_schema)
+  )
+
+  out <- dg_list_datasets(resources = TRUE)
+
+  expect_true(out$has_schema)
+})
+
+test_that("dg_list_datasets(schema_only = TRUE) keeps only documented datasets", {
+  with_schema <- mock_resource(format = "csv", id = "r1")
+  with_schema$schema <- list(name = "etalab/schema-bal", url = NULL)
+  no_schema <- mock_resource(format = "csv", id = "r2")
+  local_mocked_bindings(
+    fetch_search_all = function(...) {
       list(
-        mock_dataset(title = "Plain", id = "p1", resources = list(no_schema)),
-        mock_dataset(title = "Named", id = "p2", resources = list(with_schema))
+        mock_dataset_v2(title = "Plain", id = "p1"),
+        mock_dataset_v2(title = "Named", id = "p2")
       )
+    },
+    fetch_resource_subsection = function(subsection) {
+      if (grepl("p1", subsection$href, fixed = TRUE)) {
+        list(no_schema)
+      } else {
+        list(with_schema)
+      }
     }
   )
 
-  out <- dg_list_datasets(schema_only = TRUE)
+  out <- dg_list_datasets(schema_only = TRUE, resources = TRUE)
 
   expect_equal(out$id, "p2")
 })
 
-test_that("dg_list_datasets() returns an empty tibble when the API is empty", {
-  local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
-      list()
-    }
-  )
-
-  out <- dg_list_datasets()
-
-  expect_s3_class(out, "tbl_df")
-  expect_equal(nrow(out), 0)
-})
-
-test_that("dg_list_datasets() coerces missing fields to NA", {
-  local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
-      list(
-        mock_dataset(title = "A", id = "a1"),
-        list(id = "b2", slug = "b", description = NULL)
-      )
-    }
-  )
-
-  out <- dg_list_datasets()
-
-  expect_equal(out$title, c("A", NA))
-  expect_equal(out$id, c("a1", "b2"))
-})
-
-test_that("dg_list_datasets() forwards the search query and the limit", {
+test_that("dg_list_datasets() forwards filter arguments to the search", {
   seen <- NULL
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
+    fetch_search_all = function(
       q = NULL,
       n = 1000,
-      format = catalog_formats()
+      format = catalog_formats(),
+      organization = NULL,
+      geozone = NULL,
+      access_type = NULL,
+      license = NULL,
+      tag = NULL,
+      granularity = NULL,
+      last_update = NULL,
+      producer_type = NULL,
+      ...
     ) {
-      seen <<- list(q = q, n = n, format = format)
-      list(mock_dataset(title = "Cyclable", id = "c1"))
+      seen <<- list(
+        q = q,
+        n = n,
+        format = format,
+        organization = organization,
+        geozone = geozone,
+        access_type = access_type,
+        license = license,
+        tag = tag,
+        granularity = granularity,
+        last_update = last_update,
+        producer_type = producer_type
+      )
+      list(mock_dataset_v2(title = "Cyclable", id = "c1"))
     }
   )
 
-  out <- dg_list_datasets(q = "vélo", n = 7)
+  out <- dg_list_datasets(
+    q = "vélo",
+    n = 7,
+    organization = "org-1",
+    geozone = "country:fr",
+    access_type = "open",
+    license = "lov2",
+    tag = "mobilite",
+    granularity = "fr:commune",
+    last_update = "last_30_days",
+    producer_type = "public-service"
+  )
 
   expect_equal(out$title, "Cyclable")
   expect_equal(seen$q, "vélo")
   expect_equal(seen$n, 7)
+  expect_equal(seen$organization, "org-1")
+  expect_equal(seen$geozone, "country:fr")
+  expect_equal(seen$access_type, "open")
+  expect_equal(seen$license, "lov2")
+  expect_equal(seen$tag, "mobilite")
+  expect_equal(seen$granularity, "fr:commune")
+  expect_equal(seen$last_update, "last_30_days")
+  expect_equal(seen$producer_type, "public-service")
 })
 
-test_that("dg_list_datasets() forwards the requested formats", {
+test_that("dg_list_datasets() forwards format as repeated server-side params", {
   seen <- NULL
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
+    fetch_search_all = function(format = catalog_formats(), ...) {
       seen <<- format
-      list(mock_dataset(title = "Parquet", id = "p1"))
+      list(mock_dataset_v2(title = "Parquet", id = "p1"))
     }
   )
 
@@ -214,18 +249,67 @@ test_that("dg_list_datasets() forwards the requested formats", {
 test_that("dg_list_datasets(format = NULL) defaults to the catalog formats", {
   seen <- NULL
   local_mocked_bindings(
-    fetch_all_datasets = function(
-      page_size = 1000,
-      q = NULL,
-      n = 1000,
-      format = catalog_formats()
-    ) {
+    fetch_search_all = function(format = catalog_formats(), ...) {
       seen <<- format
-      list(mock_dataset(title = "A", id = "a1"))
+      list(mock_dataset_v2(title = "A", id = "a1"))
     }
   )
 
   dg_list_datasets()
 
   expect_equal(seen, catalog_formats())
+})
+
+test_that("dg_list_datasets() forwards the search query and the limit", {
+  seen <- NULL
+  local_mocked_bindings(
+    fetch_search_all = function(q = NULL, n = 1000, ...) {
+      seen <<- list(q = q, n = n)
+      list(mock_dataset_v2(title = "Cyclable", id = "c1"))
+    }
+  )
+
+  out <- dg_list_datasets(q = "vélo", n = 7)
+
+  expect_equal(out$title, "Cyclable")
+  expect_equal(seen$q, "vélo")
+  expect_equal(seen$n, 7)
+})
+
+test_that("dg_list_datasets() returns an empty tibble when the API is empty", {
+  local_mocked_bindings(
+    fetch_search_all = function(...) list()
+  )
+
+  out <- dg_list_datasets()
+
+  expect_s3_class(out, "tbl_df")
+  expect_equal(nrow(out), 0)
+  # The empty result still carries the full column set.
+  expect_true("quality_score" %in% names(out))
+  expect_true("has_schema" %in% names(out))
+})
+
+test_that("dg_list_datasets() coerces missing v2 fields to NA", {
+  local_mocked_bindings(
+    fetch_search_all = function(...) {
+      list(
+        mock_dataset_v2(title = "A", id = "a1", quality = list()),
+        mock_dataset_v2(
+          title = "B",
+          id = "b2",
+          organization = list(),
+          metrics = list()
+        )
+      )
+    }
+  )
+
+  out <- dg_list_datasets()
+
+  expect_equal(out$title, c("A", "B"))
+  expect_equal(out$id, c("a1", "b2"))
+  expect_true(is.na(out$quality_score[1]))
+  expect_true(is.na(out$organization[2]))
+  expect_true(is.na(out$views[2]))
 })

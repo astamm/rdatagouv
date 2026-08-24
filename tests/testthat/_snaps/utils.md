@@ -1,3 +1,11 @@
+# fetch_resource_subsection() errors without an href
+
+    Code
+      fetch_resource_subsection(list(rel = "subsection"))
+    Condition
+      Error:
+      ! The resources pointer carries no 'href' to fetch from.
+
 # find_dataset() errors when no title matches exactly
 
     Code

@@ -1,5 +1,31 @@
 # datagouv 0.0.0.9000
 
+- `dg_list_datasets()` now talks to the v2 `datasets/search` API instead of the
+  v1 `datasets` endpoint. In v2, multiple `format` values are sent as repeated
+  query parameters (a server-side union) in a single call, pagination follows
+  the pointer-based string `next_page`, and the API returns much richer
+  per-dataset metadata inline. The return tibble therefore adds new columns:
+  `organization`, `license`, `quality_score`, `quality_flags`, `views`,
+  `resources_downloads`, `access_type`, `frequency`, `spatial_granularity`,
+  `temporal_start`, `temporal_end`, `archived` and `featured`.
+- `dg_list_datasets()` gains new server-side filter arguments: `organization`
+  (a 24-hex producer id — v2 does not accept a slug or name here), `geozone`,
+  `access_type`, `license`, `tag`, `granularity`, `last_update` and
+  `producer_type`.
+- Because v2 search does **not** inline a dataset's resources, the
+  resource-derived columns `n_resources`, `formats`, `has_table` and
+  `has_schema` are now `NA` by default. Pass `resources = TRUE` to opt into a
+  per-dataset fetch of each resources subsection (one extra request per
+  dataset) so those columns are computed exactly. `schema_only` still filters
+  client-side on `has_schema`, so it only selects reliably when
+  `resources = TRUE`.
+- New export `dg_glimpse(id, table = NULL)` surfaces the v2-inline dataset
+  metadata that the v1 pull path does not expose: `quality` (score + flags),
+  `metrics` (views, downloads, followers, discussions, reuses, dataservices)
+  and `context` (organization, license, frequency, temporal/spatial coverage,
+  access_type, archived, featured). `table = TRUE` additionally returns the
+  per-resource list via the dataset's resources subsection.
+
 - Tables pulled with `dg_pull_dataset()`/`dg_refetch()` are now addressed by a
   proper URI instead of a `::`-composed id: the `id` attribute (read with
   `dg_table_id()`) is now

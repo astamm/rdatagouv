@@ -8,7 +8,16 @@ dg_list_datasets(
   q = NULL,
   n = 1000,
   format = catalog_formats(),
-  schema_only = FALSE
+  schema_only = FALSE,
+  organization = NULL,
+  geozone = NULL,
+  access_type = NULL,
+  license = NULL,
+  tag = NULL,
+  granularity = NULL,
+  last_update = NULL,
+  producer_type = NULL,
+  resources = FALSE
 )
 }
 \arguments{
@@ -17,40 +26,88 @@ matching \code{q} are returned (the API performs the search). Defaults to
 \code{NULL}, meaning no filtering.}
 
 \item{n}{Maximum number of datasets to return. Defaults to \code{1000}.
-Set to \code{Inf} to retrieve everything (the whole catalog).}
+Set to \code{Inf} to retrieve as many as the API allows (capped at 10,000).}
 
-\item{format}{Optional character vector of resource formats to keep. When
-given, only datasets that have at least one resource in one of these
-formats are returned; each requested format is queried server-side and the
-results are combined. Defaults to the full set of officially tabular
-formats (\code{csv}, \code{csv.gz}, \code{xls}, \code{xlsx}, \code{parquet}).}
+\item{format}{Optional character vector of resource formats to keep. Only
+datasets that have at least one resource in one of these formats are
+returned. The v2 API matches multiple values when passed as repeated
+parameters (a server-side union). Defaults to the full set of officially
+tabular formats (\code{csv}, \code{csv.gz}, \code{xls}, \code{xlsx}, \code{parquet}).}
 
 \item{schema_only}{Whether to keep only datasets that declare a data schema
-(see \code{has_schema}). Defaults to \code{FALSE}.}
+(see \code{has_schema}). Defaults to \code{FALSE}. v2 has no boolean "declares any
+schema" server-side filter, so this filters client-side and only works
+reliably when \code{resources = TRUE} fills \code{has_schema}.}
+
+\item{organization}{Optional data producer, matched server-side by its
+\strong{24-hex \code{organization} id} (as shown in the \code{organization} column or on
+the dataset page). Unlike v1, the v2 search API does \emph{not} accept the
+organization slug or name here (a slug yields zero matches). Defaults to
+\code{NULL}.}
+
+\item{geozone}{Optional territorial filter, e.g. \code{"country:fr"} or
+\code{"fr:commune:75056"}. Defaults to \code{NULL}.}
+
+\item{access_type}{Optional access filter, \code{"open"} or \code{"restricted"}.
+Defaults to \code{NULL}.}
+
+\item{license}{Optional license filter (a license slug, e.g. \code{"lov2"} or
+\code{"odc-odbl"}). Defaults to \code{NULL}.}
+
+\item{tag}{Optional tag filter, e.g. \code{"mobilite"}. Defaults to \code{NULL}.}
+
+\item{granularity}{Optional spatial granularity filter, e.g. \code{"fr:commune"}.
+Defaults to \code{NULL}.}
+
+\item{last_update}{Optional update-recency filter:
+\code{"last_30_days"}, \code{"last_12_months"} or \code{"last_3_years"}. Defaults to
+\code{NULL}.}
+
+\item{producer_type}{Optional producer-type filter (a facet value, e.g.
+\code{"public-service"} or \code{"local-authority"}). Defaults to \code{NULL}.}
+
+\item{resources}{Whether to fetch each dataset's resources subsection
+(one extra request per dataset) so the exact \code{n_resources}, \code{formats},
+\code{has_table} and \code{has_schema} columns can be computed. Defaults to
+\code{FALSE}, in which case those columns are \code{NA}.}
 }
 \value{
-A \code{\link[tibble:tibble]{tibble::tibble()}} with one row per matching dataset and the
-columns \code{title}, \code{id}, \code{description}, \code{slug}, \code{n_resources}, \code{formats},
-\code{has_table} and \code{has_schema}. The \code{id} column holds the stable, unique
-dataset identifier used to address a dataset with \code{\link[=dg_pull_dataset]{dg_pull_dataset()}}.
-\code{n_resources} is the number of files/resources in the dataset, \code{formats}
-lists the distinct file formats found among them, \code{has_table} indicates
-whether at least one resource is in a format that can be parsed into a
-table by this package, and \code{has_schema} indicates whether at least one
-resource carries a pointer to a declared data schema (whose per-variable
-documentation is exposed by \code{\link[=dg_schema]{dg_schema()}}).
+A \code{\link[tibble:tibble]{tibble::tibble()}} with one row per matching dataset. The
+\code{title} and \code{id} columns are always non-\code{NA}; the \code{id} column holds the
+stable, unique dataset identifier used to address a dataset with
+\code{\link[=dg_pull_dataset]{dg_pull_dataset()}}. When \code{resources = TRUE}, the columns also include
+\code{n_resources} (number of files/resources), \code{formats} (distinct file
+formats found among them), \code{has_table} (whether at least one resource is
+in a format this package can parse) and \code{has_schema} (whether at least one
+resource carries a pointer to a declared data schema, whose per-variable
+documentation is exposed by \code{\link[=dg_schema]{dg_schema()}}); these are \code{NA} otherwise.
 }
 \description{
-Collects the names (titles) of datasets published on the data.gouv.fr
-platform. By default it returns the first \code{n} datasets; use \code{q} to search
-titles and descriptions server-side instead of enumerating the whole
+Collects the datasets published on the data.gouv.fr platform, searching the
+catalog via the v2 \code{datasets/search} endpoint (the same one the web
+interface uses). By default it returns the first \code{n} datasets; use \code{q} to
+search titles and descriptions server-side instead of enumerating the whole
 catalog.
 }
 \details{
 Fetching \emph{every} dataset on the platform means paging through tens of
 thousands of records in hundreds of HTTP requests and is both slow and
-fragile, so the default is deliberately bounded. Set \code{n = Inf} to return
-all titles regardless of count.
+fragile, so the default is deliberately bounded. Set \code{n = Inf} to return as
+many matches as the API allows. Note that data.gouv caps a search at 10,000
+matches, so an un-narrowed \code{n = Inf} crawl stops at that cap even though the
+platform holds more.
+
+Because v2 search embeds rich per-dataset metadata inline, the returned
+tibble includes columns such as \code{license}, \code{quality_score}, \code{views},
+\code{access_type}, \code{frequency}, \code{temporal_start}/\code{temporal_end}, \code{archived} and
+\code{featured} that help judge whether a dataset is worth pulling.
+
+v2 search does NOT inline each dataset's resources (they are subsection
+pointers), so the exact resource-based columns \code{n_resources}, \code{formats},
+\code{has_table} and \code{has_schema} can no longer be computed without one extra
+request per dataset (an N+1 crawl). By default these are \code{NA}; set
+\code{resources = TRUE} to opt into the per-dataset resource fetch and fill them
+exactly.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
@@ -60,11 +117,16 @@ head(datasets)
 # Search server-side instead of downloading the whole catalog.
 cycle <- dg_list_datasets(q = "vélo", n = 10)
 
-# Only datasets that carry at least one parquet resource (a more compact
-# format than CSV, so a later download is lighter).
-parquet <- dg_list_datasets(format = "parquet", n = 10)
+# Only datasets that carry at least one parquet resource; the v2 API matches
+# multiple formats as a server-side union.
+compact <- dg_list_datasets(format = "parquet", n = 10)
 
-# Only datasets with a declared schema (documented variables).
-documented <- dg_list_datasets(schema_only = TRUE, n = 10)
+# Only datasets with a declared schema (documented variables). Resolving
+# `has_schema` exactly needs the per-dataset resource fetch.
+documented <- dg_list_datasets(schema_only = TRUE, resources = TRUE, n = 10)
+
+# Narrow by producer (server-side id filter) and territory.
+fr <- dg_list_datasets(organization = "534fff91a3a7292c64a77f53",
+                       geozone = "country:fr", n = 10)
 \dontshow{\}) # examplesIf}
 }

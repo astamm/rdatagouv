@@ -6,6 +6,19 @@ datagouv_base_url <- function() {
   "https://www.data.gouv.fr/api/1/"
 }
 
+# Base URL of the v2 data.gouv API (the uData-native interface). v2 is what
+# the web interface drives; it powers discovery (datasets/search) and embeds
+# richer per-dataset metadata, but does NOT inline resources (they are
+# subsection pointers).
+datagouv_v2_base_url <- function() {
+  "https://www.data.gouv.fr/api/2/"
+}
+
+# URL of the v2 datasets/search endpoint used for discovery.
+datagouv_search_url <- function() {
+  paste0(datagouv_v2_base_url(), "datasets/search/")
+}
+
 # Build a configured httr2 request against the data.gouv API.
 # Adds a polite user agent, a timeout, retry on transient errors and a
 # friendly error message extracted from the JSON error body.
@@ -55,82 +68,241 @@ http_perform <- function(req) {
   httr2::req_perform(req)
 }
 
-# Fetch a single page of datasets from the API for a single resource format.
-#
-# The API only honours one `format` value per query (a comma-joined or repeated
-# `format` is not unioned), so a page is always fetched for exactly one format;
-# `fetch_all_datasets()` issues one query per requested format and unions them.
-fetch_datasets_page <- function(page, page_size, q = NULL, format) {
-  req <- httr2::req_url_query(
-    httr2::req_url_path_append(
-      req_data_gouv(httr2::request(datagouv_base_url())),
-      "datasets"
-    ),
-    page = page,
-    page_size = page_size,
-    format = format
-  )
-  if (!is.null(q)) {
-    req <- httr2::req_url_query(req, q = q)
+# Extract the value of a single query parameter from a URL string, or NULL.
+url_query_value <- function(url, name) {
+  q <- httr2::url_parse(url)$query
+  q[[name]]
+}
+
+# Replace the `page` value in a URL's query string, adding it if absent. Used
+# for the v1 transition fallback where `next_page` is an object carrying a page
+# number rather than a full URL string.
+replace_url_page <- function(url, page) {
+  if (grepl("[?&]page=", url)) {
+    sub("([?&])page=[^&]*", paste0("\\1page=", page), url)
+  } else {
+    paste0(url, if (grepl("\\?", url)) "&" else "?", "page=", page)
   }
+}
+
+# Fetch a single page of the v2 datasets/search endpoint.
+#
+# The v2 API honours multiple `format` values when passed as *repeated* query
+# parameters (`format=csv&format=parquet` is the union; a bare comma-joined
+# `format=csv,parquet` is NOT parsed and returns zero matches), so each value in
+# `format` is added as its own query parameter. All other filter arguments are
+# single-valued server-side filters.
+#
+# The response envelope is `{data, page, page_size, total, next_page,
+# previous_page, facets}`. Pagination is pointer-based: `next_page` is a plain
+# URL string (unlike v1's object shape), so the caller follows it directly.
+fetch_search_page <- function(
+  url = datagouv_search_url(),
+  page_size = 1000,
+  q = NULL,
+  format = catalog_formats(),
+  organization = NULL,
+  geozone = NULL,
+  access_type = NULL,
+  license = NULL,
+  tag = NULL,
+  granularity = NULL,
+  last_update = NULL,
+  producer_type = NULL,
+  schema = NULL
+) {
+  args <- list(page_size = page_size)
+  if (!is.null(q)) {
+    args$q <- q
+  }
+
+  # Repeated `format` params: the v2 API honours multiple values only when sent
+  # as repeated parameters (`format=csv&format=parquet`), never as a comma-joined
+  # single value. httr2::req_url_query() overwrites a param on repeat, so build
+  # these into the URL string directly.
+  if (length(format) > 0) {
+    url <- append_url_params(
+      url,
+      paste0("format=", utils::URLencode(format, reserved = TRUE))
+    )
+  }
+
+  single <- c(
+    args,
+    list(
+      organization = organization,
+      geozone = geozone,
+      access_type = access_type,
+      license = license,
+      tag = tag,
+      granularity = granularity,
+      last_update = last_update,
+      producer_type = producer_type,
+      schema = schema
+    )
+  )
+  single <- single[!vapply(single, is.null, logical(1))]
+  url <- append_url_params(
+    url,
+    paste0(
+      names(single),
+      "=",
+      vapply(
+        single,
+        function(v) utils::URLencode(as.character(v), reserved = TRUE),
+        character(1)
+      )
+    )
+  )
+
+  req <- req_data_gouv(httr2::request(url))
   httr2::resp_body_json(http_perform(req))
 }
 
-# Fetch dataset objects, following pagination until the last page or until `n`
-# datasets have been collected (whichever comes first).
+# Append one or more `key=value` query-string fragments to a URL, joining with
+# the preserved separator (`?` for the first, `&` thereafter). Supports repeated
+# parameters: each element of `frags` is appended as its own pair.
+append_url_params <- function(url, frags) {
+  sep <- if (grepl("\\?", url)) "&" else "?"
+  paste0(url, sep, paste(frags, collapse = "&"))
+}
+
+# Fetch dataset objects from the v2 datasets/search endpoint, following the
+# pointer-based pagination until `n` datasets have been collected or the last
+# page is reached (whichever comes first).
 #
-# `q` is an optional full-text query forwarded to the API, so the search is
-# done server-side instead of downloading and filtering the whole catalog.
+# `url` is the starting search URL (defaults to the v2 search endpoint). Because
+# pagination is pointer-based, a caller can resume from any `next_page` URL the
+# server returned. `next_page` is a string in v2; for robustness during the
+# transition this also tolerates the older v1 object shape (`{page: ...}`).
 #
-# `n` bounds the number of datasets returned; the default caps the work so a
-# caller cannot accidentally trigger a huge crawl of the entire platform. Pass
-# `n = Inf` to enumerate everything.
-#
-# `format` is one or more resource formats to keep. Because the API filters
-# only one format per query, one query per requested format is issued and the
-# results are combined, removing datasets that matched more than one format
-# (the full dataset object is returned identically whichever format matched, so
-# deduplication by dataset id keeps a single copy).
-fetch_all_datasets <- function(
+# `q` is an optional full-text query forwarded to the API (server-side search).
+# `n` bounds the work; pass `n = Inf` to enumerate as much as the API allows.
+# Note: data.gouv caps `total` at 10,000, so an un-narrowed `n = Inf` crawl
+# stops at the first 10,000 matches even though the platform holds far more.
+# `format` passes every requested format as a repeated server-side parameter
+# (union); results are deduplicated by id in case the API ever overlaps.
+fetch_search_all <- function(
+  url = datagouv_search_url(),
   page_size = 1000,
   q = NULL,
   n = 1000,
-  format = catalog_formats()
+  format = catalog_formats(),
+  organization = NULL,
+  geozone = NULL,
+  access_type = NULL,
+  license = NULL,
+  tag = NULL,
+  granularity = NULL,
+  last_update = NULL,
+  producer_type = NULL,
+  schema = NULL
 ) {
   all <- list()
   seen_ids <- character()
-  for (fmt in format) {
-    if (length(all) >= n) {
+  repeat {
+    body <- fetch_search_page(
+      url = url,
+      page_size = page_size,
+      q = q,
+      format = format,
+      organization = organization,
+      geozone = geozone,
+      access_type = access_type,
+      license = license,
+      tag = tag,
+      granularity = granularity,
+      last_update = last_update,
+      producer_type = producer_type,
+      schema = schema
+    )
+    items <- body$data %||% list()
+    if (length(items) == 0) {
       break
     }
-    datasets <- list()
-    page <- 1
-    repeat {
-      if (length(all) + length(datasets) >= n) {
-        break
-      }
-      remaining <- n - length(all) - length(datasets)
-      this_size <- min(page_size, remaining)
-      body <- fetch_datasets_page(page, this_size, q = q, format = fmt)
-      items <- body$data
-      if (length(items) == 0) {
-        break
-      }
-      datasets <- c(datasets, items)
-      if (is.null(body$next_page)) {
-        break
-      }
-      page <- page + 1
+    # Respect the `n` bound before appending so we never collect more than n.
+    take <- items
+    if (!is.infinite(n) && length(all) + length(take) > n) {
+      take <- take[seq_len(n - length(all))]
     }
-    # Keep only datasets not already yielded by an earlier format query, and
-    # drop duplicates within this format's pages (full objects are identical,
-    # so either copy is equivalent).
-    ids <- vapply(datasets, function(d) d$id %||% NA_character_, character(1))
+    ids <- vapply(take, function(d) d$id %||% NA_character_, character(1))
     keep <- !(ids %in% seen_ids) & !duplicated(ids)
-    all <- c(all, datasets[keep])
+    all <- c(all, take[keep])
     seen_ids <- c(seen_ids, ids[keep])
+
+    if (!is.infinite(n) && length(all) >= n) {
+      break
+    }
+    np <- body$next_page
+    # v2: next_page is a string URL. v1 (transition fallback): an object with a
+    # `page` member giving the next page number.
+    if (is.character(np)) {
+      url <- np
+    } else if (is.list(np) && !is.null(np$page)) {
+      url <- replace_url_page(url, np$page)
+    } else {
+      break
+    }
   }
   all
+}
+
+# Fetch the full resource list of a dataset via its v2 resources subsection URL
+# (a `{"rel":"subsection","href":...,"total":N}` pointer that v2 search and v2
+# dataset objects use instead of inlining resources).
+#
+# The subsection is paginated at 50 per page, so the first page never holds the
+# whole list for datasets with many resources — this fully paginates it by
+# following the string `next_page` until NULL, never trusting the first page.
+# When fully paginated it reproduces v1's inline `dataset$resources` list
+# exactly (same ids, same declared order, same resource key sets), making it a
+# behavior-preserving drop-in replacement for v1's direct GET should v1 ever be
+# retired — at the cost of one request per subsection page.
+fetch_resource_subsection <- function(subsection) {
+  href <- subsection$href
+  if (is.null(href)) {
+    stop(
+      "The resources pointer carries no 'href' to fetch from.",
+      call. = FALSE
+    )
+  }
+  all <- list()
+  url <- href
+  repeat {
+    req <- req_data_gouv(httr2::request(url))
+    body <- httr2::resp_body_json(http_perform(req))
+    items <- body$data %||% list()
+    if (length(items) > 0) {
+      all <- c(all, items)
+    }
+    np <- body$next_page
+    if (is.character(np)) {
+      url <- np
+    } else if (is.list(np) && !is.null(np$page)) {
+      url <- replace_url_page(url, np$page)
+    } else {
+      break
+    }
+  }
+  all
+}
+
+# Fetch a dataset object from the v2 API by its identifier (a direct GET on
+# /api/2/datasets/{id}/). The v2 object does NOT inline resources — `resources`
+# (and `community_resources`) are subsection pointers — but embeds rich
+# per-dataset metadata (`quality`, `metrics`, `organization`, `license`,
+# `frequency`, ...). Used by dg_glimpse() to surface discovery-side health and
+# engagement metadata.
+fetch_dataset_v2 <- function(id) {
+  httr2::resp_body_json(
+    http_perform(
+      httr2::req_url_path_append(
+        req_data_gouv(httr2::request(datagouv_v2_base_url())),
+        "datasets",
+        id
+      )
+    )
+  )
 }
 
 # Test whether a string is a data.gouv dataset identifier (a MongoDB
