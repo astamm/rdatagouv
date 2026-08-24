@@ -6,12 +6,13 @@
 #' search titles and descriptions server-side instead of enumerating the whole
 #' catalog.
 #'
-#' Fetching *every* dataset on the platform means paging through tens of
-#' thousands of records in hundreds of HTTP requests and is both slow and
-#' fragile, so the default is deliberately bounded. Set `n = Inf` to return as
-#' many matches as the API allows. Note that data.gouv caps a search at 10,000
-#' matches, so an un-narrowed `n = Inf` crawl stops at that cap even though the
-#' platform holds more.
+#' Fetching *every* dataset on the platform means paging through many thousands
+#' of records in many HTTP requests and is both slow and fragile, so the
+#' default is deliberately bounded. Set `n = Inf` to return as many matches as
+#' the API allows. Note that data.gouv caps a search at 10,000 matches, so an
+#' un-narrowed `n = Inf` crawl stops at that cap even though the platform holds
+#' more. For large or infinite `n` the crawl scales its page size up (to ~250)
+#' so a full 10,000-row crawl takes ~40 requests, not hundreds.
 #'
 #' Because v2 search embeds rich per-dataset metadata inline, the returned
 #' tibble includes columns such as `license`, `quality_score`, `views`,

@@ -216,6 +216,120 @@ test_that("fetch_search_all() stops when n datasets are collected", {
   expect_equal(called, 1L)
 })
 
+test_that("fetch_search_all() clamps page_size down to a finite n", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      list(
+        data = lapply(seq_len(page_size), function(i) {
+          mock_dataset_v2(title = paste0("A", i), id = sprintf("id-%d", i))
+        }),
+        next_page = NULL
+      )
+    }
+  )
+
+  fetch_search_all(n = 3, page_size = 100)
+
+  # A finite `n` below the page size must shrink the request down to `n`, never
+  # ask for a full page_size worth of rows.
+  expect_equal(requested[[1]], 3)
+})
+
+test_that("fetch_search_all() shrinks page_size as the remaining budget runs down", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      # Ignore the page size: always serve a fixed 600 new datasets per page so
+      # the collection has room to grow over multiple pages.
+      list(
+        data = lapply(seq_len(600), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  fetch_search_all(n = 1000, page_size = 1000)
+
+  # The first page asks for the full page_size; once 600 are collected the next
+  # request asks for exactly the remaining 400, not a full page of 1000.
+  expect_equal(requested, c(1000, 400))
+})
+
+test_that("fetch_search_all() scales page_size up for a large finite n", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      list(
+        data = lapply(seq_len(250), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  # n above the default page_size (100) must scale the request up to the
+  # ~250 large-page cap rather than crawl at tiny pages.
+  fetch_search_all(n = 1000, page_size = 100)
+
+  # 250 + 250 + 250 + 250 = 1000: four scaled-up pages, not ten 100-row ones.
+  expect_equal(requested, c(250, 250, 250, 250))
+})
+
+test_that("fetch_search_all() scales page_size up for an infinite n", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      if (length(requested) >= 2) {
+        return(list(data = list(), next_page = NULL))
+      }
+      list(
+        data = lapply(seq_len(page_size), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  fetch_search_all(n = Inf, page_size = 100)
+
+  # An infinite crawl never clamps, so it adopts the ~250 large-page cap.
+  expect_equal(requested, c(250, 250))
+})
+
+test_that("fetch_search_all() clamps the adaptive page_size on the final stretch", {
+  requested <- NULL
+  local_mocked_bindings(
+    fetch_search_page = function(url = datagouv_search_url(), page_size, ...) {
+      requested <<- c(requested, page_size)
+      list(
+        data = lapply(seq_len(page_size), function(i) {
+          id <- sprintf("id-%d-%d", length(requested), i)
+          mock_dataset_v2(title = id, id = id)
+        }),
+        next_page = "https://x/?page=2"
+      )
+    }
+  )
+
+  # A large finite n scales to 250, but the last page must shrink to exactly
+  # the remaining budget (300 = 550 - 250) instead of over-fetching.
+  fetch_search_all(n = 550, page_size = 100)
+
+  expect_equal(requested, c(250, 250, 50))
+})
+
 test_that("fetch_search_all() stops on an empty page", {
   local_mocked_bindings(
     fetch_search_page = function(...) {

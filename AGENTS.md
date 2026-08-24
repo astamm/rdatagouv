@@ -57,7 +57,12 @@ the design doc are historical, not normative. The README and the vignette
   (which N+1-fetches each dataset's resources subsection). `id` and `title` are
   always non-`NA` (contract with `dg_summarise()`). Backed by
   `fetch_search_all()`/`fetch_search_page()` on the v2 `datasets/search`
-  endpoint (string `next_page` pointer pagination, `page_size = 1000`).
+  endpoint (string `next_page` pointer pagination; `fetch_search_all()` uses
+  `adaptive_page_size()` — default `page_size = 100`, scaled up to ~250 for
+  large/`Inf` `n` to cut round-trips on a full catalog crawl, and clamped to
+  the remaining budget for a finite `n`. It stays low because the v2 search
+  endpoint's latency scales with page_size and `page_size = 1000` consistently
+  trips the 30s timeout in `req_data_gouv()`).
 - `dg_glimpse(id, table = NULL)` -> a named list surfacing v2-inline
   dataset-level metadata that the v1 fetch path does not expose:
   `quality` (score + boolean flags), `metrics` (views, resources_downloads,

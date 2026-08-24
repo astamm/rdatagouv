@@ -290,3 +290,8 @@ Implications for this package:
    inline metadata); new server-side filter args and inline columns; resource-derived columns
    become `NA` unless `resources = TRUE`; new export `dg_glimpse()` surfaces v2-only
    dataset metadata. Pull/refetch/schema/summary remain on v1.
+   *(Page-size tuning: the v2 search endpoint's latency scales with `page_size` — a
+   `page_size = 1000` page consistently tripped the 30s `req_data_gouv()` timeout — so the
+   crawl pages at `page_size = 100` by default and scales adaptively to ~250 for large/`Inf`
+   `n`, clamping the final page to the remaining budget. Kept out of `n = Inf`'s path so a
+   full 10,000-row crawl is ~40 requests instead of ~100.)*

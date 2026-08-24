@@ -87,6 +87,12 @@ replace_url_page <- function(url, page) {
 
 # Fetch a single page of the v2 datasets/search endpoint.
 #
+# `page_size` defaults to 100, not 1000: the v2 search endpoint's response
+# latency scales with page_size (a 1000-row page consistently takes ~30s and
+# trips the 30s client timeout in req_data_gouv(); 100 rows responds in a few
+# seconds with ample headroom). Pagination is pointer-based, so a smaller page
+# only means a few more follow-up requests, not a larger footprint.
+#
 # The v2 API honours multiple `format` values when passed as *repeated* query
 # parameters (`format=csv&format=parquet` is the union; a bare comma-joined
 # `format=csv,parquet` is NOT parsed and returns zero matches), so each value in
@@ -98,7 +104,7 @@ replace_url_page <- function(url, page) {
 # URL string (unlike v1's object shape), so the caller follows it directly.
 fetch_search_page <- function(
   url = datagouv_search_url(),
-  page_size = 1000,
+  page_size = 100,
   q = NULL,
   format = catalog_formats(),
   organization = NULL,
@@ -167,6 +173,33 @@ append_url_params <- function(url, frags) {
   paste0(url, sep, paste(frags, collapse = "&"))
 }
 
+# Pick the page size for the next fetch_search_page() request in a paginated
+# crawl.
+#
+# The v2 search endpoint's latency scales with page_size, so the default (100)
+# keeps individual requests fast and is a good all-rounder for small and
+# medium `n`. But a large or infinite `n` (a full-catalog crawl) at small
+# pages means many round-trips — ~100 requests at page_size 100 for data.gouv's
+# 10,000-row cap. Per-request latency grows roughly linearly with page size, so
+# total wall-clock stays about constant either way; the request count is what a
+# larger page reduces. When the crawl clearly needs more than one default-sized
+# page (or never ends, `n = Inf`), we therefore scale the page up to
+# `large_page_size` (~250) to cut the request count (~40 for a full crawl)
+# at no meaningful latency cost.
+#
+# For a finite `n` the page is always clamped to the remaining budget so we
+# never fetch more rows than still needed (e.g. `n = 20` asks for a 20-row
+# page), and `n = Inf` leaves the page size untouched by the clamp.
+adaptive_page_size <- function(
+  page_size,
+  n,
+  remaining,
+  large_page_size = 250L
+) {
+  cap <- if (is.infinite(n) || n > page_size) large_page_size else page_size
+  max(1L, min(cap, remaining))
+}
+
 # Fetch dataset objects from the v2 datasets/search endpoint, following the
 # pointer-based pagination until `n` datasets have been collected or the last
 # page is reached (whichever comes first).
@@ -184,7 +217,7 @@ append_url_params <- function(url, frags) {
 # (union); results are deduplicated by id in case the API ever overlaps.
 fetch_search_all <- function(
   url = datagouv_search_url(),
-  page_size = 1000,
+  page_size = 100,
   q = NULL,
   n = 1000,
   format = catalog_formats(),
@@ -201,9 +234,17 @@ fetch_search_all <- function(
   all <- list()
   seen_ids <- character()
   repeat {
+    # Adaptive page size: scale up to ~250 for large/infinite crawls to cut
+    # round-trips, and clamp down to the remaining budget for a finite `n` so
+    # e.g. `n = 20` asks for a 20-row page, not a full `page_size` one.
+    eff_page <- adaptive_page_size(
+      page_size = page_size,
+      n = n,
+      remaining = n - length(all)
+    )
     body <- fetch_search_page(
       url = url,
-      page_size = page_size,
+      page_size = eff_page,
       q = q,
       format = format,
       organization = organization,

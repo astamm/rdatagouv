@@ -52,9 +52,12 @@
   formats are queried server-side one by one and the results are combined and
   de-duplicated by dataset id. This also fixes a latent bug where the
   multi-format request was effectively honoured as `csv` only.
-- `fetch_all_datasets()` now pages at `page_size = 1000` by default (up from
-  100), cutting the number of requests for a full-catalog crawl roughly
-  tenfold.
+- The v2 discovery crawl scales its page size adaptively: `dg_list_datasets()`
+  requests small, fast pages (`page_size = 100`) by default, but a large or
+  infinite `n` (e.g. a full-catalog `n = Inf` crawl) automatically scales each
+  page up to ~250 and clamps the final page to the remaining budget. This keeps
+  individual requests well under the client timeout while cutting a full
+  10,000-row crawl to ~40 requests.
 - `dg_pull_dataset()`/`dg_refetch()` now prefer the lightest advertised file
   when a dataset offers the *same table* in several formats (same base file
   name, different extension, e.g. `data.csv` vs `data.xlsx`): among such
