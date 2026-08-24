@@ -139,13 +139,20 @@ declare one,
 [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
 only helps on a subset of the catalog. You can target that subset
 directly. v2 has no boolean “declares a schema” server-side filter, so
-`schema_only` filters client-side on `has_schema` — pass
-`resources = TRUE` so that column is populated (and the filter has
-something to act on):
+`schema_only` filters client-side on `has_schema`, which needs the
+per-dataset resource fetch — so calling it forces `resources = TRUE`
+(with a message about the extra requests) and the filter just works:
 
 ``` r
 
-documented <- dg_find_datasets(schema_only = TRUE, n = 10, resources = TRUE)
+documented <- dg_find_datasets(schema_only = TRUE, n = 10)
+```
+
+    Forcing `resources = TRUE` because `schema_only = TRUE` selects on
+    `has_schema`, which needs the per-dataset resource fetch.
+
+``` r
+
 documented[, c("title", "has_schema")]
 ```
 
@@ -308,7 +315,14 @@ returns the documented fields:
 ``` r
 
 # schema_only filters client-side, so request a batch and take the first hit.
-documented <- dg_find_datasets(schema_only = TRUE, n = 100, resources = TRUE)
+documented <- dg_find_datasets(schema_only = TRUE, n = 100)
+```
+
+    Forcing `resources = TRUE` because `schema_only = TRUE` selects on
+    `has_schema`, which needs the per-dataset resource fetch.
+
+``` r
+
 table_id <- documented$id[!is.na(documented$id)][[1]]
 
 # Pull it, then inspect the schema of the returned table.
@@ -552,13 +566,15 @@ variables:
 ``` r
 
 # Find a dataset, take its first id, pull it into a table and read its schema.
-dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
-                 resources = TRUE) |>
+dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
   pull(id) |>
   head(1) |>
   dg_pull_dataset() |>
   dg_schema()
 ```
+
+    Forcing `resources = TRUE` because `schema_only = TRUE` selects on
+    `has_schema`, which needs the per-dataset resource fetch.
 
     Warning: One or more parsing issues, call `problems()` on your data frame for details,
     e.g.:
@@ -604,12 +620,14 @@ how the catalog changes in the meantime:
 
 ``` r
 
-tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5,
-                        resources = TRUE) |>
+tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
   pull(id) |>
   head(1) |>
   dg_pull_dataset()
 ```
+
+    Forcing `resources = TRUE` because `schema_only = TRUE` selects on
+    `has_schema`, which needs the per-dataset resource fetch.
 
     Warning: One or more parsing issues, call `problems()` on your data frame for details,
     e.g.:

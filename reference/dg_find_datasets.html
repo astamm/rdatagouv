@@ -97,8 +97,11 @@ tabular formats (<code>csv</code>, <code>csv.gz</code>, <code>xls</code>, <code>
 <dt id="arg-schema-only">schema_only<a class="anchor" aria-label="anchor" href="#arg-schema-only"></a></dt>
 <dd><p>Whether to keep only datasets that declare a data schema
 (see <code>has_schema</code>). Defaults to <code>FALSE</code>. v2 has no boolean "declares any
-schema" server-side filter, so this filters client-side and only works
-reliably when <code>resources = TRUE</code> fills <code>has_schema</code>.</p></dd>
+schema" server-side filter, so this filters client-side on <code>has_schema</code>,
+which itself needs the per-dataset resource fetch. When <code>schema_only</code> is
+set without <code>resources = TRUE</code>, this function forces <code>resources = TRUE</code>
+(with an informative message about the extra requests) so the filter
+actually runs.</p></dd>
 
 
 <dt id="arg-organization">organization<a class="anchor" aria-label="anchor" href="#arg-organization"></a></dt>
@@ -177,7 +180,8 @@ values <code>"public-service"</code>, <code>"local-authority"</code>, <code>"com
 <dd><p>Whether to fetch each dataset's resources subsection
 (one extra request per dataset) so the exact <code>n_resources</code>, <code>formats</code>,
 <code>has_table</code> and <code>has_schema</code> columns can be computed. Defaults to
-<code>FALSE</code>, in which case those columns are <code>NA</code>.</p></dd>
+<code>FALSE</code>, in which case those columns are <code>NA</code>. Automatically forced to
+<code>TRUE</code> when <code>schema_only = TRUE</code> (see <code>schema_only</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -190,7 +194,9 @@ stable, unique dataset identifier used to address a dataset with
 formats found among them), <code>has_table</code> (whether at least one resource is
 in a format this package can parse) and <code>has_schema</code> (whether at least one
 resource carries a pointer to a declared data schema, whose per-variable
-documentation is exposed by <code><a href="dg_schema.html">dg_schema()</a></code>); these are <code>NA</code> otherwise.</p>
+documentation is exposed by <code><a href="dg_schema.html">dg_schema()</a></code>); these are <code>NA</code> when
+<code>resources = FALSE</code> (the default) unless <code>schema_only = TRUE</code>, which forces
+the fetch so <code>has_schema</code> is filled and the filter can run.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -226,9 +232,10 @@ exactly.</p>
 <span class="r-in"><span><span class="co"># multiple formats as a server-side union.</span></span></span>
 <span class="r-in"><span><span class="va">compact</span> <span class="op">&lt;-</span> <span class="fu">dg_find_datasets</span><span class="op">(</span>format <span class="op">=</span> <span class="st">"parquet"</span>, n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Only datasets with a declared schema (documented variables). Resolving</span></span></span>
-<span class="r-in"><span><span class="co"># `has_schema` exactly needs the per-dataset resource fetch.</span></span></span>
-<span class="r-in"><span><span class="va">documented</span> <span class="op">&lt;-</span> <span class="fu">dg_find_datasets</span><span class="op">(</span>schema_only <span class="op">=</span> <span class="cn">TRUE</span>, resources <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Only datasets with a declared schema (documented variables). `schema_only`</span></span></span>
+<span class="r-in"><span><span class="co"># forces the per-dataset resource fetch itself (~30s for n = 1000), so</span></span></span>
+<span class="r-in"><span><span class="co"># `resources = TRUE` is optional here.</span></span></span>
+<span class="r-in"><span><span class="va">documented</span> <span class="op">&lt;-</span> <span class="fu">dg_find_datasets</span><span class="op">(</span>schema_only <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Narrow by producer and territory. A producer may be given by its 24-hex</span></span></span>
 <span class="r-in"><span><span class="co"># id or by its exact slug/name (resolved for you), and by geozone.</span></span></span>

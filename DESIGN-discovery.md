@@ -173,9 +173,13 @@ New columns on the returned tibble (resource-derived):
 > when the caller passes `resources = TRUE` (an N+1 fetch of each
 > dataset’s resources subsection); otherwise they are `NA`.
 > `schema_only` filters client-side on `has_schema`, so it only selects
-> reliably with `resources = TRUE`. The v2 migration also added the
-> inline metadata columns and server-side filters described in the note
-> to the first “Discovery improvement 1” section above.
+> reliably with `resources = TRUE`. To remove the silent-no-op footgun
+> (previously `schema_only = TRUE` with the default `resources = FALSE`
+> returned the unfiltered catalog with `has_schema = NA`),
+> `schema_only = TRUE` now forces `resources = TRUE` and emits an
+> informative message about the extra requests. The v2 migration also
+> added the inline metadata columns and server-side filters described in
+> the note to the first “Discovery improvement 1” section above.
 
 Adding these makes `dg_list_datasets(q = "vélo", n = 20)` immediately
 answer “which of these can I actually open?” before spending a download.

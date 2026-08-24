@@ -52,8 +52,11 @@ dg_find_datasets(
 
   Whether to keep only datasets that declare a data schema (see
   `has_schema`). Defaults to `FALSE`. v2 has no boolean "declares any
-  schema" server-side filter, so this filters client-side and only works
-  reliably when `resources = TRUE` fills `has_schema`.
+  schema" server-side filter, so this filters client-side on
+  `has_schema`, which itself needs the per-dataset resource fetch. When
+  `schema_only` is set without `resources = TRUE`, this function forces
+  `resources = TRUE` (with an informative message about the extra
+  requests) so the filter actually runs.
 
 - organization:
 
@@ -136,7 +139,8 @@ dg_find_datasets(
   Whether to fetch each dataset's resources subsection (one extra
   request per dataset) so the exact `n_resources`, `formats`,
   `has_table` and `has_schema` columns can be computed. Defaults to
-  `FALSE`, in which case those columns are `NA`.
+  `FALSE`, in which case those columns are `NA`. Automatically forced to
+  `TRUE` when `schema_only = TRUE` (see `schema_only`).
 
 ## Value
 
@@ -153,7 +157,9 @@ can parse) and `has_schema` (whether at least one resource carries a
 pointer to a declared data schema, whose per-variable documentation is
 exposed by
 [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md));
-these are `NA` otherwise.
+these are `NA` when `resources = FALSE` (the default) unless
+`schema_only = TRUE`, which forces the fetch so `has_schema` is filled
+and the filter can run.
 
 ## Details
 
@@ -192,9 +198,10 @@ cycle <- dg_find_datasets(q = "vélo", n = 10)
 # multiple formats as a server-side union.
 compact <- dg_find_datasets(format = "parquet", n = 10)
 
-# Only datasets with a declared schema (documented variables). Resolving
-# `has_schema` exactly needs the per-dataset resource fetch.
-documented <- dg_find_datasets(schema_only = TRUE, resources = TRUE, n = 10)
+# Only datasets with a declared schema (documented variables). `schema_only`
+# forces the per-dataset resource fetch itself (~30s for n = 1000), so
+# `resources = TRUE` is optional here.
+documented <- dg_find_datasets(schema_only = TRUE, n = 10)
 
 # Narrow by producer and territory. A producer may be given by its 24-hex
 # id or by its exact slug/name (resolved for you), and by geozone.

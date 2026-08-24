@@ -2,6 +2,13 @@
 
 ## datagouv 0.0.0.9000
 
+- `dg_find_datasets(schema_only = TRUE)` no longer silently returns an
+  unfiltered catalog. Because `schema_only` selects client-side on
+  `has_schema` — which needs the per-dataset resource fetch — calling it
+  without `resources = TRUE` now forces `resources = TRUE` and emits an
+  informative message about the extra requests, so the filter actually
+  runs instead of returning every row with `has_schema = NA`.
+
 - New export `dg_find_topics(q = NULL, n = 20, elements = FALSE)`
   queries the v2 `topics/search` endpoint and returns a tibble of
   `{id, name, slug, description, tags, featured, n_elements}` (plus
