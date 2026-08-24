@@ -9,6 +9,7 @@ reference:
   contents:
   - dg_find_datasets
   - dg_find_organization
+  - dg_find_topics
   - dg_glimpse
   - dg_pull_dataset
   - dg_table_id

@@ -6,6 +6,7 @@
 ^\.github$
 ^README\.qmd$
 ^DESIGN-discovery\.md$
+^TOPIC-SUPPORT-SKETCH\.md$
 ^AGENTS\.md$
 ^vignettes/\.quarto$
 ^codecov\.yml$

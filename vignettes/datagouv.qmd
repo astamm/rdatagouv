@@ -97,7 +97,7 @@ than it should be:
 
 | Step | Function |
 |------|----------|
-| Find / search the catalog | `dg_find_datasets()`, `dg_find_organization()` |
+| Find / search the catalog | `dg_find_datasets()`, `dg_find_organization()`, `dg_find_topics()` |
 | Judge documented columns | `dg_schema()` |
 | Download tabular resources | `dg_pull_dataset()` |
 | Summarise table contents | `dg_summary()`, `dg_summarise()` |
@@ -198,6 +198,35 @@ The slug resolves to the same datasets as the corresponding id — pass either t
 sncf <- dg_find_datasets(organization = "sncf", n = 10)
 sncf[, c("title", "organization")]
 ```
+
+### Finding datasets grouped under a theme
+
+Beyond producers, data.gouv curates datasets into *themes* (topics) such as
+"Mobilité", "Environnement" or "Énergie". `dg_find_topics()` lists these
+themes — including how many elements each groups — so you can discover one and
+get its stable 24-hex id:
+
+```{r}
+#| live: true
+topics <- dg_find_topics(q = "mobilité", n = 5)
+topics[, c("name", "n_elements")]
+```
+
+Pass a theme's id to `dg_find_datasets(topic =)` to narrow a catalog search to
+datasets grouped under it (the same single-valued server-side filter that
+`organization`/`geozone` use; it takes a topic id, not a name/slug):
+
+```{r}
+#| live: true
+mobility <- dg_find_datasets(topic = topics$id[1], n = 10)
+mobility[, c("title", "organization")]
+```
+
+By default `dg_find_topics()` reports `n_elements` — the theme's declared total
+element count (datasets, reuses, dataservices, ...). To see how that total
+breaks down by kind, pass `elements = TRUE` (costing one extra request per
+topic); the `n_datasets`/`n_dataservices`/`n_reuses` columns are `NA`
+otherwise.
 
 ## Judging whether a dataset is usable
 

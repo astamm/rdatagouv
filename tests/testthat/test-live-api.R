@@ -182,3 +182,76 @@ test_that("each discovered organization id is directly filterable", {
     expect_gt(nrow(res), 0)
   }
 })
+
+test_that("dg_find_topics() returns the expected tibble live", {
+  skip_unless_live()
+
+  topics <- dg_find_topics(q = "environnement", n = 5)
+
+  expect_s3_class(topics, "tbl_df")
+  expect_true(all(
+    c(
+      "id",
+      "name",
+      "slug",
+      "description",
+      "tags",
+      "featured",
+      "n_elements",
+      "n_datasets",
+      "n_dataservices",
+      "n_reuses"
+    ) %in%
+      names(topics)
+  ))
+})
+
+test_that("a discovered topic id is directly filterable live", {
+  skip_unless_live()
+
+  # Any topic surfaced by dg_find_topics() should be addressable as a single-
+  # valued server-side `topic` filter on dg_find_datasets(). Some curated
+  # topics may group only reuses/dataservices (no datasets), so we only demand
+  # a well-formed tibble, not a positive row count.
+  topics <- dg_find_topics(n = 5)
+  for (tid in topics$id) {
+    res <- dg_find_datasets(topic = tid, n = 5)
+    expect_s3_class(res, "tbl_df")
+    expect_true(all(c("id", "title") %in% names(res)))
+  }
+})
+
+test_that("dg_find_topics(elements = TRUE) follows pagination on a large theme live", {
+  skip_unless_live()
+
+  # sift through the catalog for a topic whose declared element count exceeds
+  # a single page (page_size = 100), guaranteeing the next_page crawl runs.
+  # The `n_elements` total comes from the topics/search envelope, so no N+1
+  # crawl is needed just to find a large candidate.
+  topics <- dg_find_topics(n = 100)
+  large <- topics[!is.na(topics$n_elements) & topics$n_elements > 100, ]
+  if (nrow(large) == 0) {
+    testthat::skip(paste(
+      "no topic among the first",
+      nrow(topics),
+      "has more than 100 elements"
+    ))
+  }
+  big <- large[1, ]
+
+  # `elements = TRUE` N+1-crawls the subsection (and its pagination). Search by
+  # the topic's name to surface just that topic; the per-kind breakdown must
+  # sum to at most the declared total (external-link NULL-class entries are
+  # excluded, hence `<=`), and none of the counts may be NA once fetched.
+  elems <- dg_find_topics(q = big$name, n = 1, elements = TRUE)
+  row <- elems[elems$id == big$id, ]
+  expect_equal(nrow(row), 1)
+  expect_false(anyNA(c(
+    row$n_datasets,
+    row$n_dataservices,
+    row$n_reuses
+  )))
+  expect_true(
+    row$n_datasets + row$n_dataservices + row$n_reuses <= row$n_elements
+  )
+})

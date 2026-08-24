@@ -109,6 +109,29 @@ sncf$title
 #> [5] "Fichier de formes des lignes du Réseau Ferré National"
 ```
 
+You can likewise narrow a search to a curated *theme*. Discover which
+themes exist with `dg_find_topics()` (which also reports how many
+elements each groups), then filter the catalog by a theme’s id:
+
+``` r
+topics <- dg_find_topics(q = "mobilité", n = 3)
+topics[, c("id", "name", "n_elements")]
+#> # A tibble: 3 × 3
+#>   id                       name                                       n_elements
+#>   <chr>                    <chr>                                           <int>
+#> 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         27
+#> 2 68da7823bc643f6ea5cae5a0 🚎 Tarification sociale/solidaire des tran…          0
+#> 3 673cba35210c475e77ef3e38 Catalogue des données sur l'immobilier lo…        135
+
+mobility <- dg_find_datasets(topic = topics$id[1], n = 5)
+mobility$title
+#> [1] "Nombre de places de stationnement vélo "                                  
+#> [2] "Flux domicile-travail selon le mode de transport principal utilisé"       
+#> [3] "Distance domicile-travail moyenne, selon le mode de déplacement principal"
+#> [4] "Nombre de stations de transports en commun selon le type de réseau"       
+#> [5] "Nombre de flux domicile-travail"
+```
+
 Glimpse a dataset’s health and engagement metadata before deciding to
 pull it. `dg_glimpse()` surfaces the v2-inline `quality` score and
 flags, `metrics` (views, downloads, followers, …) and context that the

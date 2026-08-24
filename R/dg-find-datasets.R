@@ -68,6 +68,13 @@
 #' @param tag Optional tag filter. Tags form an open vocabulary (dynamic
 #'   facets), so any free-form tag such as `"mobilite"` is accepted and is not
 #'   enumerated or validated. Defaults to `NULL`.
+#' @param topic Optional topic filter, the **24-hex `topic` id** of a theme
+#'   (found via [dg_find_topics()]). Only datasets grouped under that topic are
+#'   returned. Matched server-side as a single-valued filter, so pass exactly
+#'   one id. Topic ids form an open vocabulary (themes are created
+#'   dynamically), so this is not enumerated or validated. Unlike `organization`,
+#'   a human-readable topic name/slug is not auto-resolved — use
+#'   [dg_find_topics()] to discover a theme and get its id. Defaults to `NULL`.
 #' @param granularity Optional spatial granularity filter, one of the
 #'   exhaustive values `"other"`, `"fr:commune"`, `"country"`, `"fr:epci"`,
 #'   `"fr:departement"`, `"poi"`, `"fr:region"`, `"fr:canton"`,
@@ -113,6 +120,10 @@
 #' # id or by its exact slug/name (resolved for you), and by geozone.
 #' fr <- dg_find_datasets(organization = "sncf",
 #'                        geozone = "country:fr", n = 10)
+#'
+#' # Only datasets grouped under one topic (find its id with dg_find_topics()).
+#' mob <- dg_find_topics(q = "mobilité")
+#' dg_find_datasets(topic = mob$id[1], n = 10)
 dg_find_datasets <- function(
   q = NULL,
   n = 1000,
@@ -123,6 +134,7 @@ dg_find_datasets <- function(
   access_type = NULL,
   license = NULL,
   tag = NULL,
+  topic = NULL,
   granularity = NULL,
   last_update = NULL,
   producer_type = NULL,
@@ -141,6 +153,7 @@ dg_find_datasets <- function(
     access_type = access_type,
     license = license,
     tag = tag,
+    topic = topic,
     granularity = granularity,
     last_update = last_update,
     producer_type = producer_type

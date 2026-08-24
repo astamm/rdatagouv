@@ -14,6 +14,7 @@ dg_find_datasets(
   access_type = NULL,
   license = NULL,
   tag = NULL,
+  topic = NULL,
   granularity = NULL,
   last_update = NULL,
   producer_type = NULL,
@@ -71,6 +72,14 @@ downloadable) or \code{"restricted"} (access requires approval). Defaults to
 \item{tag}{Optional tag filter. Tags form an open vocabulary (dynamic
 facets), so any free-form tag such as \code{"mobilite"} is accepted and is not
 enumerated or validated. Defaults to \code{NULL}.}
+
+\item{topic}{Optional topic filter, the \strong{24-hex \code{topic} id} of a theme
+(found via \code{\link[=dg_find_topics]{dg_find_topics()}}). Only datasets grouped under that topic are
+returned. Matched server-side as a single-valued filter, so pass exactly
+one id. Topic ids form an open vocabulary (themes are created
+dynamically), so this is not enumerated or validated. Unlike \code{organization},
+a human-readable topic name/slug is not auto-resolved — use
+\code{\link[=dg_find_topics]{dg_find_topics()}} to discover a theme and get its id. Defaults to \code{NULL}.}
 
 \item{granularity}{Optional spatial granularity filter, one of the
 exhaustive values \code{"other"}, \code{"fr:commune"}, \code{"country"}, \code{"fr:epci"},
@@ -149,5 +158,9 @@ documented <- dg_find_datasets(schema_only = TRUE, resources = TRUE, n = 10)
 # id or by its exact slug/name (resolved for you), and by geozone.
 fr <- dg_find_datasets(organization = "sncf",
                        geozone = "country:fr", n = 10)
+
+# Only datasets grouped under one topic (find its id with dg_find_topics()).
+mob <- dg_find_topics(q = "mobilité")
+dg_find_datasets(topic = mob$id[1], n = 10)
 \dontshow{\}) # examplesIf}
 }

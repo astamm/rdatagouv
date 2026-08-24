@@ -20,6 +20,7 @@ Four workflow steps, each mapping to exported functions:
 |------|----------|
 | Find / search the catalog | `dg_find_datasets()` |
 | Find / identify producers | `dg_find_organization()` |
+| Find / identify themes | `dg_find_topics()` |
 | Judge documented columns | `dg_schema()` |
 | Download tabular resources | `dg_pull_dataset()` |
 | Summarise table contents | `dg_summary()`, `dg_summarise()` |
@@ -28,18 +29,22 @@ Four workflow steps, each mapping to exported functions:
 The design rationale and full history live in `DESIGN-discovery.md` (top-level,
 ignored by R CMD build). Treat that file as a proposal/decision log: its
 `*(implemented)*` phasing markers and change map reflect status, but the
+`TOPIC-SUPPORT-SKETCH.md` (top-level) is a related decision log that sketched
+and confirmed the topic-support work (`dg_find_topics()` + the `topic` filter on
+`dg_find_datasets()`); like `DESIGN-discovery.md` it is also Rbuildignore'd so
+it never trips `R CMD check`. Both logs track status/decisions, but the
 "Core design concepts", [Public API](#public-api-7-exports) and architecture
 sections of *this* AGENTS.md are the source of truth for how the package
 currently behaves; exploratory/optional and superseded-alternative sections in
 the design doc are historical, not normative. The README and the vignette
 `vignettes/datagouv.qmd` document usage for end users.
 
-## Public API (8 exports)
+## Public API (10 exports)
 
 - `dg_find_datasets(q = NULL, n = 1000, format = catalog_formats(),
   schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL,
-  license = NULL, tag = NULL, granularity = NULL, last_update = NULL,
-  producer_type = NULL, resources = FALSE)` -> tibble with robust columns
+  license = NULL, tag = NULL, topic = NULL, granularity = NULL,
+  last_update = NULL, producer_type = NULL, resources = FALSE)` -> tibble with robust columns
   `title, id, description, slug, organization, license, quality_score,
   quality_flags, views, resources_downloads, access_type, frequency,
   spatial_granularity, temporal_start, temporal_end, archived, featured` plus
@@ -51,13 +56,17 @@ the design doc are historical, not normative. The README and the vignette
   union; a bare comma-joined value is *not* parsed, so pass a vector);
   `schema_only = TRUE` stays **client-side** (v2 has no "declares any schema"
   boolean); the filter args (`geozone`,
-  `access_type`, `license`, `tag`, `granularity`, `last_update`,
+  `access_type`, `license`, `tag`, `topic`, `granularity`, `last_update`,
   `producer_type`) are forwarded as server-side filters. `organization` accepts
   a 24-hex producer id **or** an organization `name`/`slug`; a name/slug is
   auto-resolved to its 24-hex id via the v2 `organizations/search` endpoint
   using an **exact match only** (`resolve_organization_id()`) and errors with
   the candidate list on zero or multiple exact matches, while a bare 24-hex id
-  is passed straight through without a lookup. **Resource fidelity is
+  is passed straight through without a lookup. `topic` accepts the **24-hex id
+  of a theme** (found via `dg_find_topics()`); like `tag`/`geozone` it is an
+  open vocabulary, so it is **not validated or name/slug-resolved** (unlike
+  `organization`) — discover the id with `dg_find_topics()` and pass it
+  directly. **Resource fidelity is
   opt-in**: because v2 search does NOT inline resources, `n_resources`,
   `formats`, `has_table` and `has_schema` are `NA` unless `resources = TRUE`
   (which N+1-fetches each dataset's resources subsection). `id` and `title` are
@@ -79,6 +88,18 @@ the design doc are historical, not normative. The README and the vignette
   stable 24-hex `id`, which you can pass to `dg_find_datasets(organization =)`.
   Backed by `fetch_organizations_all()`/`fetch_organization_page()` (same
   pointer-pagination envelope as `fetch_search_page()`).
+- `dg_find_topics(q = NULL, n = 20, elements = FALSE)` -> tibble
+  `id, name, slug, description, tags, featured, n_elements` plus
+  `n_datasets, n_dataservices, n_reuses`, listing themes matching `q` from the
+  v2 `topics/search` endpoint (`q` is server-side full-text; default `n = 20`).
+  `n_elements` is always the topic's declared `elements$total`; the per-kind
+  breakdown is `NA` unless `elements = TRUE`, which N+1-fetches each topic's
+  `topics/<id>/elements/` subsection and counts the **nested `element$class`**
+  (Dataset/Reuse/Dataservice); external-link (NULL-class) entries are excluded.
+  Use it to discover a theme and get its stable 24-hex `id`, which you pass to
+  `dg_find_datasets(topic =)`. Backed by `fetch_topics_all()`/
+  `fetch_topic_page()` (same pointer-pagination envelope as organizations),
+  plus `fetch_topic_elements()`/`topic_element_counts()`.
 - `dg_glimpse(id, table = NULL)` -> a named list surfacing v2-inline
   dataset-level metadata that the v1 fetch path does not expose:
   `quality` (score + boolean flags), `metrics` (views, resources_downloads,
@@ -123,10 +144,14 @@ Note: `format_tibble()` is **not exported** (used internally and in tests).
   `parse_table_id`, `table_attr` / `table_id_from_attr` / `resolve_table_id`,
   `%||%`, `uniquify_names`, `is_dataset_id`, plus the organization-source
   helpers `datagouv_organizations_url()`, `fetch_organization_page()`,
-  `fetch_organizations_all()` and `resolve_organization_id()`.
+  `fetch_organizations_all()` and `resolve_organization_id()`, and the
+  topic-source helpers `datagouv_topics_url()`, `fetch_topic_page()`,
+  `fetch_topics_all()`, `fetch_topic_elements()` and `topic_element_counts()`.
 - `R/dg-find-datasets.R` — `dg_find_datasets()`.
 - `R/dg-find-organization.R` — `dg_find_organization()` + internal
   `organization_empty_columns()`.
+- `R/dg-find-topics.R` — `dg_find_topics()` + internal
+  `topic_empty_columns()`.
 - `R/dg-pull-dataset.R` — `dg_pull_dataset()`.
 - `R/dg-table-id.R` — `dg_table_id()`.
 - `R/dg-refetch.R` — `dg_refetch()` + `parse_table_id` validation.

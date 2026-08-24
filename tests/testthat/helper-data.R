@@ -165,6 +165,61 @@ mock_organization_envelope <- function(orgs, next_page = NULL, total = NULL) {
   mock_search_envelope(orgs, next_page = next_page, total = total)
 }
 
+# A minimal, realistic topic object as returned by the v2 topics/search
+# endpoint. `id` is the stable 24-hex topic id a caller would pass to the
+# `topic` argument of dg_find_datasets().
+mock_topic <- function(
+  id = "54f5f20f88ee38233f4da0dd",
+  name = "Mobilité",
+  slug = "mobilite",
+  description = NULL,
+  tags = character(),
+  featured = FALSE,
+  n_elements = 0
+) {
+  list(
+    id = id,
+    name = name,
+    slug = slug,
+    description = description %||% "A mock topic.",
+    tags = tags,
+    featured = featured,
+    elements = list(
+      rel = "subsection",
+      href = paste0(
+        "https://www.data.gouv.fr/api/2/topics/",
+        id,
+        "/elements/?page_size=100"
+      ),
+      type = "GET",
+      total = n_elements
+    )
+  )
+}
+
+# Build a single element item of a topic's elements subsection. `class` is the
+# *nested* element$class classifier; pass `NULL` for an external-link entry
+# (element is empty).
+mock_topic_element <- function(
+  class = "Dataset",
+  id = "dset-1",
+  title = "Curator annotation"
+) {
+  element <- if (is.null(class)) {
+    list()
+  } else {
+    list(class = class, id = id)
+  }
+  list(
+    id = id,
+    title = title,
+    description = NULL,
+    tags = list(),
+    extras = list(),
+    element = element
+  )
+}
+
 # A small CSV the mocks can return when "reading" a resource.
 mock_csv_data <- function() {
   data.frame(

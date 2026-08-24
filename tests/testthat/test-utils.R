@@ -119,13 +119,15 @@ test_that("fetch_search_page() forwards filter args as single query params", {
     q = "vélo",
     organization = "org-1",
     geozone = "country:fr",
-    license = "lov2"
+    license = "lov2",
+    topic = "54f5f20f88ee38233f4da0dd"
   )
 
   expect_equal(seen$q, "vélo")
   expect_equal(seen$organization, "org-1")
   expect_equal(seen$geozone, "country:fr")
   expect_equal(seen$license, "lov2")
+  expect_equal(seen$topic, "54f5f20f88ee38233f4da0dd")
 })
 
 test_that("fetch_search_page() omits NULL filters", {
@@ -140,6 +142,53 @@ test_that("fetch_search_page() omits NULL filters", {
   expect_equal(seen$q, "vélo")
   expect_null(seen$organization)
   expect_null(seen$geozone)
+  expect_null(seen$topic)
+})
+
+test_that("fetch_topics_all() follows a string next_page until NULL", {
+  pages <- list(
+    mock_search_envelope(
+      list(mock_topic(id = "a", name = "Alpha")),
+      next_page = "https://x/?page=2"
+    ),
+    mock_search_envelope(
+      list(mock_topic(id = "b", name = "Beta")),
+      next_page = NULL
+    )
+  )
+  page_calls <- 0L
+  local_mocked_bindings(
+    fetch_topic_page = function(url = datagouv_topics_url(), ...) {
+      page_calls <<- page_calls + 1L
+      pages[[page_calls]]
+    }
+  )
+
+  out <- fetch_topics_all(q = "x", n = 10)
+
+  expect_equal(length(out), 2)
+  expect_equal(vapply(out, `[[`, character(1), "id"), c("a", "b"))
+})
+
+test_that("topic_element_counts() classifies nested element$class", {
+  local_mocked_bindings(
+    fetch_topic_elements = function(topic_id) {
+      list(
+        mock_topic_element(class = "Dataset", id = "d1"),
+        mock_topic_element(class = "Dataset", id = "d2"),
+        mock_topic_element(class = "Reuse", id = "r1"),
+        mock_topic_element(class = "Dataservice", id = "s1"),
+        # External-link annotation: element is empty, must not count.
+        mock_topic_element(class = NULL, id = "link1")
+      )
+    }
+  )
+
+  counts <- topic_element_counts("54f5f20f88ee38233f4da0dd")
+
+  expect_equal(counts$n_datasets, 2L)
+  expect_equal(counts$n_dataservices, 1L)
+  expect_equal(counts$n_reuses, 1L)
 })
 
 # fetch_search_all() -- v2 pointer-based pagination ------------------------------

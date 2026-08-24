@@ -1,5 +1,20 @@
 # datagouv 0.0.0.9000
 
+- New export `dg_find_topics(q = NULL, n = 20, elements = FALSE)` queries the
+  v2 `topics/search` endpoint and returns a tibble of
+  `{id, name, slug, description, tags, featured, n_elements}` (plus
+  `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE`) for the
+  curated themes grouping datasets, reuses and dataservices. Use it to
+  discover a theme and get its stable 24-hex `id`. The per-kind counts require
+  one extra request per topic (an N+1 crawl), so `n_elements` is always the
+  topic's declared total while the breakdown defaults to `NA`.
+- `dg_find_datasets()` gains a `topic` filter: pass the 24-hex id of a theme
+  (found via `dg_find_topics()`) to return only datasets grouped under that
+  topic. Matched server-side as a single-valued filter, echoing how
+  `organization`/`geozone` narrow the catalog. Like `tag`/`geozone`, topic ids
+  form an open vocabulary, so the argument is not enumerated or validated; a
+  human-readable topic name/slug is not auto-resolved (see
+  `dg_find_topics()`).
 - `dg_find_datasets()` now validates its closed-vocabulary filter arguments
   (`access_type`, `license`, `granularity`, `last_update`, `producer_type`)
   before they reach the server, erroring with the exhaustive list of valid

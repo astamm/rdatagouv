@@ -2,6 +2,7 @@
 
 export(dg_find_datasets)
 export(dg_find_organization)
+export(dg_find_topics)
 export(dg_glimpse)
 export(dg_pull_dataset)
 export(dg_refetch)

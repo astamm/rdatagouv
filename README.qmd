@@ -82,6 +82,18 @@ sncf <- dg_find_datasets(organization = "sncf", n = 5)
 sncf$title
 ```
 
+You can likewise narrow a search to a curated *theme*. Discover which themes
+exist with `dg_find_topics()` (which also reports how many elements each
+groups), then filter the catalog by a theme's id:
+
+```{r}
+topics <- dg_find_topics(q = "mobilité", n = 3)
+topics[, c("id", "name", "n_elements")]
+
+mobility <- dg_find_datasets(topic = topics$id[1], n = 5)
+mobility$title
+```
+
 Glimpse a dataset's health and engagement metadata before deciding to pull it.
 `dg_glimpse()` surfaces the v2-inline `quality` score and flags, `metrics`
 (views, downloads, followers, ...) and context that the fetch path does not

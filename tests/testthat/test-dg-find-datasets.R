@@ -183,6 +183,7 @@ test_that("dg_find_datasets() forwards filter arguments to the search", {
       access_type = NULL,
       license = NULL,
       tag = NULL,
+      topic = NULL,
       granularity = NULL,
       last_update = NULL,
       producer_type = NULL,
@@ -197,6 +198,7 @@ test_that("dg_find_datasets() forwards filter arguments to the search", {
         access_type = access_type,
         license = license,
         tag = tag,
+        topic = topic,
         granularity = granularity,
         last_update = last_update,
         producer_type = producer_type
@@ -213,6 +215,7 @@ test_that("dg_find_datasets() forwards filter arguments to the search", {
     access_type = "open",
     license = "lov2",
     tag = "mobilite",
+    topic = "54f5f20f88ee38233f4da0dd",
     granularity = "fr:commune",
     last_update = "last_30_days",
     producer_type = "public-service"
@@ -226,6 +229,7 @@ test_that("dg_find_datasets() forwards filter arguments to the search", {
   expect_equal(seen$access_type, "open")
   expect_equal(seen$license, "lov2")
   expect_equal(seen$tag, "mobilite")
+  expect_equal(seen$topic, "54f5f20f88ee38233f4da0dd")
   expect_equal(seen$granularity, "fr:commune")
   expect_equal(seen$last_update, "last_30_days")
   expect_equal(seen$producer_type, "public-service")
