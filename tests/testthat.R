@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(datagouv)
+library(rdatagouv)
 
-test_check("datagouv")
+test_check("rdatagouv")

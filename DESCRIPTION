@@ -1,4 +1,4 @@
-Package: datagouv
+Package: rdatagouv
 Title: Tools to Download and Explore Datasets from the French Open Data Platform
 Version: 0.0.0.9000
 Authors@R: c( 
@@ -33,8 +33,8 @@ Description: Provides a client for the public API of data.gouv.fr, the French
     missing-value rate, ...). Each returned table carries a stable identifier
     so it can be re-fetched later. Requests are built on top of 'httr2'.
 License: MIT + file LICENSE
-URL: https://astamm.github.io/datagouv/
-BugReports: https://github.com/astamm/datagouv/issues
+URL: https://astamm.github.io/rdatagouv/
+BugReports: https://github.com/astamm/rdatagouv/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: quarto

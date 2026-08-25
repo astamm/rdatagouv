@@ -1,4 +1,4 @@
-#' datagouv: Tools to download and explore datasets from the French open data
+#' rdatagouv: Tools to download and explore datasets from the French open data
 #' platform
 #'
 #' This package provides a small client for the public API of

@@ -277,7 +277,7 @@ Implications for this package:
 | `R/dg-glimpse.R` (new) | Exported `dg_glimpse(id, table = NULL)` surfaces v2-inline dataset metadata (`quality`, `metrics`, `context`, plus `resources` when `table = TRUE`) via `fetch_dataset_v2()` + `fetch_resource_subsection()`. |
 | `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. |
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
-| `R/datagouv-package.R` / NAMESPACE | Document/export the new functions. |
+| `R/rdatagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |
 | `tests/test-live-api.R` (new) | Opt-in live integration tests: verify a file inside a real ZIP is addressable and re-fetchable via its composed URI on the live data.gouv API. Skipped unless `DATAGOUV_LIVE=1` (connectivity is probed against data.gouv itself, not `skip_if_offline()`'s `captive.apple.com`). See AGENTS.md. |
 | `README.qmd` | Update flow examples; rebuild README. |
