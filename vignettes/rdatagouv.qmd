@@ -1,5 +1,5 @@
 ---
-title: "Finding, judging and re-fetching French open data with datagouv"
+title: "Finding, judging and re-fetching French open data with rdatagouv"
 author: "Aymeric Stamm"
 format: html
 editor: source
@@ -25,9 +25,9 @@ unconditionally:
 
 ```{r}
 #| include: false
-has_datagouv <- requireNamespace("datagouv", quietly = TRUE)
-if (has_datagouv) {
-  library(datagouv)
+has_rdatagouv <- requireNamespace("rdatagouv", quietly = TRUE)
+if (has_rdatagouv) {
+  library(rdatagouv)
 }
 library(dplyr)     # for the pipe workflow (pull(), head())
 knitr::opts_hooks$set(
@@ -58,7 +58,7 @@ knitr::opts_hooks$set(
     fun <- options$dg
     ok <- is.character(fun) && length(fun) == 1L &&
       toupper(Sys.getenv("DATAGOUV_LIVE")) == "1" &&
-      "package:datagouv" %in% search() &&
+      "package:rdatagouv" %in% search() &&
       !is.null(tryCatch(get(fun, inherits = TRUE), error = function(e) NULL))
     options$eval <- ok && isTRUE(options$eval)
     options
@@ -66,9 +66,9 @@ knitr::opts_hooks$set(
 )
 ```
 
-## The problem datagouv solves
+## The problem rdatagouv solves
 
-`datagouv` is a small R client for the public API of
+`rdatagouv` is a small R client for the public API of
 [data.gouv.fr](https://www.data.gouv.fr), the French government's open data
 platform. It was written with a specific user in mind: a student or a data
 scientist who wants to *find* a dataset that matches their interests, *judge*
@@ -93,7 +93,7 @@ than it should be:
    script that reaches for a dataset "by title" is fragile. You want an address
    that always resolves to the same table.
 
-`datagouv` addresses all four. Its functions are organised around that workflow:
+`rdatagouv` addresses all four. Its functions are organised around that workflow:
 
 | Step | Function |
 |------|----------|
@@ -113,7 +113,7 @@ tailored to the data.gouv.fr API.
 
 ```{r}
 #| live: true
-library(datagouv)
+library(rdatagouv)
 
 datasets <- dg_find_datasets(n = 20)
 head(datasets)

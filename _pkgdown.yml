@@ -1,4 +1,4 @@
-url: https://astamm.github.io/datagouv/
+url: https://astamm.github.io/rdatagouv/
 template:
   bootstrap: 5
 reference:
@@ -22,7 +22,3 @@ reference:
   contents:
   - dg_summary
   - dg_summarise
-articles:
-- title: Articles
-  contents: datagouv
-

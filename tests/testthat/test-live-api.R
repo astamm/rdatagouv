@@ -52,7 +52,7 @@ live_zip_uri <- function(file = live_zip_member) {
 test_that("the v2 datasets/search endpoint has the expected envelope", {
   skip_unless_live()
 
-  body <- getFromNamespace("fetch_search_page", "datagouv")(
+  body <- getFromNamespace("fetch_search_page", "rdatagouv")(
     q = "vélo",
     page_size = 1
   )
@@ -68,10 +68,10 @@ test_that("the v2 datasets/search endpoint has the expected envelope", {
 test_that("v2 organization and geozone filters narrow the total", {
   skip_unless_live()
 
-  unfiltered <- getFromNamespace("fetch_search_page", "datagouv")(page_size = 1)
+  unfiltered <- getFromNamespace("fetch_search_page", "rdatagouv")(page_size = 1)
   # A current, live producer: "Ministère de l'intérieur". (The v2 API matches
   # `organization` by its 24-hex id; a slug is not accepted.)
-  narrowed <- getFromNamespace("fetch_search_page", "datagouv")(
+  narrowed <- getFromNamespace("fetch_search_page", "rdatagouv")(
     organization = "534fff91a3a7292c64a77f53",
     page_size = 1
   )
@@ -112,13 +112,13 @@ test_that("a refetched ZIP member matches a direct read of that file", {
 
   # Cross-check against reading the same member straight out of the archive,
   # the low-level path dg_refetch() wraps.
-  dataset <- getFromNamespace("fetch_dataset", "datagouv")(live_dataset_id)
+  dataset <- getFromNamespace("fetch_dataset", "rdatagouv")(live_dataset_id)
   resource <- Filter(function(r) r$id == live_zip_rid, dataset$resources)[[1]]
-  direct <- getFromNamespace("read_one_zip_file", "datagouv")(
+  direct <- getFromNamespace("read_one_zip_file", "rdatagouv")(
     resource,
     live_zip_member
   )
-  direct <- tibble::as_tibble(getFromNamespace("format_tibble", "datagouv")(
+  direct <- tibble::as_tibble(getFromNamespace("format_tibble", "rdatagouv")(
     direct
   ))
   direct <- structure(direct, id = live_zip_uri())

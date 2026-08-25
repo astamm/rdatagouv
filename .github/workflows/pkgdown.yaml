@@ -36,7 +36,7 @@ jobs:
 
       - name: Build site
         env:
-          # Opt in to live-API vignette chunks (see vignettes/datagouv.qmd).
+          # Opt in to live-API vignette chunks (see vignettes/rdatagouv.qmd).
           # The site's vignette then shows real output; R CMD build/check are
           # unaffected because they don't set this variable.
           DATAGOUV_LIVE: "1"
