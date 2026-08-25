@@ -10,3 +10,4 @@
 ^AGENTS\.md$
 ^vignettes/\.quarto$
 ^codecov\.yml$
+^rdatagouv-howto\.qmd$
