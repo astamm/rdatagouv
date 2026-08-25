@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Guidance for AI agents (and returning humans) working on the `datagouv` R
+Guidance for AI agents (and returning humans) working on the `rdatagouv` R
 package. Establishes the package's intent, architecture and conventions so
 future sessions can pick up context quickly.
 
 ## Purpose
 
-`datagouv` is an R client for the public API of data.gouv.fr, the French
+`rdatagouv` is an R client for the public API of data.gouv.fr, the French
 government's open-data platform. Its **primary intent** (the reframed goal that
 drives the design):
 
@@ -37,7 +37,7 @@ it never trips `R CMD check`. Both logs track status/decisions, but the
 sections of *this* AGENTS.md are the source of truth for how the package
 currently behaves; exploratory/optional and superseded-alternative sections in
 the design doc are historical, not normative. The README and the vignette
-`vignettes/datagouv.qmd` document usage for end users.
+`vignettes/rdatagouv.qmd` document usage for end users.
 
 ## Public API (10 exports)
 
@@ -160,7 +160,7 @@ Note: `format_tibble()` is **not exported** (used internally and in tests).
 - `R/dg-schema.R` — `dg_schema()` + `field_attr()` + `resolve_schema_url()`.
 - `R/dg-summary.R` — `dg_summary()` (single-table metrics).
 - `R/dg-summarise.R` — `dg_summarise()` + internal `flatten_tables`.
-- `R/datagouv-package.R` — package-level `.Rd`.
+- `R/rdatagouv-package.R` — package-level `.Rd`.
 
 ## Core design concepts
 
@@ -259,7 +259,7 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
   both files together. Do not hand-edit README.md — edits there are lost on the
   next regeneration and make it drift from the source. This applies
   systematically to any change touching the README.
-- One Quarto vignette: `vignettes/datagouv.qmd`. It uses a knitr chunk hook so
+- One Quarto vignette: `vignettes/rdatagouv.qmd`. It uses a knitr chunk hook so
   live-API chunks (marked `#| live: true`) run only when the `DATAGOUV_LIVE=1`
   env var is set (the pkgdown workflow sets it so the site shows real output).
   They are skipped otherwise — including during `R CMD build`/`R CMD check`,
@@ -273,7 +273,7 @@ preserve full format/coverage (unindexed resources 404 on the tabular service).
 - **Keep docs in sync on every change.** At the end of each task, audit the
   package-level docs and fill in relevant files to reflect the changes made —
   whether a function or feature was added, removed, or changed signature.
-  Cover at minimum: vignettes (`vignettes/datagouv.qmd`), pkgdown-related
+  Cover at minimum: vignettes (`vignettes/rdatagouv.qmd`), pkgdown-related
   files (`_pkgdown.yml`, `.github/workflows/pkgdown.yaml`), `DESCRIPTION`,
   `NEWS.md`, `DESIGN-discovery.md`, and the `README.qmd`/`README.md` pair
   (regenerate `README.md` from `README.qmd` with `devtools::build_readme()`).
@@ -361,13 +361,13 @@ transient platform artifacts — none reflect a defect in the package (local
 
 ### The `dg` opts_hook (vignette) — why and how
 
-`vignettes/datagouv.qmd` sets `knitr::opts_hooks` for `live` (DATAGOUV_LIVE=1)
+`vignettes/rdatagouv.qmd` sets `knitr::opts_hooks` for `live` (DATAGOUV_LIVE=1)
 and `dg`. The `dg` hook gates the two network-free in-memory chunks so a bad
 environment degrades to a skip instead of failing `R CMD build`. Each chunk sets
 `#| dg: <function name>` (e.g. `dg: dg_summarise`) **and** `#| error: true`, and
 wraps its call in `try()` (the actual robustness guarantee — see below); the
 hook evaluates the chunk only when `DATAGOUV_LIVE=1` **and**
-`"package:datagouv" %in% search()` **and** the named export forces to a real
+`"package:rdatagouv" %in% search()` **and** the named export forces to a real
 function — checked with `get(<fn>, inherits = TRUE)` inside `tryCatch`, NOT
 `exists()`.
 
@@ -395,7 +395,7 @@ not fire there.
 **`error: true` alone is NOT a sufficient backstop (run 32594354116, head
 `9bf4b6f`).** The follow-up commit added `#| error: true` to both decorative
 chunks and still aborted identically — `* creating vignettes ... ERROR`,
-`Quitting from datagouv.qmd:286-291`, `could not find function
+`Quitting from rdatagouv.qmd:286-291`, `could not find function
 "dg_summarise"`. Reproduced locally with `quarto_render()`: knitr's `error`
 option does contain a *normal function-body error*, but it does **not** contain
 the unforceable-export hard failure. The error is raised while forcing the

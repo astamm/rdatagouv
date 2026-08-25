@@ -43,8 +43,8 @@ jobs:
         with:
           # Force install the package itself so the Quarto subprocess that
           # re-builds the vignette during `R CMD build` can load it. Without
-          # this, `R CMD build` installs datagouv into an ephemeral temp
-          # library that the child R process cannot see, and `library(datagouv)`
+          # this, `R CMD build` installs rdatagouv into an ephemeral temp
+          # library that the child R process cannot see, and `library(rdatagouv)`
           # in the vignette errors on Windows. See
           # https://github.com/quarto-dev/quarto-r/issues/217
           extra-packages: any::rcmdcheck, local::.

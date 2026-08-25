@@ -1,4 +1,4 @@
-# Internal helpers for the datagouv package.
+# Internal helpers for the rdatagouv package.
 # These functions are not exported.
 
 # Base URL of the data.gouv public API.
@@ -50,7 +50,7 @@ req_data_gouv <- function(req) {
         # A hung reply must not block dg_pull_dataset() indefinitely.
         httr2::req_user_agent(
           req,
-          "datagouv R package (https://github.com/stamm-a/datagouv)"
+          "rdatagouv R package (https://github.com/stamm-a/rdatagouv)"
         ),
         seconds = 30
       ),
@@ -960,7 +960,7 @@ format_from_path <- function(path) {
 read_zip_resource <- function(resource) {
   zip <- download_resource(resource)
   on.exit(unlink(zip))
-  dir <- tempfile(pattern = "datagouv-zip-")
+  dir <- tempfile(pattern = "rdatagouv-zip-")
   dir.create(dir)
   on.exit(unlink(dir, recursive = TRUE), add = TRUE)
   utils::unzip(zip, exdir = dir)
@@ -1078,7 +1078,7 @@ parse_table_id <- function(id) {
 read_one_zip_file <- function(resource, name) {
   zip <- download_resource(resource)
   on.exit(unlink(zip))
-  dir <- tempfile(pattern = "datagouv-zip-")
+  dir <- tempfile(pattern = "rdatagouv-zip-")
   dir.create(dir)
   on.exit(unlink(dir, recursive = TRUE), add = TRUE)
   utils::unzip(zip, exdir = dir)
@@ -1134,7 +1134,7 @@ read_resource <- function(resource) {
 # from a static CDN that can also be slow or flaky).
 download_resource <- function(resource) {
   path <- tempfile(
-    pattern = "datagouv-",
+    pattern = "rdatagouv-",
     fileext = paste0(".", resource$format %||% "bin")
   )
   writeBin(

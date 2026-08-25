@@ -1,4 +1,4 @@
-# datagouv 0.0.0.9000
+# rdatagouv 0.0.0.9000
 
 - `dg_find_datasets(schema_only = TRUE)` no longer silently returns an
   unfiltered catalog. Because `schema_only` selects client-side on `has_schema`

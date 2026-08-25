@@ -437,7 +437,7 @@ without changing the public signature. Flag this as an explicit scope decision.
 | `R/dg-find-datasets.R` | add `topic = NULL` param + `@param` + example; add to `filter_args` |
 | `R/dg-find-topics.R` | **new** — `dg_find_topics()` + `topic_empty_columns()` |
 | `tests/testthat/` | URL-param unit test for `topic`; `topic` forwarding test; live-test entry in `test-live-api.R` |
-| docs | roxygen/`devtools::document()`; `NIPATES.md` reference + list the 9th export; `NEWS.md`; `README.qmd`/`README.md`; `vignettes/datagouv.qmd`; `DESIGN-discovery.md` change map; `_pkgdown.yml` reference section |
+| docs | roxygen/`devtools::document()`; `NIPATES.md` reference + list the 9th export; `NEWS.md`; `README.qmd`/`README.md`; `vignettes/rdatagouv.qmd`; `DESIGN-discovery.md` change map; `_pkgdown.yml` reference section |
 | format | `air format .` at package root before committing |
 
 ---
