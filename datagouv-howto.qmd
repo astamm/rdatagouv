@@ -1,7 +1,7 @@
 ---
-title: "Le package R [{datagouv}](https://astamm.github.io/datagouv/index.html) : de la découverte des données à la reproductibilité"
+title: "Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : de la découverte des données à la reproductibilité"
 subtitle: "Documentation technique — API data.gouv, httr2, URI, tests et mocking"
-author: "Équipe datagouv"
+author: "Équipe rdatagouv"
 date: 2026-08-21
 lang: fr-FR
 format: html
@@ -22,7 +22,7 @@ make_gt <- function(df, ...) {
 
 ::: {.callout-note}
 Ce document décrit l'architecture et le fonctionnement du package R
-[{datagouv}](https://astamm.github.io/datagouv/index.html), un client de l'API publique de la plateforme française
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html), un client de l'API publique de la plateforme française
 d'open data data.gouv.fr. Il est conçu comme une documentation pédagogique et
 technique : il couvre l'intention du package, les différents points d'entrée de
 la plateforme, l'usage du package [{httr2}](https://httr2.r-lib.org/) pour interroger des API web, le
@@ -30,9 +30,9 @@ concept d'**URI** appliqué à la reproductibilité, et la stratégie de **test*
 (mocking et API live).
 :::
 
-# Le package R [{datagouv}](https://astamm.github.io/datagouv/index.html) : intention et objectif principal
+# Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : intention et objectif principal
 
-Le package [{datagouv}](https://astamm.github.io/datagouv/index.html) est un client R pour l'API publique de
+Le package [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) est un client R pour l'API publique de
 <https://www.data.gouv.fr>, la plateforme gouvernementale des
 données publiques françaises ouvertes. Le public cible est constitué d'étudiants et de data
 scientists qui souhaitent travailler sur des données réelles mais manquent
@@ -48,7 +48,7 @@ Ce flux de travail se décompose en quatre étapes, chacune assurée au sein du 
 
 ```{r}
 #| label: tbl-workflow
-#| tbl-cap: "**Flux de travail principal dans le package [{datagouv}](https://astamm.github.io/datagouv/index.html).** Chaque étape est assurée par une fonction dédiée, plus quelques fonctions utilitaires exposées."
+#| tbl-cap: "**Flux de travail principal dans le package [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html).** Chaque étape est assurée par une fonction dédiée, plus quelques fonctions utilitaires exposées."
 #| message: false
 #| warning: false
 #| echo: false
@@ -76,11 +76,11 @@ data.frame(
   make_gt()
 ```
 
-Les workflows typiques sont résumés dans la vignette [*Getting started*](https://astamm.github.io/datagouv/articles/datagouv.html) et dans le [README](https://astamm.github.io/datagouv/index.html) du package. @fig-workflow illustre le flux de travail principal en montrant comment les fonctions s'enchaînent pour passer de la recherche d'un jeu de données au re-téléchargement exact d'une table.
+Les workflows typiques sont résumés dans la vignette [*Getting started*](https://astamm.github.io/rdatagouv/articles/rdatagouv.html) et dans le [README](https://astamm.github.io/rdatagouv/index.html) du package. @fig-workflow illustre le flux de travail principal en montrant comment les fonctions s'enchaînent pour passer de la recherche d'un jeu de données au re-téléchargement exact d'une table.
 
 ```{mermaid}
 %%| label: fig-workflow
-%%| fig-cap: "**Flux de travail principal dans le package [{datagouv}](https://astamm.github.io/datagouv/index.html).** Chaque étape est assurée par une fonction dédiée, plus quelques fonctions utilitaires exposées."
+%%| fig-cap: "**Flux de travail principal dans le package [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html).** Chaque étape est assurée par une fonction dédiée, plus quelques fonctions utilitaires exposées."
 flowchart TD
     A["dg_find_datasets(*q*)"] -->|"formats / n_resources / has_table / has_schema"| B{"choisir un candidat"}
     B --> C["dg_pull_dataset(id)"]
@@ -120,7 +120,7 @@ data.frame(
     "tabular-api.data.gouv.fr",
     "schema.data.gouv.fr"
   ),
-  `Rôle dans datagouv` = c(
+  `Rôle dans rdatagouv` = c(
     "**Backbone** : recherche catalogue et métadonnées de découverte, téléchargement brut des fichiers",
     "API v2 (interface uData native) : recherche `datasets/search`, `organizations/search`, `topics/search`, métadonnées riches par dataset",
     "Service tabulaire (métadonnées par variable) — **pas utilisé** par l'implémentation actuelle",
@@ -136,7 +136,7 @@ C'est **l'épine dorsale** de la plateforme. Elle gère la recherche par mots-cl
 sur le catalogue, les métadonnées de découverte (titre, organisation, licence,
 fréquence, couverture temporelle/spatiale, description, formats, tailles) et le
 téléchargement brut des fichiers (servis par le CDN `static.data.gouv.fr`).
-Dans `datagouv`, le téléchargement (`dg_pull_dataset`), le re-téléchargement
+Dans `rdatagouv`, le téléchargement (`dg_pull_dataset`), le re-téléchargement
 (`dg_refetch`), le schéma (`dg_schema`) et le résumé restent sur cette API v1.
 
 Sa couverture est **totale** : tout ce qui est publié sur la plateforme y est
@@ -173,7 +173,7 @@ filtrage/pagination/tri donées. Cependant, elle ne couvre que les ressources
 indexées par le service tabulaire, est orientée CSV, et ne propose **pas** de
 recherche par mots-clés sur le catalogue.
 
-Dans `datagouv`, elle n'est **pas utilisée** par l'implémentation actuelle.
+Dans `rdatagouv`, elle n'est **pas utilisée** par l'implémentation actuelle.
 Les métadonnées par variable proviennent des documents de schéma publiés sur
 `schema.data.gouv.fr` (voir ci-dessous), qui contiennent les descriptions
 réellement rédigées par les producteurs.
@@ -234,13 +234,13 @@ l'**exécute** avec `req_perform()` et on en **extrait** le corps
 ## L'approche « wrapping » recommandée
 
 Comme le suggère [l'article *Wrapping APIs*](https://httr2.r-lib.org/articles/wrapping-apis.html),
-un package client comme `datagouv` ne doit pas laisser les détails HTTP fuiter
+un package client comme `rdatagouv` ne doit pas laisser les détails HTTP fuiter
 partout dans le code. On centralise la configuration dans un **helper interne**
 unique, puis chaque appel l'utilise. Cela offre un seul endroit où gérer
 user-agent, timeouts, retries et messages d'erreur — et, comme on le verra,
 un **seul point de couture** (seam) à mocker dans les tests.
 
-Dans `datagouv`, ce helper est `req_data_gouv()` (`.env` interne,
+Dans `rdatagouv`, ce helper est `req_data_gouv()` (`.env` interne,
 `R/utils.R`). Il empile les _policies_ httr2 de la façon suivante — la cellule
 ci-dessous est **exécutable** : elle définit la fonction, puis construit une
 requête et affiche les policies qui s'y sont agrégées.
@@ -255,7 +255,7 @@ req_data_gouv <- function(req) {
         # Une réponse bloquée ne doit pas geler dg_pull_dataset() indéfiniment.
         httr2::req_user_agent(
           req,
-          "datagouv R package (https://github.com/stamm-a/datagouv)"
+          "rdatagouv R package (https://github.com/stamm-a/rdatagouv)"
         ),
         seconds = 30
       ),
@@ -366,7 +366,7 @@ Le parsing est standardisé : `httr2::resp_body_json()` pour les réponses API, 
 
 La cellule suivante met tout en action — et sans réseau : `httr2::with_mocked_responses()`
 intercepte la pile de transport et fournit des réponses **déterministes**,
-exactement comme `datagouv` mocke `http_perform()` dans ses tests. C'est la
+exactement comme `rdatagouv` mocke `http_perform()` dans ses tests. C'est la
 façon de rendre un exemple httr2 exécutable *et* reproductible.
 
 ```{r}
@@ -378,7 +378,7 @@ library(httr2)
 construire <- function() {
   request("https://www.data.gouv.fr/api/2/datasets/search/") |>
     req_url_query(q = "velo", page_size = 2) |>
-    req_user_agent("datagouv exemple") |>
+    req_user_agent("rdatagouv exemple") |>
     req_timeout(seconds = 30) |>
     req_error(is_error = function(resp) resp_status(resp) >= 400)
 }
@@ -419,7 +419,7 @@ Le message d'erreur extrait vient directement du champ `message` défini par la
 policy `req_error()` de `req_data_gouv()` — une erreur compréhensible, extraite
 du corps JSON de la réponse, plutôt qu'un vague échec HTTP.
 
-# Les URI : définition, problème résolu et usage dans `datagouv`
+# Les URI : définition, problème résolu et usage dans `rdatagouv`
 
 ## Qu'est-ce qu'une URI ?
 
@@ -435,7 +435,7 @@ sont mauvais : deux datasets peuvent partager un titre, un titre peut changer,
 être tronqué, ou ne pas refléter le contenu. Une URI construite sur des
 identifiants de plateforme est au contraire stable, parseable et globale.
 
-## Comment `datagouv` construit une URI par table
+## Comment `rdatagouv` construit une URI par table
 
 Chaque table parsée reçoit une **adresse unique et re-fetchable** sous forme
 d'URI, composée par `compose_table_id()` :
@@ -504,14 +504,14 @@ Le **mocking** consiste à **remplacer temporairement** une dépendance d'un cod
 (dans notre cas un appel réseau) par une **illusion contrôlée**, afin de
 tester le comportement du code sans avoir à contacter le système réel.
 
-Les tests unitaires de `datagouv` les testent en **réseau libre** (network-free)
+Les tests unitaires de `rdatagouv` les testent en **réseau libre** (network-free)
 et **déterministes** : on ne peut pas dépendre d'Internet pour vérifier la
 logique d'assemblage d'un tibble, car un appel réel serait lent, fragile et
 instable dans ses réponses. On mocke donc chaque couche de la pile réseau.
 
 Voir [l'article testthat sur le mocking](https://testthat.r-lib.org/articles/mocking.html).
 
-## Les deux niveaux de couture dans `datagouv`
+## Les deux niveaux de couture dans `rdatagouv`
 
 Le package teste deux niveaux, en mockant des fonctions différentes selon ce
 qu'on veut vérifier.
@@ -571,7 +571,7 @@ avec soin les formes réelles des objets API (enveloppe de recherche v2,
 subsection de ressources, éléments de thème au `element$class` imbriqué) pour
 que les fakes restent réalistes et proches de la réalité.
 
-## Pourquoi et quand on mocke dans `datagouv`
+## Pourquoi et quand on mocke dans `rdatagouv`
 
 - **Quand** : pour tous les tests unitaires de logique, de parsing,
   d'assemblage de tibbles, de gestion d'erreurs et de validation des filtres —
@@ -638,7 +638,7 @@ thème de plus de 100 éléments). Cette double stratégie — mocks pour la log
 live pour l'adressage réel — est complémentaire et nécessaire dans un package
 qui enveloppe une API vivante.
 
-# L'API conçue du package `datagouv` : les 7 exports
+# L'API conçue du package `rdatagouv` : les 7 exports
 
 Toutes les fonctions partagent un préfixe **`dg_*`** uniforme. Une table
 représente soit un tibble unique (porte un attribut `id`), soit — pour
@@ -820,7 +820,7 @@ Par souci de reproductibilité, quelques conventions du dépôt sont rappelées 
 
 # Conclusion
 
-Le package `datagouv` illustre une conception aboutie de client pour une API
+Le package `rdatagouv` illustre une conception aboutie de client pour une API
 publique vivante : une **intention pédagogique claire** pilotée par un workflow
 en quatre étapes, une **architecture en couches** qui identifie précisément
 quel point d'entrée de data.gouv sert quelle étape, l'usage du **package

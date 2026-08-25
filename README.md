@@ -2,19 +2,19 @@
 
 <!-- README.md is generated from README.qmd. Please edit that file -->
 
-# datagouv
+# rdatagouv
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/astamm/datagouv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/astamm/datagouv/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/astamm/rdatagouv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/astamm/rdatagouv/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
-coverage](https://codecov.io/gh/astamm/datagouv/graph/badge.svg)](https://app.codecov.io/gh/astamm/datagouv)
-[![pkgdown](https://github.com/astamm/datagouv/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/astamm/datagouv/actions/workflows/pkgdown.yaml)
+coverage](https://codecov.io/gh/astamm/rdatagouv/graph/badge.svg)](https://app.codecov.io/gh/astamm/rdatagouv)
+[![pkgdown](https://github.com/astamm/rdatagouv/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/astamm/rdatagouv/actions/workflows/pkgdown.yaml)
 [![CRAN
-status](https://www.r-pkg.org/badges/version/datagouv.png)](https://CRAN.R-project.org/package=datagouv)
+status](https://www.r-pkg.org/badges/version/rdatagouv.png)](https://CRAN.R-project.org/package=rdatagouv)
 <!-- badges: end -->
 
-`datagouv` is an R client for the public API of
+`rdatagouv` is an R client for the public API of
 [data.gouv.fr](https://www.data.gouv.fr), the French government’s open
 data platform. It helps you *find* a dataset that matches your
 interests, *judge* whether it is usable, *download* it, and later
@@ -25,7 +25,7 @@ of the [`httr2`](https://httr2.r-lib.org) package.
 
 ``` r
 # From GitHub once the package is published
-# remotes::install_github("astamm/datagouv")
+# remotes::install_github("astamm/rdatagouv")
 ```
 
 ## Try it in seconds
@@ -36,18 +36,18 @@ Find datasets matching a topic — `dg_find_datasets()` searches titles
 and descriptions server-side:
 
 ``` r
-library(datagouv)
+library(rdatagouv)
 
 hits <- dg_find_datasets(q = "vélo", n = 5)
 hits[, c("title", "id", "organization", "quality_score", "views")]
 #> # A tibble: 5 × 5
 #>   title                                   id    organization quality_score views
 #>   <chr>                                   <chr> <chr>                <dbl> <int>
-#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7137
-#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7955
-#> 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2252
-#> 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16121
-#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8559
+#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7143
+#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7960
+#> 3 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16132
+#> 4 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2253
+#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8564
 ```
 
 `id` is the stable identifier you use to download; `quality_score` and
@@ -177,7 +177,7 @@ g$metrics
 #> [1] 549
 #> 
 #> $resources_downloads
-#> [1] 39
+#> [1] 43
 #> 
 #> $followers
 #> [1] 0
@@ -280,8 +280,8 @@ populated by passing `resources = TRUE`. Direct pulls additionally
 accept `tsv`, `txt` and `json` resources.
 
 See the
-[vignette](https://astamm.github.io/datagouv/articles/datagouv.html) for
-the full workflow and API reference.
+[vignette](https://astamm.github.io/rdatagouv/articles/rdatagouv.html)
+for the full workflow and API reference.
 
 ## Disclaimer
 
@@ -289,7 +289,7 @@ This package is not affiliated with or endorsed by data.gouv.fr. It is
 an independent project, and the authors are not responsible for the
 content of the datasets it indexes. This first version is a proof of
 concept and may contain bugs. Please report any issues on the [GitHub
-repository](https://github.com/astamm/datagouv/issues).
+repository](https://github.com/astamm/rdatagouv/issues).
 
 This package is the result of a joint effort initiated during the French
 [Finist’R](https://stateofther.pages-forge.inrae.fr/finistr2026/)
