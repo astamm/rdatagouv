@@ -1,14 +1,14 @@
 # AGENTS.md
 
-Guidance for AI agents (and returning humans) working on the `datagouv`
+Guidance for AI agents (and returning humans) working on the `rdatagouv`
 R package. Establishes the package’s intent, architecture and
 conventions so future sessions can pick up context quickly.
 
 ## Purpose
 
-`datagouv` is an R client for the public API of data.gouv.fr, the French
-government’s open-data platform. Its **primary intent** (the reframed
-goal that drives the design):
+`rdatagouv` is an R client for the public API of data.gouv.fr, the
+French government’s open-data platform. Its **primary intent** (the
+reframed goal that drives the design):
 
 > Let students/data scientists find a dataset matching their interests,
 > judge whether it is usable, fetch it, and re-fetch the exact same
@@ -18,29 +18,29 @@ Four workflow steps, each mapping to exported functions:
 
 | Step | Function |
 |----|----|
-| Find / search the catalog | [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md) |
-| Find / identify producers | [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md) |
-| Find / identify themes | [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) |
-| Judge documented columns | [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md) |
-| Download tabular resources | [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) |
-| Summarise table contents | [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md), [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) |
-| Re-fetch a table reproducibly | [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md) |
+| Find / search the catalog | [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md) |
+| Find / identify producers | [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md) |
+| Find / identify themes | [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md) |
+| Judge documented columns | [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md) |
+| Download tabular resources | [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md) |
+| Summarise table contents | [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md), [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md) |
+| Re-fetch a table reproducibly | [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md) |
 
 The design rationale and full history live in `DESIGN-discovery.md`
 (top-level, ignored by R CMD build). Treat that file as a
 proposal/decision log: its `*(implemented)*` phasing markers and change
 map reflect status, but the `TOPIC-SUPPORT-SKETCH.md` (top-level) is a
 related decision log that sketched and confirmed the topic-support work
-([`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) +
+([`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md) +
 the `topic` filter on
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md));
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md));
 like `DESIGN-discovery.md` it is also Rbuildignore’d so it never trips
 `R CMD check`. Both logs track status/decisions, but the “Core design
 concepts”, [Public API](#public-api-7-exports) and architecture sections
 of *this* AGENTS.md are the source of truth for how the package
 currently behaves; exploratory/optional and superseded-alternative
 sections in the design doc are historical, not normative. The README and
-the vignette `vignettes/datagouv.qmd` document usage for end users.
+the vignette `vignettes/rdatagouv.qmd` document usage for end users.
 
 ## Public API (10 exports)
 
@@ -68,17 +68,17 @@ the vignette `vignettes/datagouv.qmd` document usage for end users.
   candidate list on zero or multiple exact matches, while a bare 24-hex
   id is passed straight through without a lookup. `topic` accepts the
   **24-hex id of a theme** (found via
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md));
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md));
   like `tag`/`geozone` it is an open vocabulary, so it is **not
   validated or name/slug-resolved** (unlike `organization`) — discover
   the id with
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
   and pass it directly. **Resource fidelity is opt-in**: because v2
   search does NOT inline resources, `n_resources`, `formats`,
   `has_table` and `has_schema` are `NA` unless `resources = TRUE` (which
   N+1-fetches each dataset’s resources subsection). `id` and `title` are
   always non-`NA` (contract with
-  [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)).
+  [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)).
   Backed by `fetch_search_all()`/`fetch_search_page()` on the v2
   `datasets/search` endpoint (string `next_page` pointer pagination;
   `fetch_search_all()` uses `adaptive_page_size()` — default
@@ -127,7 +127,7 @@ the vignette `vignettes/datagouv.qmd` document usage for end users.
   first parseable file). `all_files = TRUE` returns a named list (one
   element per ZIP file). Every table carries its composed id as an `id`
   **attribute** (not a column), set by `table_attr()` and read by
-  [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)/`table_id_from_attr()`.
+  [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)/`table_id_from_attr()`.
 - `dg_refetch(x, remove_na = FALSE)` -\> a **single tibble** re-fetched
   from a composed id; `x` may be a table (its `id` attribute is read) or
   a bare id string.
@@ -142,7 +142,7 @@ the vignette `vignettes/datagouv.qmd` document usage for end users.
   `dataset, size_kb, n_vars, n_numeric, n_non_numeric, n_rows, prop_missing`.
 - `dg_summarise(datasets = NULL, n = 100)` -\> metrics over many tables.
   Accepts a named list of tibbles, a nested list (ZIP), a
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
   tibble, a character vector of ids, or `NULL` (first `n` of the
   catalog).
 
@@ -167,30 +167,30 @@ tests).
   `datagouv_topics_url()`, `fetch_topic_page()`, `fetch_topics_all()`,
   `fetch_topic_elements()` and `topic_element_counts()`.
 - `R/dg-find-datasets.R` —
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md).
 - `R/dg-find-organization.R` —
-  [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md) +
+  [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md) +
   internal `organization_empty_columns()`.
 - `R/dg-find-topics.R` —
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) +
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md) +
   internal `topic_empty_columns()`.
 - `R/dg-pull-dataset.R` —
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md).
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md).
 - `R/dg-table-id.R` —
-  [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md).
+  [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md).
 - `R/dg-refetch.R` —
-  [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md) +
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md) +
   `parse_table_id` validation.
 - `R/dg-schema.R` —
-  [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md) +
+  [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md) +
   `field_attr()` + `resolve_schema_url()`.
 - `R/dg-summary.R` —
-  [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)
+  [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)
   (single-table metrics).
 - `R/dg-summarise.R` —
-  [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) +
+  [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md) +
   internal `flatten_tables`.
-- `R/datagouv-package.R` — package-level `.Rd`.
+- `R/rdatagouv-package.R` — package-level `.Rd`.
 
 ## Core design concepts
 
@@ -204,11 +204,11 @@ never appear in those fields. Built from the platform’s own identifiers
 (and href-able to the dataset page), so it is stable and re-fetchable,
 unlike human-readable titles. Stored as the `id` **attribute** of each
 table by
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 (not a column);
-[`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
+[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)
 and
-[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
 consume it. Parsed by `parse_table_id()` (URI form only — the legacy
 `<dataset>::<resource>(::<file>)` delimited form was removed; the URI
 fragment `#<resource_id>(/<file>)` covers all the single-file and
@@ -219,7 +219,7 @@ readers stay untouched.
 `catalog_formats()` = `c("csv", "csv.gz", "xls", "xlsx", "parquet")` —
 the official tabular formats data.gouv.fr indexes. The **discovery
 catalog**
-([`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md))
+([`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md))
 is restricted to these so every listed dataset is in principle openable
 as a table. The API honors a single `format` value per query, so
 `fetch_all_datasets()` queries each requested format separately and
@@ -233,13 +233,13 @@ addressed directly.
 several formats (same base file name, different extension),
 `read_first_parseable_resource()` reduces the candidates to the one with
 the smallest advertised `filesize` (`prefer_lightest_file()`), so
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 download the lighter copy. Resources with distinct names keep their
 declared order.
 
 **Schema resolution.** data.gouv attaches a schema only as a *pointer*
 (`resource$schema = {name, url, version}`).
-[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
 resolves the pointer — the `url` directly, or the `name` via
 `resolve_schema_url()` against `schema.data.gouv.fr` — to a Table Schema
 document and returns its `fields`. Real per-column descriptions live
@@ -252,7 +252,7 @@ i.e. a zero-length list, not `NULL` — handle both).
 
 **Metrics and the id attribute.** Because the composed id is a table
 *attribute*, not a column,
-[`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)/[`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+[`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)/[`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
 need no special exclusion — it never inflates
 `n_vars`/`n_numeric`/`n_non_numeric`/ `prop_missing`.
 
@@ -262,10 +262,10 @@ Main API (`www.data.gouv.fr/api/1`) is the **backbone**: catalog keyword
 search, discovery metadata, and raw file downloads. The tabular API
 (`tabular-api.data.gouv.fr`) is a **supplement** but is NOT used by the
 current implementation:
-[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
 pulls documented fields from `schema.data.gouv.fr` instead of the
 tabular API `/profile/` endpoint that an early design sketch mentioned.
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 downloads raw files itself to preserve full format/coverage (unindexed
 resources 404 on the tabular service).
 
@@ -307,7 +307,7 @@ resources 404 on the tabular service).
   commit both files together. Do not hand-edit README.md — edits there
   are lost on the next regeneration and make it drift from the source.
   This applies systematically to any change touching the README.
-- One Quarto vignette: `vignettes/datagouv.qmd`. It uses a knitr chunk
+- One Quarto vignette: `vignettes/rdatagouv.qmd`. It uses a knitr chunk
   hook so live-API chunks (marked `#| live: true`) run only when the
   `DATAGOUV_LIVE=1` env var is set (the pkgdown workflow sets it so the
   site shows real output). They are skipped otherwise — including during
@@ -323,7 +323,7 @@ resources 404 on the tabular service).
   the package-level docs and fill in relevant files to reflect the
   changes made — whether a function or feature was added, removed, or
   changed signature. Cover at minimum: vignettes
-  (`vignettes/datagouv.qmd`), pkgdown-related files (`_pkgdown.yml`,
+  (`vignettes/rdatagouv.qmd`), pkgdown-related files (`_pkgdown.yml`,
   `.github/workflows/pkgdown.yaml`), `DESCRIPTION`, `NEWS.md`,
   `DESIGN-discovery.md`, and the `README.qmd`/`README.md` pair
   (regenerate `README.md` from `README.qmd` with
@@ -423,7 +423,7 @@ in the package (local `R CMD build` + test suite, 0 errors, are green):
 
 ### The `dg` opts_hook (vignette) — why and how
 
-`vignettes/datagouv.qmd` sets
+`vignettes/rdatagouv.qmd` sets
 [`knitr::opts_hooks`](https://rdrr.io/pkg/knitr/man/opts_hooks.html) for
 `live` (DATAGOUV_LIVE=1) and `dg`. The `dg` hook gates the two
 network-free in-memory chunks so a bad environment degrades to a skip
@@ -432,8 +432,8 @@ instead of failing `R CMD build`. Each chunk sets
 `#| error: true`, and wraps its call in
 [`try()`](https://rdrr.io/r/base/try.html) (the actual robustness
 guarantee — see below); the hook evaluates the chunk only when
-`DATAGOUV_LIVE=1` **and** `"package:datagouv" %in% search()` **and** the
-named export forces to a real function — checked with
+`DATAGOUV_LIVE=1` **and** `"package:rdatagouv" %in% search()` **and**
+the named export forces to a real function — checked with
 `get(<fn>, inherits = TRUE)` inside `tryCatch`, NOT
 [`exists()`](https://rdrr.io/r/base/exists.html).
 
@@ -468,7 +468,7 @@ there.
 **`error: true` alone is NOT a sufficient backstop (run 32594354116,
 head `9bf4b6f`).** The follow-up commit added `#| error: true` to both
 decorative chunks and still aborted identically —
-`* creating vignettes ... ERROR`, `Quitting from datagouv.qmd:286-291`,
+`* creating vignettes ... ERROR`, `Quitting from rdatagouv.qmd:286-291`,
 `could not find function "dg_summarise"`. Reproduced locally with
 `quarto_render()`: knitr’s `error` option does contain a *normal
 function-body error*, but it does **not** contain the unforceable-export

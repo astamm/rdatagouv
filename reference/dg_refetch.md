@@ -2,9 +2,9 @@
 
 Downloads again the exact table addressed by a table URI, stored as an
 `id` attribute on the tables returned by
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 and readable with
-[`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md).
+[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md).
 The URI is built from the platform's own stable identifiers (dataset
 id + resource id, plus the file name inside a ZIP) and opens the dataset
 page in a browser, so this reproducibly returns the same table,
@@ -21,7 +21,7 @@ dg_refetch(x, remove_na = FALSE)
 - x:
 
   Either a table returned by
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   or `dg_refetch()` (its `id` attribute is read automatically) or a
   table address string: the URI
   `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (or

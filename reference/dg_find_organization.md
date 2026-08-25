@@ -4,12 +4,12 @@ Searches the platform's producers via the v2 `organizations/search`
 endpoint and returns a tibble with one row per matching organization,
 including its stable 24-hex `id`. That `id` is exactly what you pass to
 the `organization` argument of
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 to restrict a catalog search to one producer — or, more conveniently,
 you can pass a producer's exact `name` or `slug` to
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 directly and it is resolved for you (see
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)).
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)).
 
 ## Usage
 
@@ -39,7 +39,7 @@ with one row per matching organization and columns:
 
 - `id` — the stable, unique 24-hex producer id (passable to the
   `organization` argument of
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)).
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)).
   Always non-`NA`.
 
 - `name` — the producer's display name.

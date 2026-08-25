@@ -2,8 +2,8 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  datagouv: datagouv.html
-last_built: 2026-08-24T21:05Z
+  rdatagouv: rdatagouv.html
+last_built: 2026-08-25T08:42Z
 urls:
-  reference: https://astamm.github.io/datagouv/reference
-  article: https://astamm.github.io/datagouv/articles
+  reference: https://astamm.github.io/rdatagouv/reference
+  article: https://astamm.github.io/rdatagouv/articles

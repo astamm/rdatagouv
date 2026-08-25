@@ -20,7 +20,7 @@ of the [`httr2`](https://httr2.r-lib.org) package.
 The examples below hit the live data.gouv.fr API and show real results.
 
 Find datasets matching a topic —
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 searches titles and descriptions server-side:
 
 ``` r
@@ -66,7 +66,7 @@ parquet_only$title
 You can also narrow a search to a single producer. Pass the producer’s
 exact name or slug — it is resolved to its stable id for you — or look
 producers up first with
-[`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md)
+[`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md)
 to see which exist and how their names are spelled:
 
 ``` r
@@ -105,7 +105,7 @@ sncf$title
 
 You can likewise narrow a search to a curated *theme*. Discover which
 themes exist with
-[`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+[`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
 (which also reports how many elements each groups), then filter the
 catalog by a theme’s id:
 
@@ -131,7 +131,7 @@ mobility$title
 
 Glimpse a dataset’s health and engagement metadata before deciding to
 pull it.
-[`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
+[`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.md)
 surfaces the v2-inline `quality` score and flags, `metrics` (views,
 downloads, followers, …) and context that the fetch path does not
 expose:
@@ -211,7 +211,7 @@ dg_table_id(tbl)
 ```
 
 Judge whether the columns mean what you think.
-[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
 resolves the dataset’s declared schema and returns human-readable column
 documentation (pass the table directly — its id is read automatically):
 
@@ -262,7 +262,7 @@ dg_summarise(datasets = list(iris = iris, mtcars = mtcars))
 
 ## Supported formats
 
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 downloads the first tabular resource of a dataset among CSV, CSV.GZ,
 XLS, XLSX, PARQUET, TSV, TXT and JSON, and returns the parsed table as a
 single tibble. A ZIP resource is unpacked and its first parseable file
@@ -273,7 +273,7 @@ pipe, …), so both standard and European-style (semicolon/comma-decimal)
 files are handled without special configuration.
 
 The discovery catalog
-([`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md))
+([`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md))
 is restricted to the official tabular formats data.gouv.fr itself
 indexes (`csv`, `csv.gz`, `xls`, `xlsx`, `parquet`), so every listed
 dataset is in principle openable as a table. Use the `format` argument
@@ -311,21 +311,21 @@ organizers and the Albert API team for their support and guidance.
 Find a dataset on data.gouv.fr, judge whether it is usable, and pull its
 tabular resources into tidy tables.
 
-- [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+- [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
   : Find datasets available on data.gouv.fr
-- [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md)
+- [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md)
   : Search for organizations (data producers) on data.gouv.fr
-- [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+- [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
   : Find topics (themes) on data.gouv.fr
-- [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
+- [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.md)
   : Glimpse the metadata of a dataset on data.gouv.fr
-- [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   : Download a dataset from data.gouv.fr
-- [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
+- [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)
   : Read a table's stable address
-- [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+- [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   : Re-fetch a single parsed table by its stable address
-- [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+- [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   : Documented schema of a parsed table's columns
 
 ## Summaries
@@ -333,14 +333,14 @@ tabular resources into tidy tables.
 Compute summary metrics (size, number of columns, missing-value rates,
 …) on a single dataset or across several datasets.
 
-- [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)
+- [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)
   : Compute summary metrics for a dataset
-- [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+- [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
   : Summarise several datasets
 
 # Articles
 
-### Articles
+### All vignettes
 
 - [Finding, judging and re-fetching French open data with
-  datagouv](https://astamm.github.io/datagouv/articles/datagouv.md):
+  rdatagouv](https://astamm.github.io/rdatagouv/articles/rdatagouv.md):

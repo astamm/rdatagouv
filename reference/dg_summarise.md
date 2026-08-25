@@ -1,11 +1,11 @@
 # Summarise several datasets
 
 Applies
-[`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)
+[`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)
 to a collection of tables and combines the resulting metrics into a
 single tibble. If `datasets` is `NULL`, the first `n` datasets returned
 by
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 are downloaded and summarised.
 
 ## Usage
@@ -20,13 +20,13 @@ dg_summarise(datasets = NULL, n = 100)
 
   Either a named list of tibbles (each element is a single table, named
   after it), a named list of such lists (as returned by
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md),
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md),
   where a ZIP may contribute several tables), a tibble from
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
   (identified by its `id` column; each dataset is downloaded and
   summarised), a character vector of dataset identifiers (or exact
   titles), or `NULL` (the default) to use the first `n` datasets from
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md).
 
 - n:
 
@@ -38,7 +38,7 @@ dg_summarise(datasets = NULL, n = 100)
 A
 [`tibble::tibble()`](https://tibble.tidyverse.org/reference/tibble.html)
 with one row per table and the columns described in
-[`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md).
+[`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md).
 
 ## Examples
 

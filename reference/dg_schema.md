@@ -20,14 +20,14 @@ dg_schema(x)
 - x:
 
   Either a table returned by
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   or
-  [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   (its `id` attribute is read automatically) or a table address string:
   the URI `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
   (or `...#<resource_id>/<file>` for a file inside a ZIP), as readable
   with
-  [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md).
+  [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md).
 
 ## Value
 
@@ -42,12 +42,12 @@ attributes `schema_title` and `schema_name`.
 ## Details
 
 This is a *supplement* to
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md):
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md):
 the table itself comes from the main API; the schema is read from the
 producer's declared data specification. Only resources that carry a
 schema pointer have documentation; resources without one return `NULL`
 with a message. Use
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 (column `has_schema`, or the `schema_only` argument) to target
 schema-documented tables in the first place.
 

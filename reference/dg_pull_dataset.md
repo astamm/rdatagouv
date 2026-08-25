@@ -4,7 +4,7 @@ Downloads the first tabular resource of a dataset and parses it into a
 [`tibble::tibble()`](https://tibble.tidyverse.org/reference/tibble.html)
 with `format_tibble()`. The dataset is identified by its `id`, which is
 the stable, unique identifier returned in the `id` column of
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md).
 For backwards compatibility, an exact title is also accepted and is
 resolved by searching the platform.
 
@@ -45,9 +45,9 @@ after it). Every table carries its stable, unique address as an `id`
 attribute — a URI of the form
 `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (plus
 `/&lt;file&gt;` for a file inside a ZIP) — re-fetchable with
-[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 and readable with
-[`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md).
+[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md).
 
 ## Details
 
@@ -55,11 +55,11 @@ By default a single tibble is returned: the first resource that can
 actually be parsed as a table (for a multi-file ZIP, the first parseable
 file). The table's stable, unique address is attached as an `id`
 attribute, readable with
-[`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
+[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)
 and accepted directly by
-[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 and
-[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md).
+[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md).
 Set `all_files = TRUE` to instead receive one table per parseable file
 as a named list (useful for a ZIP holding several files).
 

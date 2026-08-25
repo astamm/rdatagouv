@@ -11,8 +11,8 @@ Current public API:
 `dg_summary(x, name)`, `dg_summarise(datasets, n)`. (All functions share
 the `dg_*` prefix; `dg_download_many()` was removed — its role is
 covered by
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) +
-[`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md).)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md) +
+[`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md).)
 
 > **2026-08 v2 switch:** `dg_list_datasets()` now queries the v2
 > `datasets/search` API (pointer-based string `next_page` pagination,
@@ -21,13 +21,13 @@ covered by
 > `n_resources`/`formats`/`has_table`/ `has_schema` are `NA` unless
 > `resources = TRUE` (N+1 per-dataset fetch of the resources
 > subsection).
-> [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
+> [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.md)
 > exposes v2-only dataset metadata. Pull/refetch/schema/summary remain
 > on v1. See AGENTS.md for the authoritative description.
 >
 > **Implemented (2026-08): filter-argument validation.** The
 > closed-vocabulary server-side filters of
-> [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+> [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 > (`access_type`, `license`, `granularity`, `last_update`,
 > `producer_type`) are now validated client-side by
 > `validate_filter_args()`, which errors with the exhaustive list of
@@ -84,10 +84,10 @@ did.)*
 ### 1.2 Store the ID as a table attribute (`dg_pull_dataset`)
 
 Each tibble returned by
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 carries its composed ID as an `id` **attribute** (added by the internal
 `table_attr()`), *not* a per-row column. Injected in
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 *after* `read_resource()`/`format_tibble()`, so the low-level parsers
 stay untouched.
 
@@ -102,7 +102,7 @@ The new exported getter `dg_table_id(x)` reads the attribute and returns
 `NULL` for an ordinary data frame. Because the id is an attribute, not a
 column, it **cannot** inflate
 `n_vars`/`n_numeric`/`n_non_numeric`/`prop_missing` in
-[`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)
+[`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)
 — no exclusion hack is needed (the old `.id` column design required
 one).
 
@@ -115,9 +115,9 @@ attribute survives row/column verbs
 build a structurally different table (`pivot_longer`, `nest`,
 `summarise`) — the intended behaviour, since those objects are no longer
 the same logical table. After a drop,
-[`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
+[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)
 returns `NULL` and
-[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
 raise a clear “carries no table id” error.
 
 ### 1.3 `dg_refetch(x, remove_na = FALSE)` — new export
@@ -130,7 +130,7 @@ dg_refetch(x, remove_na = FALSE)
 Re-fetch the exact table addressed by a table id (URI) and return **one
 tibble** (the id addresses a single table, not a multi-file list). `x`
 may be a table returned by
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 (its `id` attribute is read by `resolve_table_id()`) or a bare id string
 — the canonical URI.
 
@@ -189,8 +189,8 @@ answer “which of these can I actually open?” before spending a download.
 extension), the pull path (`read_first_parseable_resource()`) reduces
 those candidates to the one with the smallest advertised `filesize`
 (`prefer_lightest_file()`), so
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/
-[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 download the lighter copy — e.g. a `data.csv` rather than a heavier
 `data.xlsx` twin. Resources with distinct names keep their declared
 order, so distinct tables are never silently swapped.
@@ -217,7 +217,7 @@ matched by 24-hex id only).
 Close the preview loop so students can see rows/variables/missingness
 across all matching datasets.
 
-**[`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+**[`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
 gains an accepted input:** a data-frame returned by `dg_list_datasets()`
 (recognized by its `id` column, which is already present). Then
 `dg_summarise(dg_list_datasets(q = "vélo"))` pulls and summarizes every
@@ -230,7 +230,7 @@ behaviour.
 
 ## Optional / low priority
 
-- **[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+- **[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   accepting a search term** — convenience alternative to
   `dg_list_datasets(q) |> ...`; only if we want the pull to own search.
 
@@ -278,12 +278,12 @@ Implications for this package:
 `dg_schema(x)` — documented column metadata for a single table address.
 
 - Input: a table returned by
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   (its `id` attribute is read via `resolve_table_id()`), or a bare table
   id string (the URI).
 - Implementation: data.gouv attaches a schema only as a *pointer*
   (`resource$schema = {name, url, version}`).
-  [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+  [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   resolves the pointer — the `url` directly, or the `name` via
   `resolve_schema_url()` against `schema.data.gouv.fr` — to a Table
   Schema document and returns its `fields` as a tibble of `name`,
@@ -303,16 +303,16 @@ Implications for this package:
 | File | Change |
 |----|----|
 | `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. **Topics:** `datagouv_topics_url()`; thread `topic` through `fetch_search_page()`/`fetch_search_all()`; topics crawler `fetch_topic_page()` / `fetch_topics_all()` (clone of the organizations crawler), `fetch_topic_elements()` (paginated elements subsection, nested `element$class` classifier), `topic_element_counts()`. |
-| `R/dg-pull-dataset.R` | [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. (Stays on v1.) |
+| `R/dg-pull-dataset.R` | [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md) returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. (Stays on v1.) |
 | `R/dg-table-id.R` (new) | Exported `dg_table_id(x)` reads the `id` attribute. |
-| `R/dg-summary.R` / `R/dg-summarise.R` | [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md) needs no metadata-column exclusion (id is an attribute); [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md) accepts a `dg_list_datasets()` tibble. |
+| `R/dg-summary.R` / `R/dg-summarise.R` | [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md) needs no metadata-column exclusion (id is an attribute); [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md) accepts a `dg_list_datasets()` tibble. |
 | `R/dg-list-datasets.R` | Add `n_resources`, `formats`, `has_table`, `has_schema` columns, and the `format` argument (server-side per-format filtering, unioned and de-duplicated by id). **v2 switch:** rework onto `fetch_search_all()` over `datasets/search`; new server-side filter args (`organization`, `geozone`, `access_type`, `license`, `tag`, `granularity`, `last_update`, `producer_type`); new inline columns; resource columns `NA` unless `resources = TRUE`. |
 | `R/dg-find-datasets.R` (formerly `dg-list-datasets.R`) | Renamed verb-first. Adds the `topic` server-side filter (a 24-hex topic id, open vocabulary like `tag`/`geozone`, deliberately not validated and not name/slug-resolved). |
-| `R/dg-find-topics.R` (new) | Exported `dg_find_topics(q, n, elements)` mirroring [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md): tibble `{id, name, slug, description, tags, featured, n_elements}` plus `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE` (N+1 per-topic fetch, counting nested `element$class`); external-link (NULL-class) entries excluded. |
+| `R/dg-find-topics.R` (new) | Exported `dg_find_topics(q, n, elements)` mirroring [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md): tibble `{id, name, slug, description, tags, featured, n_elements}` plus `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE` (N+1 per-topic fetch, counting nested `element$class`); external-link (NULL-class) entries excluded. |
 | `R/dg-glimpse.R` (new) | Exported `dg_glimpse(id, table = NULL)` surfaces v2-inline dataset metadata (`quality`, `metrics`, `context`, plus `resources` when `table = TRUE`) via `fetch_dataset_v2()` + `fetch_resource_subsection()`. |
 | `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. |
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
-| `R/datagouv-package.R` / NAMESPACE | Document/export the new functions. |
+| `R/rdatagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |
 | `tests/test-live-api.R` (new) | Opt-in live integration tests: verify a file inside a real ZIP is addressable and re-fetchable via its composed URI on the live data.gouv API. Skipped unless `DATAGOUV_LIVE=1` (connectivity is probed against data.gouv itself, not `skip_if_offline()`’s `captive.apple.com`). See AGENTS.md. |
 | `README.qmd` | Update flow examples; rebuild README. |
@@ -322,33 +322,33 @@ Implications for this package:
 ## Phasing
 
 1.  **Baseline only** *(implemented)*: composed ID +
-    [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md) +
+    [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md) +
     tests.
 2.  **Search surfacing** *(implemented)*: `dg_list_datasets()`
     availability columns + tests.
 3.  **Preview loop** *(implemented)*:
-    [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+    [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
     accepts a list-datasets tibble + tests.
 4.  **Column profile** *(implemented)*: `dg_schema(id)` via
     schema.data.gouv.fr Table Schema, `NULL` fallback when no schema
     pointer + tests.
 5.  **ID as attribute refactor** *(implemented)*: move the composed ID
     out of a per-row column into a table `id` attribute;
-    [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+    [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
     returns a single tibble by default and a named list only for
     `all_files = TRUE` on a multi-file ZIP; add
-    [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md);
-    [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/
-    [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+    [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md);
+    [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)/
+    [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
     accept a table or a bare id string.
 6.  (Optional) convenience tweaks.
 7.  **API cleanup** *(implemented)*:
     `get_summary()`/`summarise_datasets()` renamed to
-    [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)/[`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+    [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)/[`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
     for a uniform `dg_*` prefix; `dg_download_many()` removed (covered
     by
-    [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md) +
-    [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md));
+    [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md) +
+    [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md));
     each public function split into its own `R/dg-*.R` file
     (`format_tibble()` moved to `utils.R`).
 8.  **Live integration tests** *(implemented)*: `tests/test-live-api.R`
@@ -359,7 +359,7 @@ Implications for this package:
     params, string `next_page` pagination, rich inline metadata); new
     server-side filter args and inline columns; resource-derived columns
     become `NA` unless `resources = TRUE`; new export
-    [`dg_glimpse()`](https://astamm.github.io/datagouv/reference/dg_glimpse.md)
+    [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.md)
     surfaces v2-only dataset metadata. Pull/refetch/schema/summary
     remain on v1. *(Page-size tuning: the v2 search endpoint’s latency
     scales with `page_size` — a `page_size = 1000` page consistently
@@ -369,10 +369,10 @@ Implications for this package:
     Kept out of `n = Inf`’s path so a full 10,000-row crawl is ~40
     requests instead of ~100.)*
 10. **Topic support** *(implemented)*:
-    [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+    [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
     (topics/search crawler + `${id}` → `elements/` classifier for the
     per-kind N+1 breakdown) and the `topic =` filter on
-    [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+    [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md).
     Topics reuse the exact pointer-pagination envelope of organizations,
     so no new pagination machinery. Element kind lives in the nested
     `element$class`; NULL-class entries are curator external links and

@@ -65,7 +65,7 @@ dg_find_datasets(
   `organization` column of the returned tibble or on the dataset page),
   or its exact `name` or `slug` — a human-readable value is resolved to
   its id automatically via
-  [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md)
+  [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md)
   (only an exact match is auto-resolved, so results stay reproducible;
   an ambiguous or unmatched value stops with the candidate list). Note
   that, unlike v1, the v2 search API itself only accepts the id (a raw
@@ -106,13 +106,13 @@ dg_find_datasets(
 - topic:
 
   Optional topic filter, the **24-hex `topic` id** of a theme (found via
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)).
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)).
   Only datasets grouped under that topic are returned. Matched
   server-side as a single-valued filter, so pass exactly one id. Topic
   ids form an open vocabulary (themes are created dynamically), so this
   is not enumerated or validated. Unlike `organization`, a
   human-readable topic name/slug is not auto-resolved — use
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
   to discover a theme and get its id. Defaults to `NULL`.
 
 - granularity:
@@ -149,14 +149,14 @@ A
 with one row per matching dataset. The `title` and `id` columns are
 always non-`NA`; the `id` column holds the stable, unique dataset
 identifier used to address a dataset with
-[`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md).
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md).
 When `resources = TRUE`, the columns also include `n_resources` (number
 of files/resources), `formats` (distinct file formats found among them),
 `has_table` (whether at least one resource is in a format this package
 can parse) and `has_schema` (whether at least one resource carries a
 pointer to a declared data schema, whose per-variable documentation is
 exposed by
-[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md));
+[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md));
 these are `NA` when `resources = FALSE` (the default) unless
 `schema_only = TRUE`, which forces the fetch so `has_schema` is filled
 and the filter can run.

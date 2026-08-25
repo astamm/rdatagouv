@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Tools to Download and Explore Datasets from the French Open Data Platform • datagouv</title>
+<title>Tools to Download and Explore Datasets from the French Open Data Platform • rdatagouv</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -20,7 +20,7 @@
 
     <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
-    <a class="navbar-brand me-2" href="index.html">datagouv</a>
+    <a class="navbar-brand me-2" href="index.html">rdatagouv</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
 
@@ -31,16 +31,15 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="articles/datagouv.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="articles/rdatagouv.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/astamm/datagouv/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/astamm/rdatagouv/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -67,7 +66,7 @@
 <p>The examples below hit the live data.gouv.fr API and show real results.</p>
 <p>Find datasets matching a topic — <code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code> searches titles and descriptions server-side:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://astamm.github.io/datagouv/">datagouv</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://astamm.github.io/datagouv/" class="external-link">datagouv</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hits</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"vélo"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">hits</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"title"</span>, <span class="st">"id"</span>, <span class="st">"organization"</span>, <span class="st">"quality_score"</span>, <span class="st">"views"</span><span class="op">)</span><span class="op">]</span></span>
@@ -244,7 +243,7 @@
 </h2>
 <p><code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the first tabular resource of a dataset among CSV, CSV.GZ, XLS, XLSX, PARQUET, TSV, TXT and JSON, and returns the parsed table as a single tibble. A ZIP resource is unpacked and its first parseable file is returned by default; <code>all_files = TRUE</code> keeps every contained file in one of these formats as a named list — one element per file. The delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe, …), so both standard and European-style (semicolon/comma-decimal) files are handled without special configuration.</p>
 <p>The discovery catalog (<code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code>) is restricted to the official tabular formats data.gouv.fr itself indexes (<code>csv</code>, <code>csv.gz</code>, <code>xls</code>, <code>xlsx</code>, <code>parquet</code>), so every listed dataset is in principle openable as a table. Use the <code>format</code> argument to narrow the catalog to datasets with a resource in a specific format (the v2 search API matches several formats as a server-side union). The exact <code>n_resources</code>/<code>formats</code>/<code>has_table</code>/<code>has_schema</code> resource columns are populated by passing <code>resources = TRUE</code>. Direct pulls additionally accept <code>tsv</code>, <code>txt</code> and <code>json</code> resources.</p>
-<p>See the <a href="https://astamm.github.io/datagouv/articles/datagouv.html">vignette</a> for the full workflow and API reference.</p>
+<p>See the <a href="https://astamm.github.io/datagouv/articles/datagouv.html" class="external-link">vignette</a> for the full workflow and API reference.</p>
 </div>
 <div class="section level2">
 <h2 id="disclaimer">Disclaimer<a class="anchor" aria-label="anchor" href="#disclaimer"></a>
@@ -256,8 +255,8 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/astamm/datagouv/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/astamm/datagouv/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/astamm/rdatagouv/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/astamm/rdatagouv/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -273,7 +272,7 @@
 <div class="citation">
 <h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li><a href="authors.html#citation">Citing datagouv</a></li>
+<li><a href="authors.html#citation">Citing rdatagouv</a></li>
 </ul>
 </div>
 

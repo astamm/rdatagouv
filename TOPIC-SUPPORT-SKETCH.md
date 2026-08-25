@@ -3,12 +3,12 @@
 Implements the two additions recommended in the v2-search assessment:
 
 1.  a `topic =` filter argument on
-    [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+    [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
     (server-side, like `organization`), and
 2.  a new exported finder
-    [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+    [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
     (analogous to
-    [`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md))
+    [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md))
     so users can discover themes and obtain a stable 24-hex topic id to
     pass to that filter.
 
@@ -111,7 +111,7 @@ each page’s query string like the other single-valued filters.
   topic `slug`/`name`, stop early — but unlike `organization`, there is
   no cheap id resolution endpoint to auto-resolve names, so keep `topic`
   strictly id-in / id-out and let
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
   be the name-discovery path. (See the design note below.)
 
 - Roxygen `@param topic` documenting it as the single-valued topic id
@@ -155,7 +155,7 @@ Add to an existing find-datasets test file (e.g. mocks in
 ## 2. `dg_find_topics()` — new exported finder
 
 Mirrors
-[`dg_find_organization()`](https://astamm.github.io/datagouv/reference/dg_find_organization.md)
+[`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md)
 end to end: a `topics/search` crawler in `R/utils.R` (a near-clone of
 the organizations crawler, same pointer-pagination envelope) plus the
 exported wrapper in a new `R/dg-find-topics.R`.
@@ -445,7 +445,7 @@ truncate.
 ### 2c. `elements` N+1 trade-off
 
 Like `resources = TRUE` on
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md),
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md),
 per-topic element counts are **not** inlined, so the breakdown requires
 one extra request per topic. Keep `n_elements` (the API’s cheap declared
 `total`) always populated, and gate only the *breakdown* (`n_datasets`/
@@ -466,7 +466,7 @@ name/slug match). I recommend **not** adding it initially:
 - It would complicate `resolve_organization_id()`-style logic with a
   second, parallel resolver.
 - Topic ids are discoverable through
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md),
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md),
   and passing the id directly is the idiomatic, reproducible path
   (matching how `organization` ids are the canonical input).
 
@@ -482,9 +482,9 @@ public signature. Flag this as an explicit scope decision.
 |----|----|
 | `R/utils.R` | `datagouv_topics_url()`, `fetch_topic_page()`, `fetch_topics_all()`, `fetch_topic_elements()`; add `topic = NULL` to `fetch_search_page()`/`fetch_search_all()` |
 | `R/dg-find-datasets.R` | add `topic = NULL` param + `@param` + example; add to `filter_args` |
-| `R/dg-find-topics.R` | **new** — [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md) + `topic_empty_columns()` |
+| `R/dg-find-topics.R` | **new** — [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md) + `topic_empty_columns()` |
 | `tests/testthat/` | URL-param unit test for `topic`; `topic` forwarding test; live-test entry in `test-live-api.R` |
-| docs | roxygen/`devtools::document()`; `NIPATES.md` reference + list the 9th export; `NEWS.md`; `README.qmd`/`README.md`; `vignettes/datagouv.qmd`; `DESIGN-discovery.md` change map; `_pkgdown.yml` reference section |
+| docs | roxygen/`devtools::document()`; `NIPATES.md` reference + list the 9th export; `NEWS.md`; `README.qmd`/`README.md`; `vignettes/rdatagouv.qmd`; `DESIGN-discovery.md` change map; `_pkgdown.yml` reference section |
 | format | `air format .` at package root before committing |
 
 ------------------------------------------------------------------------
@@ -496,9 +496,9 @@ public signature. Flag this as an explicit scope decision.
     exact.
 2.  Implement parts 1a–1b (the `topic =` filter) — small, low-risk,
     directly improves
-    [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md).
+    [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md).
 3.  Implement
-    [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)
+    [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)
     with `elements = FALSE` first, then add the breakdown.
 4.  Decide on the `resolve_topic_id()` scope question before finalizing
     docs.

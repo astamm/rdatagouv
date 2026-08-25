@@ -1,6 +1,6 @@
 # Changelog
 
-## datagouv 0.0.0.9000
+## rdatagouv 0.0.0.9000
 
 - `dg_find_datasets(schema_only = TRUE)` no longer silently returns an
   unfiltered catalog. Because `schema_only` selects client-side on
@@ -19,17 +19,17 @@
   `n_elements` is always the topic’s declared total while the breakdown
   defaults to `NA`.
 
-- [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+- [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
   gains a `topic` filter: pass the 24-hex id of a theme (found via
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md))
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md))
   to return only datasets grouped under that topic. Matched server-side
   as a single-valued filter, echoing how `organization`/`geozone` narrow
   the catalog. Like `tag`/`geozone`, topic ids form an open vocabulary,
   so the argument is not enumerated or validated; a human-readable topic
   name/slug is not auto-resolved (see
-  [`dg_find_topics()`](https://astamm.github.io/datagouv/reference/dg_find_topics.md)).
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md)).
 
-- [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+- [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
   now validates its closed-vocabulary filter arguments (`access_type`,
   `license`, `granularity`, `last_update`, `producer_type`) before they
   reach the server, erroring with the exhaustive list of valid options
@@ -42,7 +42,7 @@
   territory-code format for `geozone`, whose codes are open-ended).
 
 - `dg_list_datasets()` is renamed to
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
   for a verb-first API that pairs with the other discovery functions.
   The old name is removed without a deprecation shim (the package has
   never been released).
@@ -92,19 +92,19 @@
   dataset’s resources subsection.
 
 - Tables pulled with
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   are now addressed by a proper URI instead of a `::`-composed id: the
   `id` attribute (read with
-  [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md))
+  [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md))
   is now `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`
   (plus `/<file>` for a file inside a ZIP). The address still carries
   the platform’s stable dataset/resource ids — so
-  [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   stay reproducible — and, as a URI, it is now href-able and opens the
   right dataset page in a browser. Legacy composed ids of the form
   `<dataset_id>::<resource_id>` / `<dataset_id>::<resource_id>::<file>`
   remain accepted by
-  [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)/[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   for backwards compatibility.
 
 - Added opt-in live integration tests (`tests/testthat/test-live-api.R`)
@@ -115,17 +115,17 @@
   `DATAGOUV_LIVE=1 Rscript -e 'devtools::test(filter = "live")'`.
 
 - `get_summary()` and `summarise_datasets()` are renamed to
-  [`dg_summary()`](https://astamm.github.io/datagouv/reference/dg_summary.md)
+  [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md)
   and
-  [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+  [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
   for a uniform `dg_*` API.
 
 - `dg_download_many()` is removed; its functionality is covered by
-  [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)
+  [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)
   (to get both the raw tables and the metrics, call
-  [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   then
-  [`dg_summarise()`](https://astamm.github.io/datagouv/reference/dg_summarise.md)).
+  [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md)).
 
 - `dg_list_datasets()` gains a `format` argument to keep only datasets
   that have a resource in one of the requested formats (defaults to the
@@ -143,7 +143,7 @@
   under the client timeout while cutting a full 10,000-row crawl to ~40
   requests.
 
-- [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   now prefer the lightest advertised file when a dataset offers the
   *same table* in several formats (same base file name, different
   extension, e.g. `data.csv` vs `data.xlsx`): among such duplicates, the
@@ -165,7 +165,7 @@
   datasets, disambiguating duplicate titles in the output by appending
   each dataset’s id.
 
-- [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   downloads a dataset by its stable, unique `id` (and, as a fallback, by
   exact title) and parses it.
 
@@ -181,12 +181,12 @@
 - `dg_download_many()` replaces `wrapper_datasets()` (renamed);
   `wrapper_datasets()` is no longer available.
 
-- [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   now tags every returned table with a stable, unique `id` column of the
   form `<dataset>::<resource>` (or `<dataset>::<resource>::<file>` for a
   file inside a ZIP), built from the platform’s own identifiers.
 
-- [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+- [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   re-fetches a single table from its composed `id`, reproducibly
   returning the same table across calls.
 
@@ -198,26 +198,26 @@
   `dg_list_datasets()` (identified by its `id` column) and summarises
   the matching datasets.
 
-- [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+- [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   returns the documented column metadata (`name`, `title`,
   `description`, `type`, `example`) declared in the dataset’s data
   schema on schema.data.gouv.fr, resolved from a resource’s schema
   pointer, or `NULL` (with a message) when the resource carries no
   schema.
 
-- [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   now returns a single tibble by default instead of a one-element list,
   with the table’s stable id stored as an `id` attribute rather than a
   per-row `.id` column; a multi-file ZIP is returned via
   `all_files = TRUE` and each file keeps its own id attribute.
 
-- [`dg_table_id()`](https://astamm.github.io/datagouv/reference/dg_table_id.md)
+- [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)
   returns the stable composed id stored as an attribute on a pulled or
   re-fetched table.
 
-- [`dg_refetch()`](https://astamm.github.io/datagouv/reference/dg_refetch.md)
+- [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
   and
-  [`dg_schema()`](https://astamm.github.io/datagouv/reference/dg_schema.md)
+  [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   now accept either a table (its `id` attribute is read automatically)
   or a composed id string.
 
@@ -236,7 +236,7 @@
 - `get_summary()` and `summarise_datasets()` exclude the `.id` column
   from variable and missing-value metrics.
 
-- [`dg_pull_dataset()`](https://astamm.github.io/datagouv/reference/dg_pull_dataset.md)
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
   now skips a dataset resource whose declared format cannot actually be
   parsed into a table (e.g. a `json` resource serving an API metadata
   document) and falls back to the next tabular resource, instead of

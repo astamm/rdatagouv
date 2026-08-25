@@ -16,17 +16,17 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/astamm/datagouv/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/astamm/rdatagouv/blob/main/DESCRIPTION)
 
-Gloaguen P, Leroy A, Mariadassou M, Rey J, Stamm A (2026). *datagouv:
+Gloaguen P, Leroy A, Mariadassou M, Rey J, Stamm A (2026). *rdatagouv:
 Tools to Download and Explore Datasets from the French Open Data
 Platform*. R package version 0.0.0.9000,
-<https://astamm.github.io/datagouv/>.
+<https://astamm.github.io/rdatagouv/>.
 
     @Manual{,
-      title = {datagouv: Tools to Download and Explore Datasets from the French Open Data Platform},
+      title = {rdatagouv: Tools to Download and Explore Datasets from the French Open Data Platform},
       author = {Pierre Gloaguen and Arthur Leroy and Mahendra Mariadassou and Jean-François Rey and Aymeric Stamm},
       year = {2026},
       note = {R package version 0.0.0.9000},
-      url = {https://astamm.github.io/datagouv/},
+      url = {https://astamm.github.io/rdatagouv/},
     }

@@ -3,10 +3,10 @@
 Searches the platform's themes via the v2 `topics/search` endpoint and
 returns a tibble with one row per matching topic, including its stable
 24-hex `id`. That `id` is what you pass to the `topic` argument of
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
 to restrict a catalog search to one theme. (data.gouv does not resolve
 topic names/slugs to ids inside
-[`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md),
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md),
 so this finder is the way to discover a theme and get its id.)
 
 ## Usage
@@ -43,7 +43,7 @@ with one row per matching topic and columns:
 
 - `id` — the stable, unique 24-hex topic id (passable to the `topic`
   argument of
-  [`dg_find_datasets()`](https://astamm.github.io/datagouv/reference/dg_find_datasets.md)).
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)).
   Always non-`NA`.
 
 - `name` — the topic's display name.
