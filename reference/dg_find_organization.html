@@ -106,8 +106,8 @@ search.</p>
 <span class="r-in"><span><span class="va">orgs</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"datasets"</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use the resolved id to narrow a catalog search to one producer.</span></span></span>
-<span class="r-in"><span><span class="va">datagouv</span> <span class="op">&lt;-</span> <span class="fu">dg_find_organization</span><span class="op">(</span>q <span class="op">=</span> <span class="st">"data.gouv"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">open_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>organization <span class="op">=</span> <span class="va">datagouv</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">data_gouv</span> <span class="op">&lt;-</span> <span class="fu">dg_find_organization</span><span class="op">(</span>q <span class="op">=</span> <span class="st">"data.gouv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">open_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>organization <span class="op">=</span> <span class="va">data_gouv</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>

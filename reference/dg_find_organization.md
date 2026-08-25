@@ -73,7 +73,7 @@ orgs <- dg_find_organization(q = "SNCF")
 orgs[, c("id", "name", "datasets")]
 
 # Use the resolved id to narrow a catalog search to one producer.
-datagouv <- dg_find_organization(q = "data.gouv")
-open_data <- dg_find_datasets(organization = datagouv$id[1], n = 5)
+data_gouv <- dg_find_organization(q = "data.gouv")
+open_data <- dg_find_datasets(organization = data_gouv$id[1], n = 5)
 }
 ```

@@ -48,17 +48,17 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="datagouv">datagouv<a class="anchor" aria-label="anchor" href="#datagouv"></a>
+<div class="page-header"><h1 id="rdatagouv">rdatagouv<a class="anchor" aria-label="anchor" href="#rdatagouv"></a>
 </h1></div>
 <!-- badges: start -->
 
-<p><code>datagouv</code> is an R client for the public API of <a href="https://www.data.gouv.fr" class="external-link">data.gouv.fr</a>, the French government’s open data platform. It helps you <em>find</em> a dataset that matches your interests, <em>judge</em> whether it is usable, <em>download</em> it, and later <em>re-fetch the exact same table</em> reproducibly. Requests are built on top of the <a href="https://httr2.r-lib.org" class="external-link"><code>httr2</code></a> package.</p>
+<p><code>rdatagouv</code> is an R client for the public API of <a href="https://www.data.gouv.fr" class="external-link">data.gouv.fr</a>, the French government’s open data platform. It helps you <em>find</em> a dataset that matches your interests, <em>judge</em> whether it is usable, <em>download</em> it, and later <em>re-fetch the exact same table</em> reproducibly. Requests are built on top of the <a href="https://httr2.r-lib.org" class="external-link"><code>httr2</code></a> package.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># From GitHub once the package is published</span></span>
-<span><span class="co"># remotes::install_github("astamm/datagouv")</span></span></code></pre></div>
+<span><span class="co"># remotes::install_github("astamm/rdatagouv")</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="try-it-in-seconds">Try it in seconds<a class="anchor" aria-label="anchor" href="#try-it-in-seconds"></a>
@@ -66,18 +66,18 @@
 <p>The examples below hit the live data.gouv.fr API and show real results.</p>
 <p>Find datasets matching a topic — <code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code> searches titles and descriptions server-side:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://astamm.github.io/datagouv/" class="external-link">datagouv</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://astamm.github.io/rdatagouv/">rdatagouv</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hits</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"vélo"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">hits</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"title"</span>, <span class="st">"id"</span>, <span class="st">"organization"</span>, <span class="st">"quality_score"</span>, <span class="st">"views"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; # A tibble: 5 × 5</span></span>
 <span><span class="co">#&gt;   title                                   id    organization quality_score views</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;                                   &lt;chr&gt; &lt;chr&gt;                &lt;dbl&gt; &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7137</span></span>
-<span><span class="co">#&gt; 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7955</span></span>
-<span><span class="co">#&gt; 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2252</span></span>
-<span><span class="co">#&gt; 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16121</span></span>
-<span><span class="co">#&gt; 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8559</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7143</span></span>
+<span><span class="co">#&gt; 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7960</span></span>
+<span><span class="co">#&gt; 3 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16132</span></span>
+<span><span class="co">#&gt; 4 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2253</span></span>
+<span><span class="co">#&gt; 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8564</span></span></code></pre></div>
 <p><code>id</code> is the stable identifier you use to download; <code>quality_score</code> and <code>views</code> are among the rich per-dataset metadata the v2 search API embeds inline (see <code>license</code>, <code>access_type</code>, <code>frequency</code>, <code>temporal_start</code>/<code>end</code> and <code>featured</code> too). Because v2 search does not inline a dataset’s resources, the resource-based columns <code>n_resources</code>, <code>formats</code>, <code>has_table</code> and <code>has_schema</code> are <code>NA</code> by default; pass <code>resources = TRUE</code> to opt into the per-dataset resource fetch and fill them exactly. <code>schema_only = TRUE</code> forces that fetch (and tells you about it) so the filter works out of the box. You can restrict the catalog to datasets that carry at least one resource in a given format — e.g. only the more compact <code>parquet</code> files, which are quicker to download:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">parquet_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"parquet"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
@@ -176,7 +176,7 @@
 <span><span class="co">#&gt; [1] 549</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $resources_downloads</span></span>
-<span><span class="co">#&gt; [1] 39</span></span>
+<span><span class="co">#&gt; [1] 43</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $followers</span></span>
 <span><span class="co">#&gt; [1] 0</span></span>
@@ -243,12 +243,12 @@
 </h2>
 <p><code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the first tabular resource of a dataset among CSV, CSV.GZ, XLS, XLSX, PARQUET, TSV, TXT and JSON, and returns the parsed table as a single tibble. A ZIP resource is unpacked and its first parseable file is returned by default; <code>all_files = TRUE</code> keeps every contained file in one of these formats as a named list — one element per file. The delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe, …), so both standard and European-style (semicolon/comma-decimal) files are handled without special configuration.</p>
 <p>The discovery catalog (<code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code>) is restricted to the official tabular formats data.gouv.fr itself indexes (<code>csv</code>, <code>csv.gz</code>, <code>xls</code>, <code>xlsx</code>, <code>parquet</code>), so every listed dataset is in principle openable as a table. Use the <code>format</code> argument to narrow the catalog to datasets with a resource in a specific format (the v2 search API matches several formats as a server-side union). The exact <code>n_resources</code>/<code>formats</code>/<code>has_table</code>/<code>has_schema</code> resource columns are populated by passing <code>resources = TRUE</code>. Direct pulls additionally accept <code>tsv</code>, <code>txt</code> and <code>json</code> resources.</p>
-<p>See the <a href="https://astamm.github.io/datagouv/articles/datagouv.html" class="external-link">vignette</a> for the full workflow and API reference.</p>
+<p>See the <a href="https://astamm.github.io/rdatagouv/articles/rdatagouv.html">vignette</a> for the full workflow and API reference.</p>
 </div>
 <div class="section level2">
 <h2 id="disclaimer">Disclaimer<a class="anchor" aria-label="anchor" href="#disclaimer"></a>
 </h2>
-<p>This package is not affiliated with or endorsed by data.gouv.fr. It is an independent project, and the authors are not responsible for the content of the datasets it indexes. This first version is a proof of concept and may contain bugs. Please report any issues on the <a href="https://github.com/astamm/datagouv/issues" class="external-link">GitHub repository</a>.</p>
+<p>This package is not affiliated with or endorsed by data.gouv.fr. It is an independent project, and the authors are not responsible for the content of the datasets it indexes. This first version is a proof of concept and may contain bugs. Please report any issues on the <a href="https://github.com/astamm/rdatagouv/issues" class="external-link">GitHub repository</a>.</p>
 <p>This package is the result of a joint effort initiated during the French <a href="https://stateofther.pages-forge.inrae.fr/finistr2026/" class="external-link">Finist’R</a> bootcamp which was held in Roscoff in August 2026. It served as a complex task to benchmark R package development assisted by AI. The refinements that came up during the bootcamp were made with the assistance of <code>deepseek-v4-flash</code> as provided by Albert API, the French government’s AI platform. The author is grateful to the Finist’R organizers and the Albert API team for their support and guidance.</p>
 </div>
 </div>
@@ -290,10 +290,10 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/astamm/datagouv/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/astamm/datagouv/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://app.codecov.io/gh/astamm/datagouv" class="external-link"><img src="https://codecov.io/gh/astamm/datagouv/graph/badge.svg" alt="Codecov test coverage"></a></li>
-<li><a href="https://github.com/astamm/datagouv/actions/workflows/pkgdown.yaml" class="external-link"><img src="https://github.com/astamm/datagouv/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
-<li><a href="https://CRAN.R-project.org/package=datagouv" class="external-link"><img src="https://www.r-pkg.org/badges/version/datagouv.png" alt="CRAN status"></a></li>
+<li><a href="https://github.com/astamm/rdatagouv/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/astamm/rdatagouv/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://app.codecov.io/gh/astamm/rdatagouv" class="external-link"><img src="https://codecov.io/gh/astamm/rdatagouv/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://github.com/astamm/rdatagouv/actions/workflows/pkgdown.yaml" class="external-link"><img src="https://github.com/astamm/rdatagouv/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
+<li><a href="https://CRAN.R-project.org/package=rdatagouv" class="external-link"><img src="https://www.r-pkg.org/badges/version/rdatagouv.png" alt="CRAN status"></a></li>
 </ul>
 </div>
 
