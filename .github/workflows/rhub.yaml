@@ -60,11 +60,22 @@ jobs:
     #   nosuggests, valgrind                     -> sanitizer-instrumented libR.so
     #                                                links absent libasan/libubsan
     #   rchk                                     -> pure-R pkg, no native code
+    #   gcc16                                    -> (transient) pak sysreqs install
+    #                                                failed on the Fedora 44
+    #                                                mirror: "Cannot download
+    #                                                Packages/m/mesa-dri-drivers-
+    #                                                26.1.7-1.fc44.x86_64.rpm: All
+    #                                                mirrors were tried" (run
+    #                                                32949887407, 2026-08-26).
+    #                                                Upstream mirror/RPM
+    #                                                availability, not a package
+    #                                                defect. Re-enable once the
+    #                                                Fedora 44 repo is healthy.
     - name: Drop excluded platforms
       id: filter
       env:
         RHUB_CONTAINERS: ${{ steps.rhub-setup.outputs.containers }}
-        RHUB_EXCLUDED: ${{ toJson(fromJson('["c23","clang16","clang17","clang18","clang19","clang20","gcc13","gcc14","gcc15","intel","noremap","nosuggests","valgrind","rchk"]')) }}
+        RHUB_EXCLUDED: ${{ toJson(fromJson('["c23","clang16","clang17","clang18","clang19","clang20","gcc13","gcc14","gcc15","gcc16","intel","noremap","nosuggests","valgrind","rchk"]')) }}
       run: |
         containers="$(jq -c --argjson ex "$RHUB_EXCLUDED" \
           '[.[] | select((.name as $n | ($ex | index($n))) == null)]' \
@@ -81,16 +92,17 @@ jobs:
       matrix:
         config: ${{ fromJson(needs.setup.outputs.containers) }}
         # NOTE: the excluded/broken platforms (valgrind, clang21, nosuggests,
-        # rchk, the stale-snapshot c23/clang16-20/gcc13-15/intel/noremap, ...)
-        # are intentionally NOT listed here. GitHub's strategy.matrix.exclude
-        # matches an axis only when the exclude value equals the full axis
-        # value, but `config` is a whole r-hub container object, so a partial
-        # `{name: ...}` entry never matches (this is exactly why run
-        # 32602516575 -- manually dispatched `config: valgrind` -- slipped
-        # through and failed). The filtering instead happens in the `setup`
-        # job, which drops those names from the `containers` output before the
-        # matrix is built, so the job is never scheduled. See "Drop excluded
-        # platforms" in the setup job for the list and rationale.
+        # rchk, the stale-snapshot c23/clang16-20/gcc13-15/intel/noremap, and
+        # gcc16 [transient Fedora 44 mirror failure], ...) are intentionally
+        # NOT listed here. GitHub's strategy.matrix.exclude matches an axis
+        # only when the exclude value equals the full axis value, but `config`
+        # is a whole r-hub container object, so a partial `{name: ...}` entry
+        # never matches (this is exactly why run 32602516575 -- manually
+        # dispatched `config: valgrind` -- slipped through and failed). The
+        # filtering instead happens in the `setup` job, which drops those names
+        # from the `containers` output before the matrix is built, so the job
+        # is never scheduled. See "Drop excluded platforms" in the setup job
+        # for the list and rationale.
     container:
       image: ${{ matrix.config.container }}
 
