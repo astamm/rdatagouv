@@ -268,8 +268,8 @@ topics[, c("name", "n_elements")]
     1 Indicateurs du tableau de bord des mobilités durables                       27
     2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
     3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-    4 Lutte contre la vacance des logements                                        8
-    5 Véhicules électriques                                                       27
+    4 Véhicules électriques                                                       27
+    5 Lutte contre la vacance des logements                                        8
 
 Pass a theme’s id to `dg_find_datasets(topic =)` to narrow a catalog
 search to datasets grouped under it (the same single-valued server-side
@@ -334,7 +334,7 @@ tbl <- dg_pull_dataset(table_id)
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 224541 Columns: 52
+    Rows: 225173 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
     chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
@@ -581,7 +581,7 @@ dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 224541 Columns: 52
+    Rows: 225173 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
     chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
@@ -634,7 +634,7 @@ tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 224541 Columns: 52
+    Rows: 225173 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
     chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
@@ -658,7 +658,7 @@ again <- dg_refetch(tbl_id)
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 224541 Columns: 52
+    Rows: 225173 Columns: 52
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
     chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
