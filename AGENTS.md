@@ -347,6 +347,21 @@ in the package (local `R CMD build` + test suite, 0 errors, are green):
   hours, so current rlang (\>=1.1.7, e.g. 1.3.0) fails to compile from
   source (`use of undeclared identifier 'R_envSymbols'`). These are
   excluded from the Linux matrix until r-hub rebuilds them past r89633.
+- **gcc16** (GCC trunk aka 16.0 \| Fedora 44 \| R-devel r90447,
+  2026-08-25 — a *healthy* fresh snapshot and the successor of the
+  deprecated gcc15) failed at `setup-deps` with a pak **sysreqs
+  install** error:
+  `Librepo error: Cannot download Packages/m/mesa-dri-drivers-26.1.7-1.fc44.x86_64.rpm: All mirrors were tried`
+  (run 32949887407, 2026-08-26). This is NOT a compiler-compat or
+  sanitizer issue (unlike the other exclusions) — pak’s
+  `plan$install_sysreqs()` ran DNF to install a system RPM and the
+  Fedora 44 mirror could not serve the `mesa-dri-drivers` RPM
+  (transient/unstable repo or the RPM was removed/ replaced). It is an
+  upstream mirror/RPM-availability failure, not a package defect. gcc16
+  is otherwise valuable coverage (newest compiler), so it is excluded
+  only until the Fedora 44 repo stabilizes — re-enable (drop it from
+  `RHUB_EXCLUDED`) when a re-run of the `setup-deps`-only stage
+  succeeds.
 - **clang21** (healthy newer snapshot r90185) breaks because the r-hub
   CRAN *binary* `bit64` links against `libclang_rt.ubsan_standalone`,
   missing at load time -\> readr-based parsing fails in tests +
