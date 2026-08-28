@@ -98,8 +98,9 @@
 #'   `title` and `id` columns are always non-`NA`; the `id` column holds the
 #'   stable, unique dataset identifier used to address a dataset with
 #'   [dg_pull_dataset()]. When `resources = TRUE`, the columns also include
-#'   `n_resources` (number of files/resources), `formats` (distinct file
-#'   formats found among them), `has_table` (whether at least one resource is
+#'   `n_resources` (number of files/resources), `formats` (a list-column
+#'   whose elements are the distinct file formats found among them), `has_table`
+#'   (whether at least one resource is
 #'   in a format this package can parse) and `has_schema` (whether at least one
 #'   resource carries a pointer to a declared data schema, whose per-variable
 #'   documentation is exposed by [dg_schema()]); these are `NA` when
@@ -237,29 +238,18 @@ dg_find_datasets <- function(
       subsection <- if (is.list(.x$resources)) .x$resources else list()
       fetch_resource_subsection(subsection)
     })
+    res_formats <- lapply(res_list, function(res) {
+      sort(unique(tolower(vapply(
+        res,
+        function(r) r$format %||% "",
+        character(1)
+      ))))
+    })
     out$n_resources <- vapply(res_list, length, integer(1))
-    out$formats <- vapply(
-      res_list,
-      function(res) {
-        fmts <- sort(unique(tolower(vapply(
-          res,
-          function(r) r$format %||% "",
-          character(1)
-        ))))
-        paste(fmts, collapse = ", ")
-      },
-      character(1)
-    )
+    out$formats <- lapply(res_formats, function(fmts) fmts[fmts != ""])
     out$has_table <- vapply(
-      res_list,
-      function(res) {
-        fmts <- sort(unique(tolower(vapply(
-          res,
-          function(r) r$format %||% "",
-          character(1)
-        ))))
-        any(fmts %in% supported_formats())
-      },
+      res_formats,
+      function(fmts) any(fmts %in% supported_formats()),
       logical(1)
     )
     out$has_schema <- vapply(
@@ -267,10 +257,9 @@ dg_find_datasets <- function(
       function(res) any(vapply(res, resource_has_schema, logical(1))),
       logical(1)
     )
-    out$formats[out$formats == ""] <- NA_character_
   } else {
     out$n_resources <- NA_integer_
-    out$formats <- NA_character_
+    out$formats <- rep(list(NULL), nrow(out))
     out$has_table <- NA
     out$has_schema <- NA
   }
@@ -303,7 +292,7 @@ datagouv_empty_columns <- function() {
     archived = logical(),
     featured = logical(),
     n_resources = integer(),
-    formats = character(),
+    formats = list(),
     has_table = logical(),
     has_schema = logical()
   )

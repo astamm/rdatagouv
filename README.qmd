@@ -6,7 +6,6 @@ format: gfm
 
 ```{r}
 #| include: false
-options(readr.show_col_types = FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",

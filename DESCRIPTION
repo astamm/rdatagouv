@@ -2,6 +2,10 @@ Package: rdatagouv
 Title: Tools to Download and Explore Datasets from the French Open Data Platform
 Version: 0.0.0.9000
 Authors@R: c( 
+    person(given = "Magali", 
+           family = "Berland", 
+           role = "aut", 
+           email = "magali.berland@inrae.fr"),
     person(given = "Pierre", 
            family = "Gloaguen", 
            role = "aut", 
@@ -13,7 +17,11 @@ Authors@R: c(
     person(given = "Mahendra", 
            family = "Mariadassou", 
            role = "aut", 
-           email = "mahendra.mariadassou@inrae.fr"), 
+           email = "mahendra.mariadassou@inrae.fr"),
+    person(given = "Cédric", 
+           family = "Midoux", 
+           role = "aut", 
+           email = "cedric.midoux@inrae.fr"), 
     person(given = "Jean-François", 
            family = "Rey", 
            role = "aut", 
@@ -44,9 +52,9 @@ Imports:
     httr2,
     jsonlite,
     nanoparquet,
-    readr,
     readxl,
-    tibble
+    tibble,
+    vroom
 Suggests:
     dplyr,
     knitr,
