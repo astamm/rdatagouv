@@ -544,7 +544,11 @@ test_that("find_dataset() falls back to title search for non-id input", {
 
 test_that("read_first_parseable_resource() returns the first successful candidate", {
   local_mocked_bindings(
-    read_resource = function(resource, col_types = NULL) {
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
       if (resource$format == "pdf") {
         stop("cannot parse pdf")
       }
@@ -569,7 +573,11 @@ test_that("read_first_parseable_resource() skips a failing candidate and tries t
   # on to the CSV instead of erroring.
   attempt <- 0L
   local_mocked_bindings(
-    read_resource = function(resource, col_types = NULL) {
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
       if (resource$format == "json") {
         stop("Tibble columns must have compatible sizes")
       }
@@ -591,7 +599,13 @@ test_that("read_first_parseable_resource() skips a failing candidate and tries t
 
 test_that("read_first_parseable_resource() auto-selects a zip resource", {
   local_mocked_bindings(
-    read_resource = function(resource, col_types = NULL) mock_csv_data()
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
   )
   dataset <- mock_dataset(
     resources = list(
@@ -627,9 +641,15 @@ test_that("read_first_parseable_resource() picks the lightest of same-data forma
     filesize = 40000
   )
   dataset <- mock_dataset(resources = list(csv, xlsx))
-  local_mocked_bindings(read_resource = function(resource, col_types = NULL) {
-    mock_csv_data()
-  })
+  local_mocked_bindings(
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -646,9 +666,15 @@ test_that("read_first_parseable_resource() keeps declared order for distinct dat
   )
   income <- mock_resource(format = "csv", title = "income.csv", filesize = 1000)
   dataset <- mock_dataset(resources = list(pop, income))
-  local_mocked_bindings(read_resource = function(resource, col_types = NULL) {
-    mock_csv_data()
-  })
+  local_mocked_bindings(
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -698,7 +724,13 @@ test_that("prefer_lightest_file() leaves distinct resources in order", {
 
 test_that("read_first_parseable_resource() errors when every candidate fails", {
   local_mocked_bindings(
-    read_resource = function(resource, col_types = NULL) stop("boom")
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      stop("boom")
+    }
   )
   dataset <- mock_dataset(
     resources = list(

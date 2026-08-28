@@ -1,5 +1,37 @@
 # rdatagouv 0.0.0.9000
 
+- Documentation refresh. The README now leads with a five-step "find → judge →
+  fetch → re-fetch → summarise" quick start rather than a dense gallery of
+  every filter, keeping `organization`/`topic`/`format` narrowing to a brief
+  mention and pointing readers at the vignette for the full tour. The vignette
+  now exemplifies *every* exported function — adding a missing `dg_glimpse()`
+  worked example in the "Judging whether a dataset is usable" section — and the
+  `col_types` parsing-issues example uses a real fixture (the IRVE
+  charging-points dataset) whose `date_mise_en_service`/`date_maj` columns
+  genuinely reproduce the mixed-date straggler problem it illustrates, instead
+  of pointing at columns that had since drifted on the platform.
+- `dg_pull_dataset()` and `dg_refetch()` gain a `use_tabular_types` argument
+  (default `TRUE`) that seeds column types from data.gouv's tabular API
+  profile (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`), a
+  schema-independent per-column type detection computed by data.gouv's own
+  `csv-detective` detector. It is now on by default; pass `FALSE` to disable.
+  The profile is resolved *per resource inside the parse loop* (at the leaf
+  `read_resource()` that actually parses the addressed resource), so a
+  multi-resource dataset uses each resource's own profile rather than a
+  first-candidate guess. The detected types fill in any column `col_types`
+  does not pin (explicit `col_types` always win); the profile is best-effort —
+  it only exists for single-file resources indexed by the tabular service, and
+  a missing profile (or a ZIP member) silently falls back to type inference.
+  Each column's detection is also gated on its confidence `score`: a detection
+  below the default threshold (`min_score = 0.5`) is left out so vroom infers
+  that column instead of pinning a low-confidence type.
+- When a resource carries both a tabular profile and a declared schema, the
+  *profile* remains the column-typing source even when the schema is
+  co-present: the pulled table's column types come from the empirical
+  csv-detective detection, while the schema keeps its separate documentation
+  role via `dg_schema()`. (Schema-declared types use a looser vocabulary —
+  e.g. `year`, `geopoint`, `array` — outside the `col_types` shorthand, and are
+  often all-`string` or stale, so they are not used to seed vroom's types.)
 - `dg_pull_dataset()` and `dg_refetch()` gain a `col_types` argument to force
   the type of specific columns instead of letting vroom infer them, e.g.
   `col_types = c(date_mise_en_service = "Date")`. Values are shorthand strings

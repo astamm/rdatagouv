@@ -233,8 +233,12 @@ mock_csv_data <- function() {
 # vignette-warning investigation: a mostly-padded ISO date column with a few
 # non-padded stragglers. Enough padded values make vroom commit to a date
 # collector, which then flags the stragglers as parsing issues (the trigger is
-# data-mass dependent). Returns the file path.
+# data-mass dependent). The RNG is seeded so the sampled dates and straggler
+# positions are deterministic per call, keeping the number of reported parsing
+# problems stable across runs (these helpers back several tests that assert on
+# the problems the data produces). Returns the file path.
 local_messy_date_csv <- function(rows, stragglers = 5) {
+  withr::local_seed(2021)
   path <- tempfile(fileext = ".csv")
   d <- sprintf(
     "%d-%02d-%02d",

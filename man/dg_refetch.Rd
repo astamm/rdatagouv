@@ -4,7 +4,7 @@
 \alias{dg_refetch}
 \title{Re-fetch a single parsed table by its stable address}
 \usage{
-dg_refetch(x, remove_na = FALSE, col_types = NULL)
+dg_refetch(x, remove_na = FALSE, col_types = NULL, use_tabular_types = TRUE)
 }
 \arguments{
 \item{x}{Either a table returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or \code{\link[=dg_refetch]{dg_refetch()}}
@@ -19,6 +19,13 @@ URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
 columns instead of letting vroom infer them, e.g.
 \code{c(date_mise_en_service = "Date")}. See \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} for the
 accepted shorthand values. Defaults to \code{NULL} (no column overrides).}
+
+\item{use_tabular_types}{Whether to seed column types from data.gouv's
+tabular API profile, as in \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} (column types \code{col_types}
+does not pin are taken from the profile when it is available). Defaults to
+\code{TRUE}. Applies to single-file resources only — the profile of the
+addressed resource is used; a missing or inapplicable profile (including
+any ZIP member) falls back to type inference.}
 }
 \value{
 A \code{\link[tibble:tibble]{tibble::tibble()}} — the single re-fetched table (the id addresses

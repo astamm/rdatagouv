@@ -39,74 +39,44 @@ reproducibly. Requests are built on top of the
 # remotes::install_github("astamm/rdatagouv")
 ```
 
-## Try it in seconds
+## Quick start
 
-The examples below hit the live data.gouv.fr API and show real results.
+`rdatagouv` revolves around a simple workflow: **find** a dataset, **judge**
+whether it is usable, **fetch** it into a table, and later **re-fetch the exact
+same table** reproducibly. The examples below hit the live data.gouv.fr API and
+show real results.
 
-Find datasets matching a topic — `dg_find_datasets()` searches titles and
-descriptions server-side:
+### 1. Find
+
+`dg_find_datasets()` searches the catalog by keyword and returns one row per
+dataset, with metadata (`quality_score`, `views`, `license`, ...) to help you
+choose:
 
 ```{r}
 library(rdatagouv)
 
 hits <- dg_find_datasets(q = "vélo", n = 5)
-hits[, c("title", "id", "organization", "quality_score", "views")]
+hits[, c("title", "id", "organization", "quality_score")]
 ```
 
-`id` is the stable identifier you use to download; `quality_score` and
-`views` are among the rich per-dataset metadata the v2 search API embeds
-inline (see `license`, `access_type`, `frequency`, `temporal_start`/`end` and
-`featured` too). Because v2 search does not inline a dataset's resources, the
-resource-based columns `n_resources`, `formats`, `has_table` and `has_schema`
-are `NA` by default; pass `resources = TRUE` to opt into the per-dataset
-resource fetch and fill them exactly. `schema_only = TRUE` forces that fetch
-(and tells you about it) so the filter works out of the box. You can restrict the catalog to datasets
-that carry at least one resource in a given format — e.g. only the more compact
-`parquet` files, which are quicker to download:
+You can also discover producers with `dg_find_organization()` or curated themes
+with `dg_find_topics()`, and narrow a search to one of them via the
+`organization` / `topic` arguments.
 
-```{r}
-parquet_only <- dg_find_datasets(format = "parquet", n = 5)
-parquet_only$title
-```
+### 2. Judge
 
-You can also narrow a search to a single producer. Pass the producer's exact
-name or slug — it is resolved to its stable id for you — or look producers up
-first with `dg_find_organization()` to see which exist and how their names are
-spelled:
-
-```{r}
-orgs <- dg_find_organization(q = "SNCF")
-orgs[, c("id", "name", "datasets")]
-
-sncf <- dg_find_datasets(organization = "sncf", n = 5)
-sncf$title
-```
-
-You can likewise narrow a search to a curated *theme*. Discover which themes
-exist with `dg_find_topics()` (which also reports how many elements each
-groups), then filter the catalog by a theme's id:
-
-```{r}
-topics <- dg_find_topics(q = "mobilité", n = 3)
-topics[, c("id", "name", "n_elements")]
-
-mobility <- dg_find_datasets(topic = topics$id[1], n = 5)
-mobility$title
-```
-
-Glimpse a dataset's health and engagement metadata before deciding to pull it.
-`dg_glimpse()` surfaces the v2-inline `quality` score and flags, `metrics`
-(views, downloads, followers, ...) and context that the fetch path does not
-expose:
+Before pulling, glimpse a dataset's health and engagement in one call, or read
+its documented columns with `dg_schema()`:
 
 ```{r}
 g <- dg_glimpse("6a6be5976a05df136d48fb7a")
-g$quality
-g$metrics
+g$quality$score
 ```
 
-Download a dataset and inspect it. The result is a single table whose stable
-address is attached as an `id` attribute:
+### 3. Fetch
+
+`dg_pull_dataset()` downloads the dataset's first tabular resource and returns a
+single tibble, with a stable table id attached as an attribute:
 
 ```{r}
 tbl <- dg_pull_dataset("6397c0ff56d3963118a18345")     # C.vélo bike stations
@@ -114,18 +84,10 @@ head(tbl[, 1:6])
 dg_table_id(tbl)
 ```
 
-Judge whether the columns mean what you think. `dg_schema()` resolves the
-dataset's declared schema and returns human-readable column documentation (pass
-the table directly — its id is read automatically):
+### 4. Re-fetch reproducibly
 
-```{r}
-# Find a schema-documented dataset, then look at its documented columns.
-irve <- dg_pull_dataset("6a84778d27ac6d44d5fabe1f")     # IRVE charging points
-dg_schema(irve)[, c("name", "description", "type", "example")]
-```
-
-Re-fetch the exact same table later, reproducibly, from its stored id — no
-matter how the catalog changes underneath you:
+Save that id, and `dg_refetch()` gets back the exact same table later — no
+matter how titles or file names drift on the platform:
 
 ```{r}
 again <- dg_refetch(tbl)
@@ -133,12 +95,18 @@ again <- dg_refetch(tbl)
 identical(again, tbl)
 ```
 
-And compute summary metrics — size, columns, rows and missing-value rate — on
-one table or several at once:
+### 5. Summarise
+
+`dg_summary()` computes metrics for one table (size, columns, rows,
+missing-value rate), and `dg_summarise()` does the same for many at once — even
+an entire `dg_find_datasets()` result:
 
 ```{r}
 dg_summarise(datasets = list(iris = iris, mtcars = mtcars))
 ```
+
+For a deeper tour — including column-type control and handling parsing
+problems — see the [vignette](https://astamm.github.io/rdatagouv/articles/rdatagouv.html).
 
 ## Supported formats
 
@@ -150,11 +118,16 @@ one of these formats as a named list — one element per file. The
 delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe,
 ...), so both standard and European-style (semicolon/comma-decimal) files are
 handled without special configuration. Column types are inferred by vroom, but
-you can force them with `col_types = c(col = "Date")` (e.g. to make a mostly-
-padded ISO date column with a few non-padded stragglers read as `Date`, turning
-the stragglers into `NA`). Any parsing issues are attached to the returned
-table as an `rdatagouv_problems` attribute — read them with `dg_problems(tbl)` —
-rather than a noisy per-cell warning.
+seeded by default from data.gouv's own `csv-detective` profile
+(`use_tabular_types = TRUE`) and you can force specific columns with
+`col_types = c(col = "Date")` (e.g. to make a mostly-padded ISO date column with
+a few non-padded stragglers read as `Date`, turning the stragglers into `NA`;
+explicit `col_types` always win). The profile is a best-effort signal — it only
+exists for single-file resources indexed by the tabular service, and a missing
+profile (or a ZIP member) falls back to type inference; pass
+`use_tabular_types = FALSE` to disable seeding entirely. Any parsing issues are
+attached to the returned table as an `rdatagouv_problems` attribute — read them
+with `dg_problems(tbl)` — rather than a noisy per-cell warning.
 
 The discovery catalog (`dg_find_datasets()`) is restricted to the official
 tabular formats data.gouv.fr itself indexes (`csv`, `csv.gz`, `xls`, `xlsx`,
@@ -164,9 +137,6 @@ specific format (the v2 search API matches several formats as a server-side
 union). The exact `n_resources`/`formats`/`has_table`/`has_schema` resource
 columns are populated by passing `resources = TRUE`. Direct pulls additionally
 accept `tsv`, `txt` and `json` resources.
-
-See the [vignette](https://astamm.github.io/rdatagouv/articles/rdatagouv.html) for
-the full workflow and API reference.
 
 ## Disclaimer
 

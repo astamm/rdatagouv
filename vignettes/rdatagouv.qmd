@@ -232,8 +232,22 @@ otherwise.
 
 ## Judging whether a dataset is usable
 
-The judged usefulness of a dataset hinges on whether the columns mean what you
-think they mean. That information comes from the producer's *schema* on
+A quick way to judge a dataset before pulling it is `dg_glimpse()`. It takes a
+dataset id — or, like the other functions, a pulled table (its id is read
+automatically) — and returns a named list of the v2-inline metadata the fetch
+path does not surface directly: the dataset's `quality` score and flags, its
+usage `metrics`, and its `context` (license, frequency, coverage, ...):
+
+```{r}
+#| live: true
+glimpse <- dg_glimpse("6a6be5976a05df136d48fb7a")
+glimpse$quality$score             # 0..1 quality score
+glimpse$metrics$views             # how often the dataset is looked at
+glimpse$context$license           # e.g. "open" / "notspecified"
+```
+
+The judged usefulness of a dataset also hinges on whether the columns mean what
+you think they mean. That information comes from the producer's *schema* on
 schema.data.gouv.fr. `dg_schema()` takes a table (its id is read automatically)
 or a composed table id and returns the documented fields:
 
@@ -291,13 +305,19 @@ A few things to know about pulling:
   distinct names keep their declared order.
 * Every returned table carries its stable, unique address as an `id`
   attribute, readable with `dg_table_id()`.
-* Column types are inferred by vroom, but you can force specific columns with
+* Column types are seeded from data.gouv's own `csv-detective` profile by
+  default (`use_tabular_types = TRUE`), then remaining inference is left to
+  vroom. The profile is best-effort — it only exists for single-file resources
+  indexed by the tabular service, so a missing profile (or a ZIP member) falls
+  back to type inference; pass `use_tabular_types = FALSE` to disable seeding
+  entirely. You can always force specific columns with
   `col_types = c(col_name = "Date")` (shorthand: `"character"`,
   `"double"`/`"numeric"`, `"integer"`, `"logical"`, `"Date"`, `"datetime"`,
-  `"skip"`, `"guess"`). This is handy when vroom guesses a type the data does
-  not fully match — e.g. a mostly-padded ISO date column with a few non-padded
-  stragglers like `2021-7-01`, which vroom would otherwise flag as a parsing
-  issue; forcing `"Date"` turns those stragglers into `NA`.
+  `"skip"`, `"guess"`; explicit `col_types` always win). This is handy when
+  vroom guesses a type the data does not fully match — e.g. a mostly-padded ISO
+  date column with a few non-padded stragglers like `2021-7-01`, which vroom
+  would otherwise flag as a parsing issue; forcing `"Date"` turns those
+  stragglers into `NA`.
 * Any parsing issues vroom encountered are attached to the table as an
   `rdatagouv_problems` attribute instead of a noisy per-cell warning. Read them
   with `dg_problems(tbl)` (a data frame of `row`, `col`, `expected`, `actual`,
@@ -368,10 +388,14 @@ inference for the named columns (shorthand: `"character"`, `"double"`/
 `"guess"`). Two ways to fix the mixed-date case:
 
 1. **Force the stragglers to text** with `"character"` — nothing is lost and no
-   value becomes `NA`; you can parse the dates yourself afterwards:
+   value becomes `NA`; you can parse the dates yourself afterwards. The IRVE
+   charging-points dataset is a good real example: its `date_mise_en_service`
+   and `date_maj` columns are mostly padded with a few stragglers like
+   `2021-7-01`:
    ```r
-   tbl <- dg_pull_dataset("6397c0ff56d3963118a18345",
+   tbl <- dg_pull_dataset("5448d3e0c751df01f85d0572",
      col_types = c(date_mise_en_service = "character", date_maj = "character"))
+   dg_problems(tbl)          # NULL — nothing is flagged any more
    ```
 2. **Force `"Date"`** and accept that the stragglers become `NA` — right when a
    few unparsed dates are acceptable for your analysis:
@@ -386,11 +410,14 @@ time you re-fetch it:
 
 ```{r}
 #| live: true
-# A "re-fetch" that forces the mixed-date columns to text, then reports
-# whether anything is still flagged.
-tbl <- dg_refetch("6397c0ff56d3963118a18345",
+# Pull the IRVE charging-points table once, inspect its parsing issues with
+# dg_problems(), then re-fetch the same table with the mixed-date columns
+# forced to text so nothing is flagged.
+tbl <- dg_pull_dataset("5448d3e0c751df01f85d0572")
+nrow(dg_problems(tbl))                    # how many mixed-date stragglers
+tbl <- dg_refetch(tbl,
   col_types = c(date_mise_en_service = "character", date_maj = "character"))
-dg_problems(tbl)
+dg_problems(tbl)                          # NULL — clean re-fetch
 ```
 
 The general workflow is: pull, inspect with `dg_problems()`, spot the offending
