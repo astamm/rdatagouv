@@ -228,3 +228,27 @@ mock_csv_data <- function() {
     stringsAsFactors = FALSE
   )
 }
+
+# Write a CSV to a temp file resembling the IRVE dataset that triggered the
+# vignette-warning investigation: a mostly-padded ISO date column with a few
+# non-padded stragglers. Enough padded values make vroom commit to a date
+# collector, which then flags the stragglers as parsing issues (the trigger is
+# data-mass dependent). Returns the file path.
+local_messy_date_csv <- function(rows, stragglers = 5) {
+  path <- tempfile(fileext = ".csv")
+  d <- sprintf(
+    "%d-%02d-%02d",
+    sample(2021:2024, rows, TRUE),
+    sample(1:12, rows, TRUE),
+    sample(1:28, rows, TRUE)
+  )
+  if (length(stragglers) && stragglers > 0) {
+    idx <- sample(rows, stragglers)
+    d[idx] <- sub("-0(.)-", "-\\1-", d[idx])
+  }
+  writeLines(
+    c("date_mise_en_service,x", paste(d, seq_len(rows), sep = ",")),
+    path
+  )
+  path
+}

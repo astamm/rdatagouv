@@ -33,6 +33,23 @@ resources)`, `dg_pull_dataset(id, all_files, remove_na)`,
 > enumerated or validated. The exhaustive option sets live in the
 > `dg_*_values` constants in `R/dg-find-datasets.R` and are mirrored in the
 > roxygen docs.
+>
+> **Implemented (2026-08): `col_types` + parsing-problem surfacing.**
+> `dg_pull_dataset()`/`dg_refetch()` gain a `col_types` argument (named vector
+> of shorthand strings, e.g. `c(date_mise_en_service = "Date")`, translated to
+> a vroom cols() spec by internal `col_types_to_spec()` — no readr dependency)
+> to force specific column types instead of vroom's inference. The noisy
+> per-cell vroom parsing warnings are muffled by default via
+> `withCallingHandlers`, and the underlying issues are captured with
+> `vroom::problems()` and attached to the returned table as an
+> `rdatagouv_problems` attribute (a plain data frame — the temp-file path is
+> stripped and, unlike a vroom class, it survives `tibble::as_tibble()` in
+> `format_tibble()`), read with the new export `dg_problems(x)`. Root cause
+> that motivated this: the vignette's dynamic-pull live chunks (e.g. the IRVE
+> dataset) hit mostly-padded ISO date columns with a few non-padded stragglers
+> (`2021-7-01`), which vroom flags and warns about per cell; the warning was a
+> dead-end because `as_tibble()` strips the vroom class so `vroom::problems()`
+> failed on the returned table. See AGENTS.md.
 
 ## Target flow
 
@@ -267,15 +284,16 @@ Implications for this package:
 
 | File | Change |
 |------|--------|
-| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. **Topics:** `datagouv_topics_url()`; thread `topic` through `fetch_search_page()`/`fetch_search_all()`; topics crawler `fetch_topic_page()` / `fetch_topics_all()` (clone of the organizations crawler), `fetch_topic_elements()` (paginated elements subsection, nested `element$class` classifier), `topic_element_counts()`. |
-| `R/dg-pull-dataset.R` | `dg_pull_dataset()` returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. (Stays on v1.) |
+| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. **Topics:** `datagouv_topics_url()`; thread `topic` through `fetch_search_page()`/`fetch_search_all()`; topics crawler `fetch_topic_page()` / `fetch_topics_all()` (clone of the organizations crawler), `fetch_topic_elements()` (paginated elements subsection, nested `element$class` classifier), `topic_element_counts()`. **col_types/problems:** internal `col_types_to_spec()` maps named shorthand vectors to a `vroom::cols()` spec; `parse_resource_file()`/`read_resource()`/`read_zip_resource()`/`read_one_zip_file()` thread `col_types`; `parse_resource_file()` muffles vroom's parsing warnings via `withCallingHandlers` and attaches `vroom::problems()` (temp-file path stripped, only when non-empty) as the `rdatagouv_problems` attribute. |
+| `R/dg-pull-dataset.R` | `dg_pull_dataset()` returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. Adds `col_types` (named shorthand vector, threaded to the parse step). (Stays on v1.) |
 | `R/dg-table-id.R` (new) | Exported `dg_table_id(x)` reads the `id` attribute. |
+| `R/dg-problems.R` (new) | Exported `dg_problems(x)` reads the `rdatagouv_problems` attribute on a pulled/re-fetched table. |
 | `R/dg-summary.R` / `R/dg-summarise.R` | `dg_summary()` needs no metadata-column exclusion (id is an attribute); `dg_summarise()` accepts a `dg_list_datasets()` tibble. |
 | `R/dg-list-datasets.R` | Add `n_resources`, `formats`, `has_table`, `has_schema` columns, and the `format` argument (server-side per-format filtering, unioned and de-duplicated by id). **v2 switch:** rework onto `fetch_search_all()` over `datasets/search`; new server-side filter args (`organization`, `geozone`, `access_type`, `license`, `tag`, `granularity`, `last_update`, `producer_type`); new inline columns; resource columns `NA` unless `resources = TRUE`. |
 | `R/dg-find-datasets.R` (formerly `dg-list-datasets.R`) | Renamed verb-first. Adds the `topic` server-side filter (a 24-hex topic id, open vocabulary like `tag`/`geozone`, deliberately not validated and not name/slug-resolved). |
 | `R/dg-find-topics.R` (new) | Exported `dg_find_topics(q, n, elements)` mirroring `dg_find_organization()`: tibble `{id, name, slug, description, tags, featured, n_elements}` plus `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE` (N+1 per-topic fetch, counting nested `element$class`); external-link (NULL-class) entries excluded. |
 | `R/dg-glimpse.R` (new) | Exported `dg_glimpse(id, table = NULL)` surfaces v2-inline dataset metadata (`quality`, `metrics`, `context`, plus `resources` when `table = TRUE`) via `fetch_dataset_v2()` + `fetch_resource_subsection()`. |
-| `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. |
+| `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. Adds `col_types` (threaded to `read_resource()`/`read_one_zip_file()`). |
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
 | `R/rdatagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |

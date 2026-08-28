@@ -23,6 +23,14 @@
 #'   multi-file ZIP, `TRUE` keeps every parseable file, one named element each.
 #' @param remove_na Whether to drop rows containing any `NA` value (passed to
 #'   `format_tibble()`). Defaults to `FALSE`.
+#' @param col_types Optional named vector of column types to force on specific
+#'   columns instead of letting vroom infer them, e.g.
+#'   `c(date_mise_en_service = "Date")`. Values are shorthand strings:
+#'   `"character"`, `"double"`/`"numeric"`, `"integer"`, `"logical"`, `"Date"`,
+#'   `"datetime"`, `"skip"` or `"guess"`. Unnamed columns keep type inference.
+#'   This is useful when a mostly-padded ISO date column has a few non-padded
+#'   stragglers that vroom would otherwise flag (forcing `"Date"` turns those
+#'   into `NA`). Defaults to `NULL` (no column overrides).
 #'
 #' @return A [tibble::tibble()] (default) or, when `all_files = TRUE` and the
 #'   resource is a multi-file ZIP, a named list of tibbles (one element per
@@ -30,7 +38,9 @@
 #'   address as an `id` attribute — a URI of the form
 #'   `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>` (plus
 #'   `/&lt;file&gt;` for a file inside a ZIP) — re-fetchable with [dg_refetch()]
-#'   and readable with [dg_table_id()].
+#'   and readable with [dg_table_id()]. Any parsing issues vroom encountered are
+#'   attached as an `rdatagouv_problems` attribute (a data frame), readable with
+#'   [dg_problems()].
 #'
 #' @export
 #' @examplesIf interactive()
@@ -38,13 +48,18 @@
 #' tbl <- dg_pull_dataset(id)
 #' head(tbl)
 #' dg_table_id(tbl)
-dg_pull_dataset <- function(id, all_files = FALSE, remove_na = FALSE) {
+dg_pull_dataset <- function(
+  id,
+  all_files = FALSE,
+  remove_na = FALSE,
+  col_types = NULL
+) {
   dataset <- find_dataset(id)
   # Try the dataset's tabular resources in order, keeping the first that
   # actually parses. data.gouv's declared formats are not always accurate, so a
   # candidate can fail to read as a table (e.g. a `json` resource serving a
   # metadata document); we skip those rather than erroring on the first one.
-  parsed <- read_first_parseable_resource(dataset)
+  parsed <- read_first_parseable_resource(dataset, col_types = col_types)
   data <- parsed$data
   resource <- parsed$resource
   is_zip <- is.list(data) && !is.data.frame(data)

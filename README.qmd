@@ -149,7 +149,12 @@ file is returned by default; `all_files = TRUE` keeps every contained file in
 one of these formats as a named list — one element per file. The
 delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe,
 ...), so both standard and European-style (semicolon/comma-decimal) files are
-handled without special configuration.
+handled without special configuration. Column types are inferred by vroom, but
+you can force them with `col_types = c(col = "Date")` (e.g. to make a mostly-
+padded ISO date column with a few non-padded stragglers read as `Date`, turning
+the stragglers into `NA`). Any parsing issues are attached to the returned
+table as an `rdatagouv_problems` attribute — read them with `dg_problems(tbl)` —
+rather than a noisy per-cell warning.
 
 The discovery catalog (`dg_find_datasets()`) is restricted to the official
 tabular formats data.gouv.fr itself indexes (`csv`, `csv.gz`, `xls`, `xlsx`,

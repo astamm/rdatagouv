@@ -290,6 +290,17 @@ A few things to know about pulling:
   distinct names keep their declared order.
 * Every returned table carries its stable, unique address as an `id`
   attribute, readable with `dg_table_id()`.
+* Column types are inferred by vroom, but you can force specific columns with
+  `col_types = c(col_name = "Date")` (shorthand: `"character"`,
+  `"double"`/`"numeric"`, `"integer"`, `"logical"`, `"Date"`, `"datetime"`,
+  `"skip"`, `"guess"`). This is handy when vroom guesses a type the data does
+  not fully match — e.g. a mostly-padded ISO date column with a few non-padded
+  stragglers like `2021-7-01`, which vroom would otherwise flag as a parsing
+  issue; forcing `"Date"` turns those stragglers into `NA`.
+* Any parsing issues vroom encountered are attached to the table as an
+  `rdatagouv_problems` attribute instead of a noisy per-cell warning. Read them
+  with `dg_problems(tbl)` (a data frame of `row`, `col`, `expected`, `actual`,
+  or `NULL` when the table parsed cleanly).
 
 ## Re-fetching the same table reproducibly
 

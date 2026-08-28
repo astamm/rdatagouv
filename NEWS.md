@@ -1,5 +1,21 @@
 # rdatagouv 0.0.0.9000
 
+- `dg_pull_dataset()` and `dg_refetch()` gain a `col_types` argument to force
+  the type of specific columns instead of letting vroom infer them, e.g.
+  `col_types = c(date_mise_en_service = "Date")`. Values are shorthand strings
+  (`"character"`, `"double"`/`"numeric"`, `"integer"`, `"logical"`, `"Date"`,
+  `"datetime"`, `"skip"`, `"guess"`); unnamed columns keep type inference. This
+  resolves the case of a mostly-padded ISO date column with a few non-padded
+  stragglers (e.g. `2021-7-01`), which vroom would otherwise flag as a parsing
+  issue: forcing `"Date"` turns the stragglers into `NA`.
+- The noisy per-cell `vroom` parsing warnings are now suppressed by default
+  during a pull, and the underlying issues are attached to the returned table
+  as an `rdatagouv_problems` attribute instead. Read them with the new export
+  `dg_problems(tbl)`, which returns a data frame of `{row, col, expected,
+  actual}`, or `NULL` when the table parsed cleanly. (Previously the warning
+  told you to call `problems()`, but `format_tibble()` stripped vroom's class,
+  so that call always failed on a pulled table.)
+
 - Delimited resources (`csv`, `csv.gz`, `tsv`, `txt`) are now parsed with
   `vroom::vroom()` instead of the individual `readr` readers
   (`read_csv`/`read_tsv`/`read_csv2`/`read_delim`). `readr` is no longer an

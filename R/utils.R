@@ -813,7 +813,7 @@ prefer_lightest_file <- function(resources) {
 # Candidates offering the same data in several formats are first reduced to
 # their lightest copy (see prefer_lightest_file()), so a dataset published as
 # both .csv and .xlsx downloads the smaller file.
-read_first_parseable_resource <- function(dataset) {
+read_first_parseable_resource <- function(dataset, col_types = NULL) {
   candidates <- Filter(
     function(r) tolower(r$format %||% "") %in% supported_formats(),
     dataset$resources %||% list()
@@ -832,7 +832,10 @@ read_first_parseable_resource <- function(dataset) {
   candidates <- prefer_lightest_file(candidates)
   first_error <- NULL
   for (res in candidates) {
-    data <- tryCatch(read_resource(res), error = function(e) e)
+    data <- tryCatch(
+      read_resource(res, col_types = col_types),
+      error = function(e) e
+    )
     if (!inherits(data, "error")) {
       return(list(data = data, resource = res))
     }
@@ -913,10 +916,69 @@ read_json_file <- function(path) {
   jsonlite::stream_in(file(path), verbose = FALSE)
 }
 
+# Translate a named shorthand `col_types` vector into a vroom/readr `cols()`
+# spec. Names are column names; values are type shorthands mapped to the
+# corresponding `col_*()` collector. Columns given no entry keep vroom's type
+# inference (col_guess). An unnamed vector is an error: ambiguous which column
+# each type applies to.
+col_types_to_spec <- function(col_types) {
+  if (is.null(col_types)) {
+    return(NULL)
+  }
+  if (is.null(names(col_types)) || any(names(col_types) == "")) {
+    stop(
+      "`col_types` must be a named vector of column types, e.g. ",
+      "c(date_mise_en_service = \"Date\").",
+      call. = FALSE
+    )
+  }
+  map <- c(
+    character = "col_character",
+    c = "col_character",
+    double = "col_double",
+    d = "col_double",
+    numeric = "col_double",
+    integer = "col_integer",
+    i = "col_integer",
+    logical = "col_logical",
+    l = "col_logical",
+    Date = "col_date",
+    D = "col_date",
+    date = "col_date",
+    datetime = "col_datetime",
+    skip = "col_skip",
+    guess = "col_guess"
+  )
+  unknown <- setdiff(unique(col_types), names(map))
+  if (length(unknown) > 0) {
+    stop(
+      "Unknown column type",
+      if (length(unknown) > 1) "s" else "",
+      ": ",
+      paste(unknown, collapse = ", "),
+      ". Valid types: character, double/numeric, integer, logical, Date, ",
+      "datetime, skip, guess.",
+      call. = FALSE
+    )
+  }
+  collectors <- lapply(col_types, function(t) {
+    get(map[[t]], envir = asNamespace("vroom"))()
+  })
+  do.call(vroom::cols, c(list(.default = vroom::col_guess()), collectors))
+}
+
 # Parse a local file of a known supported format into a data frame. The file
 # must already be on disk; callers are responsible for downloading (or
 # extracting) it and for cleaning it up.
-parse_resource_file <- function(path, fmt) {
+#
+# For delimited text, an optional named `col_types` vector (shorthand strings)
+# overrides vroom's type inference for the named columns; see
+# col_types_to_spec(). The noisy per-cell parsing warnings (e.g. a mostly-ISO
+# date column with a few non-padded stragglers) are muffled by default, and the
+# underlying problems are attached to the result as the `rdatagouv_problems`
+# attribute (a plain data frame, so it survives tibble::as_tibble()), readable
+# with dg_problems().
+parse_resource_file <- function(path, fmt, col_types = NULL) {
   if (fmt == "xlsx" || fmt == "xls") {
     return(readxl::read_excel(path))
   }
@@ -942,13 +1004,36 @@ parse_resource_file <- function(path, fmt) {
   } else {
     vroom::default_locale()
   }
-  vroom::vroom(
-    path,
-    delim = delim,
-    locale = locale,
-    altrep = FALSE,
-    show_col_types = FALSE
+  spec <- col_types_to_spec(col_types)
+  # withCallingHandlers muffles the per-cell parsing warnings (they fire during
+  # strict conversion once vroom commits to a collector, e.g. a date column) yet
+  # the result still carries the problems, recovered with vroom::problems().
+  out <- withCallingHandlers(
+    vroom::vroom(
+      path,
+      delim = delim,
+      locale = locale,
+      altrep = FALSE,
+      show_col_types = FALSE,
+      col_types = spec
+    ),
+    warning = function(w) {
+      if (grepl("parsing issues", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
   )
+  problems <- tryCatch(vroom::problems(out), error = function(e) NULL)
+  # A clean parse still carries an (empty) problems tibble; only attach the
+  # attribute when there is at least one actual parsing issue.
+  if (!is.null(problems) && nrow(problems) > 0) {
+    # Strip the temp-file path from the problems (it is meaningless to end
+    # users) and store as a plain data frame attribute that survives
+    # tibble::as_tibble() in format_tibble().
+    problems$file <- NULL
+    attr(out, "rdatagouv_problems") <- as.data.frame(problems)
+  }
+  out
 }
 
 # Map a file path to a supported resource format by its extension, or NA if
@@ -966,7 +1051,7 @@ format_from_path <- function(path) {
 # skipping the rest. The result is a named list with one element per parsed
 # file (names made unique in case two files share a base name); it is empty
 # when the archive holds nothing readable.
-read_zip_resource <- function(resource) {
+read_zip_resource <- function(resource, col_types = NULL) {
   zip <- download_resource(resource)
   on.exit(unlink(zip))
   dir <- tempfile(pattern = "rdatagouv-zip-")
@@ -977,7 +1062,12 @@ read_zip_resource <- function(resource) {
   files <- list.files(dir, full.names = TRUE, recursive = TRUE)
   fmt <- vapply(files, format_from_path, character(1))
   keep <- !is.na(fmt)
-  parsed <- Map(parse_resource_file, files[keep], fmt[keep])
+  parsed <- Map(
+    parse_resource_file,
+    files[keep],
+    fmt[keep],
+    MoreArgs = list(col_types = col_types)
+  )
   names(parsed) <- uniquify_names(basename(files[keep]))
   parsed
 }
@@ -1084,7 +1174,7 @@ parse_table_id <- function(id) {
 # Parse a single named file out of a ZIP resource and return its data frame,
 # skipping nothing else. Used by dg_refetch() to re-read exactly one table.
 # `name` is a base file name within the archive.
-read_one_zip_file <- function(resource, name) {
+read_one_zip_file <- function(resource, name, col_types = NULL) {
   zip <- download_resource(resource)
   on.exit(unlink(zip))
   dir <- tempfile(pattern = "rdatagouv-zip-")
@@ -1101,7 +1191,7 @@ read_one_zip_file <- function(resource, name) {
       call. = FALSE
     )
   }
-  parse_resource_file(path, fmt)
+  parse_resource_file(path, fmt, col_types = col_types)
 }
 
 # Parse a resource into a tidy tibble.
@@ -1123,10 +1213,10 @@ format_tibble <- function(x, remove_na = FALSE) {
 # Download a resource and parse it into a data frame. ZIP resources are
 # unpacked first: each contained file in a supported format becomes one
 # element of the returned named list.
-read_resource <- function(resource) {
+read_resource <- function(resource, col_types = NULL) {
   fmt <- tolower(resource$format %||% "")
   if (fmt == "zip") {
-    return(read_zip_resource(resource))
+    return(read_zip_resource(resource, col_types = col_types))
   }
   # Guard against formats the candidate filter should have already removed.
   if (!fmt %in% supported_formats()) {
@@ -1134,7 +1224,7 @@ read_resource <- function(resource) {
   }
   path <- download_resource(resource)
   on.exit(unlink(path))
-  parse_resource_file(path, fmt)
+  parse_resource_file(path, fmt, col_types = col_types)
 }
 
 # Download a resource to a temporary file and return its path.

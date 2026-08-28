@@ -1,7 +1,7 @@
 test_that("dg_pull_dataset() returns a single tibble with its id as an attribute", {
   local_mocked_bindings(
     find_dataset = function(id) mock_dataset(title = id, id = id),
-    read_first_parseable_resource = function(dataset) {
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
       list(data = mock_csv_data(), resource = mock_resource("csv", id = "rid"))
     }
   )
@@ -22,7 +22,7 @@ test_that("dg_pull_dataset() returns a single tibble with its id as an attribute
 test_that("dg_pull_dataset() forwards remove_na to format_tibble()", {
   local_mocked_bindings(
     find_dataset = function(id) mock_dataset(title = id, id = id),
-    read_first_parseable_resource = function(dataset) {
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
       list(data = mock_csv_data(), resource = mock_resource("csv"))
     }
   )
@@ -35,7 +35,7 @@ test_that("dg_pull_dataset() forwards remove_na to format_tibble()", {
 test_that("dg_pull_dataset() returns the first file of a ZIP by default", {
   local_mocked_bindings(
     find_dataset = function(id) mock_dataset(title = id, id = id),
-    read_first_parseable_resource = function(dataset) {
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
       list(
         data = list(
           "data.csv" = mock_csv_data(),
@@ -61,7 +61,7 @@ test_that("dg_pull_dataset() returns the first file of a ZIP by default", {
 test_that("dg_pull_dataset(all_files = TRUE) keeps every file of a ZIP", {
   local_mocked_bindings(
     find_dataset = function(id) mock_dataset(title = id, id = id),
-    read_first_parseable_resource = function(dataset) {
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
       list(
         data = list(
           "data.csv" = mock_csv_data(),
@@ -93,7 +93,7 @@ test_that("dg_pull_dataset() skips a resource that fails to parse", {
   # The first candidate cannot be read as a table; the second one can.
   local_mocked_bindings(
     find_dataset = function(id) mock_dataset(title = id, id = id),
-    read_first_parseable_resource = function(dataset) {
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
       list(data = mock_csv_data(), resource = mock_resource("json"))
     }
   )
@@ -103,4 +103,38 @@ test_that("dg_pull_dataset() skips a resource that fails to parse", {
   expect_s3_class(out, "tbl_df")
   expect_equal(nrow(out), 3)
   expect_named(out, c("a", "b"))
+})
+
+test_that("dg_pull_dataset() forwards col_types to the parse step", {
+  captured <- NULL
+  local_mocked_bindings(
+    find_dataset = function(id) mock_dataset(title = id, id = id),
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
+      captured <<- col_types
+      list(data = mock_csv_data(), resource = mock_resource("csv"))
+    }
+  )
+
+  out <- dg_pull_dataset(
+    "aaaaaaaaaaaaaaaaaaaaaaaa",
+    col_types = c(date = "Date")
+  )
+
+  expect_equal(captured, c(date = "Date"))
+  expect_s3_class(out, "tbl_df")
+})
+
+test_that("dg_pull_dataset() surfaces parsing problems via the attribute", {
+  tbl <- parse_resource_file(local_messy_date_csv(5000), "csv")
+  local_mocked_bindings(
+    find_dataset = function(id) mock_dataset(title = id, id = id),
+    read_first_parseable_resource = function(dataset, col_types = NULL) {
+      list(data = tbl, resource = mock_resource("csv"))
+    }
+  )
+
+  out <- dg_pull_dataset("aaaaaaaaaaaaaaaaaaaaaaaa")
+
+  expect_named(dg_problems(out), c("row", "col", "expected", "actual"))
+  expect_gt(nrow(dg_problems(out)), 0)
 })

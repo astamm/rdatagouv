@@ -39,7 +39,7 @@ currently behaves; exploratory/optional and superseded-alternative sections in
 the design doc are historical, not normative. The README and the vignette
 `vignettes/rdatagouv.qmd` document usage for end users.
 
-## Public API (10 exports)
+## Public API (11 exports)
 
 - `dg_find_datasets(q = NULL, n = 1000, format = catalog_formats(),
   schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL,
@@ -113,14 +113,26 @@ the design doc are historical, not normative. The README and the vignette
   or a pulled table (its `id` attribute is read); `table = TRUE` also includes
   the resource list via `fetch_resource_subsection(id)` (N+1). Uses internal
   `fetch_dataset_v2(id)`.
-- `dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE)` -> a **single
-  tibble** (the first parseable resource; a ZIP yields its first parseable
-  file). `all_files = TRUE` returns a named list (one element per ZIP file).
-  Every table carries its composed id as an `id` **attribute** (not a column),
-  set by `table_attr()` and read by `dg_table_id()`/`table_id_from_attr()`.
-- `dg_refetch(x, remove_na = FALSE)` -> a **single tibble** re-fetched from a
-  composed id; `x` may be a table (its `id` attribute is read) or a bare id
-  string.
+- `dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE, col_types = NULL)`
+  -> a **single tibble** (the first parseable resource; a ZIP yields its first
+  parseable file). `all_files = TRUE` returns a named list (one element per ZIP
+  file). Every table carries its composed id as an `id` **attribute** (not a
+  column), set by `table_attr()` and read by
+  `dg_table_id()`/`table_id_from_attr()`. `col_types` is a named vector of
+  shorthand strings (e.g. `c(date_mise_en_service = "Date")`) that forces
+  vroom's column typing for the named columns (translated by internal
+  `col_types_to_spec()` to a `vroom::cols()` spec — no readr dependency);
+  unnamed columns keep inference. Any vroom parsing problems are stored as an
+  `rdatagouv_problems` attribute on the returned table (a plain data frame,
+  temp-file path stripped — it survives `tibble::as_tibble()` in
+  `format_tibble()`, unlike the vroom class).
+- `dg_refetch(x, remove_na = FALSE, col_types = NULL)` -> a **single tibble**
+  re-fetched from a composed id; `x` may be a table (its `id` attribute is
+  read) or a bare id string. `col_types` behaves as in `dg_pull_dataset()`.
+- `dg_problems(x)` -> the data frame of vroom parsing issues (`row, col,
+  expected, actual`, or `NULL` when the table parsed cleanly) for a table
+  returned by `dg_pull_dataset()`/`dg_refetch()`, read from the
+  `rdatagouv_problems` attribute.
 - `dg_schema(x)` -> tibble (`name, title, description, type, example`) of a
   table's documented columns, with `schema_title`/`schema_name` attributes;
   `NULL` + message when the resource declares no schema; errors if the resource
@@ -142,7 +154,7 @@ Note: `format_tibble()` is **not exported** (used internally and in tests).
   `fetch_dataset`, `find_dataset`, `supported_formats()`,
   `catalog_formats()`, `resource_has_schema()`,
   `read_first_parseable_resource`, `prefer_lightest_file`,
-  `guess_delimiter`, `read_json_file`,
+  `guess_delimiter`, `read_json_file`, `col_types_to_spec`,
   `parse_resource_file`, `read_zip_resource`, `read_one_zip_file`,
   `read_resource`, `download_resource`, `format_tibble`, `compose_table_id` /
   `parse_table_id`, `table_attr` / `table_id_from_attr` / `resolve_table_id`,
@@ -202,7 +214,17 @@ as extra field separators); `.csv` with a `;` delimiter gets a comma-decimal
 locale via `vroom::locale(decimal_mark = ",")`, reproducing the `read_csv2`
 behaviour it replaces. `vroom` is invoked with `altrep = FALSE` so the returned
 table is materialised eagerly and does not lazily reference the temporary file
-that `download_resource()` unlinks on exit.
+that `download_resource()` unlinks on exit. vroom's per-cell parsing warnings
+(which fire once it commits to a collector and meets a value it cannot convert,
+e.g. a mostly-padded ISO date column with a few non-padded stragglers like
+`2021-7-01`) are **muffled** with `withCallingHandlers`, and the underlying
+issues are captured with `vroom::problems()` and attached to the result as an
+`rdatagouv_problems` attribute (temp-file `file` column dropped; only attached
+when non-empty) — read by the exported `dg_problems()`. This is deliberate: a
+muffled `vroom::problems()` still works on the *vroom* object itself, whereas
+on the `format_tibble()`-converted table the vroom class is stripped so
+`vroom::problems()` would fail — the per-cell warning was a dead-end for end
+users.
 
 **Lightest-file selection.** When a dataset offers the *same table* in several
 formats (same base file name, different extension), `read_first_parseable_resource()`

@@ -30,6 +30,22 @@
       Error:
       ! None of the 2 tabular resource(s) of dataset 'Example dataset' could be parsed into a table. First failure: boom
 
+# col_types_to_spec() errors on unknown or unnamed types
+
+    Code
+      col_types_to_spec(c(a = "nautilus"))
+    Condition
+      Error:
+      ! Unknown column type: nautilus. Valid types: character, double/numeric, integer, logical, Date, datetime, skip, guess.
+
+---
+
+    Code
+      col_types_to_spec(c("Date"))
+    Condition
+      Error:
+      ! `col_types` must be a named vector of column types, e.g. c(date_mise_en_service = "Date").
+
 # read_json_file() errors clearly on a non-tabular nested object
 
     Code

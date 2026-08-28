@@ -4,7 +4,7 @@
 \alias{dg_refetch}
 \title{Re-fetch a single parsed table by its stable address}
 \usage{
-dg_refetch(x, remove_na = FALSE)
+dg_refetch(x, remove_na = FALSE, col_types = NULL)
 }
 \arguments{
 \item{x}{Either a table returned by \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or \code{\link[=dg_refetch]{dg_refetch()}}
@@ -14,11 +14,17 @@ URI \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>}
 
 \item{remove_na}{Whether to drop rows containing any \code{NA} value (passed to
 \code{format_tibble()}). Defaults to \code{FALSE}.}
+
+\item{col_types}{Optional named vector of column types to force on specific
+columns instead of letting vroom infer them, e.g.
+\code{c(date_mise_en_service = "Date")}. See \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} for the
+accepted shorthand values. Defaults to \code{NULL} (no column overrides).}
 }
 \value{
 A \code{\link[tibble:tibble]{tibble::tibble()}} — the single re-fetched table (the id addresses
 one table, not a multi-file ZIP as a whole). The table's id is attached as
-an \code{id} attribute.
+an \code{id} attribute; parsing issues are attached as an \code{rdatagouv_problems}
+attribute, readable with \code{\link[=dg_problems]{dg_problems()}}.
 }
 \description{
 Downloads again the exact table addressed by a table URI, stored as an \code{id}
