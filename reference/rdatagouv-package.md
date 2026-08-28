@@ -25,10 +25,14 @@ Authors:
 - Aymeric Stamm <aymeric.stamm@cnrs.fr>
   ([ORCID](https://orcid.org/0000-0002-8725-3654))
 
+- Magali Berland <magali.berland@inrae.fr>
+
 - Pierre Gloaguen <pierre.gloaguen@univ-ubs.fr>
 
 - Arthur Leroy <arthur.leroy@inrae.fr>
 
 - Mahendra Mariadassou <mahendra.mariadassou@inrae.fr>
+
+- Cédric Midoux <cedric.midoux@inrae.fr>
 
 - Jean-François Rey <jean-francois.rey@inrae.fr>
