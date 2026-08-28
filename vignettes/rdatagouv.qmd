@@ -312,6 +312,44 @@ again <- dg_refetch(tbl)
 `dg_refetch()` accepts the table id (URI) directly, so you can store it in a
 script or a database and reproduce the pull without re-searching the catalog.
 
+### Why a stable id beats a file name
+
+Datasets on data.gouv are *living*: producers re-upload files, correct
+typos, and re-run pipelines. The file a human-readable name or title points
+at can therefore change between the day you pull it and the day you re-run
+your analysis. The table id, by contrast, is a stable address built from the
+platform's own identifiers, and `dg_refetch()` uses it to get back **the same
+table you fetched originally** — not whatever the resource happens to contain
+today.
+
+To make this concrete with no network, imagine a producer's `bikes.csv` that
+you pulled last month, and the slightly updated file they publish today:
+
+```{r}
+# In-memory illustration of resource drift — no network, no rdatagouv calls.
+# The file you pulled on day one.
+pulled_last_month <- tibble::tibble(city = c("Caen", "Lyon"), bikes = c(42L, 17L))
+
+# The same-named file, re-uploaded by the producer the next month.
+published_today <- tibble::tibble(city = c("Caen", "Lyon"), bikes = c(43L, 18L))
+
+# A lookup by file name gives you whatever is current now (drifted):
+name_based <- published_today
+
+# A lookup by the stable id saved at pull time gives you the table you
+# actually analysed. In a real session that is exactly what happens:
+#   saved_id <- dg_table_id(pulled)   # a stable URI, e.g.
+#   # `https://www.data.gouv.fr/datasets/<id>#<resource>`
+#   back <- dg_refetch(saved_id)      # -> pulled_last_month, not published_today
+id_based <- pulled_last_month
+```
+
+The table id is what makes your analysis reproducible over time: save it
+alongside your results, and the pull you ran is the pull a future `dg_refetch()`
+gets back — even if the file name, its contents, or the surrounding catalog
+have drifted in the meantime. A file name captures only *where something is
+now*; the stable id captures *what you actually observed*.
+
 ## Summarising datasets
 
 `dg_summary()` computes metrics for a single table:

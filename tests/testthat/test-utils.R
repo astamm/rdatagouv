@@ -777,6 +777,17 @@ test_that("read_resource() guesses a pipe delimiter as given a csv.gz file", {
   expect_equal(nrow(out), 1)
 })
 
+test_that("parse_resource_file() materialises eagerly (no lazy file reference)", {
+  # vroom is read with altrep = FALSE so the returned table does not lazily
+  # reference the source file, which download_resource() unlinks on exit.
+  path <- tempfile(fileext = ".csv")
+  writeLines(c("a,b", "1,x", "2,y"), path)
+  out <- parse_resource_file(path, "csv")
+  unlink(path) # the file is gone, as it is after download_resource() returns
+  expect_equal(out$a, c(1, 2))
+  expect_equal(out$b, c("x", "y"))
+})
+
 test_that("read_json_file() parses one row per object in a JSON array", {
   path <- local_csv_path("json", '[{"a":1,"b":"x"},{"a":2,"b":"y"}]')
 

@@ -192,6 +192,18 @@ parsing so low-level readers stay untouched.
   intentionally NOT in the catalog (not guaranteed tabular) but remain
   parseable when addressed directly.
 
+**Delimited-text parsing (`parse_resource_file()`).** All delimited formats
+(CSV, CSV.GZ, TSV, TXT) are read with a single `vroom::vroom()` call instead of
+the individual `readr` readers; `readr` is **not** an import. The delimiter is
+still probed first by `guess_delimiter()` because vroom's own guesser is
+comma-first and would silently corrupt European-style files (semicolon
+separator with a comma decimal mark — the commas in the numbers would be read
+as extra field separators); `.csv` with a `;` delimiter gets a comma-decimal
+locale via `vroom::locale(decimal_mark = ",")`, reproducing the `read_csv2`
+behaviour it replaces. `vroom` is invoked with `altrep = FALSE` so the returned
+table is materialised eagerly and does not lazily reference the temporary file
+that `download_resource()` unlinks on exit.
+
 **Lightest-file selection.** When a dataset offers the *same table* in several
 formats (same base file name, different extension), `read_first_parseable_resource()`
 reduces the candidates to the one with the smallest advertised `filesize`

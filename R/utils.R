@@ -927,19 +927,28 @@ parse_resource_file <- function(path, fmt) {
     return(read_json_file(path))
   }
   # Every other supported format is delimited text (CSV, CSV.GZ, TSV or TXT).
+  # vroom reads them all with a single call (it infers column types and
+  # materialises eagerly via altrep = FALSE, so the returned table does not
+  # reference the temporary file we unlink on exit). The delimiter is still
+  # probed by guess_delimiter() first: vroom's own delimiter guesser is
+  # comma-first and therefore silently mis-reads European-style files
+  # (semicolon field separator with a comma decimal mark) as if the commas in
+  # the numbers were field separators, returning corrupted values. Passing the
+  # probed delimiter explicitly is robust, and for the semicolon case we swap
+  # in a comma-decimal locale (the read_csv2 behaviour it replaces).
   delim <- guess_delimiter(path)
-  if (delim == "\t") {
-    return(readr::read_tsv(path))
+  locale <- if (delim == ";") {
+    vroom::locale(decimal_mark = ",")
+  } else {
+    vroom::default_locale()
   }
-  if (delim == ";") {
-    # European-style CSV: semicolon field separator with a comma decimal mark.
-    return(readr::read_csv2(path))
-  }
-  if (delim == ",") {
-    return(readr::read_csv(path))
-  }
-  # Any other delimiter (e.g. pipe or colon): use the generic reader.
-  readr::read_delim(path, delim = delim)
+  vroom::vroom(
+    path,
+    delim = delim,
+    locale = locale,
+    altrep = FALSE,
+    show_col_types = FALSE
+  )
 }
 
 # Map a file path to a supported resource format by its extension, or NA if
@@ -1097,7 +1106,7 @@ read_one_zip_file <- function(resource, name) {
 
 # Parse a resource into a tidy tibble.
 #
-# Converts a data frame (e.g. read with `readr`) into a `tibble::tibble()` and,
+# Converts a data frame (e.g. read with `vroom`) into a `tibble::tibble()` and,
 # optionally, drops all rows that contain at least one missing value.
 format_tibble <- function(x, remove_na = FALSE) {
   if (!is.data.frame(x)) {
