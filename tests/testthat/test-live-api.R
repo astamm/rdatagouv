@@ -68,7 +68,9 @@ test_that("the v2 datasets/search endpoint has the expected envelope", {
 test_that("v2 organization and geozone filters narrow the total", {
   skip_unless_live()
 
-  unfiltered <- getFromNamespace("fetch_search_page", "rdatagouv")(page_size = 1)
+  unfiltered <- getFromNamespace("fetch_search_page", "rdatagouv")(
+    page_size = 1
+  )
   # A current, live producer: "Ministère de l'intérieur". (The v2 API matches
   # `organization` by its 24-hex id; a slug is not accepted.)
   narrowed <- getFromNamespace("fetch_search_page", "rdatagouv")(

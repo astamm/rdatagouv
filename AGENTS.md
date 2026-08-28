@@ -48,7 +48,9 @@ the design doc are historical, not normative. The README and the vignette
   `title, id, description, slug, organization, license, quality_score,
   quality_flags, views, resources_downloads, access_type, frequency,
   spatial_granularity, temporal_start, temporal_end, archived, featured` plus
-  the resource-derived `n_resources, formats, has_table, has_schema`. `q` is
+  the resource-derived `n_resources, formats, has_table, has_schema` (`formats`
+  is a **list-column** — each element a `character` vector of distinct file
+  formats, `NULL` when `resources = FALSE`). `q` is
   server-side full-text search; `n = Inf` fetches as much as the API allows
   (**capped at 10,000** by data.gouv); `format` narrows to datasets holding a
   resource in one of the given formats — the v2 API matches **multiple `format`

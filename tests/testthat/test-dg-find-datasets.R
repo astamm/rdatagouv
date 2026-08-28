@@ -95,7 +95,7 @@ test_that("resource columns are NA when resources = FALSE (default)", {
   out <- dg_find_datasets()
 
   expect_true(is.na(out$n_resources))
-  expect_true(is.na(out$formats))
+  expect_equal(out$formats, list(NULL))
   expect_true(is.na(out$has_table))
   expect_true(is.na(out$has_schema))
 })
@@ -122,7 +122,7 @@ test_that("resources = TRUE fills the resource columns via the subsection", {
   out <- dg_find_datasets(resources = TRUE)
 
   expect_equal(out$n_resources, 2)
-  expect_equal(out$formats, "csv, xlsx")
+  expect_equal(out$formats, list(c("csv", "xlsx")))
   expect_true(out$has_table)
   expect_false(out$has_schema)
 })

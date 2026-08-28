@@ -108,8 +108,9 @@ A \code{\link[tibble:tibble]{tibble::tibble()}} with one row per matching datase
 \code{title} and \code{id} columns are always non-\code{NA}; the \code{id} column holds the
 stable, unique dataset identifier used to address a dataset with
 \code{\link[=dg_pull_dataset]{dg_pull_dataset()}}. When \code{resources = TRUE}, the columns also include
-\code{n_resources} (number of files/resources), \code{formats} (distinct file
-formats found among them), \code{has_table} (whether at least one resource is
+\code{n_resources} (number of files/resources), \code{formats} (a list-column
+whose elements are the distinct file formats found among them), \code{has_table}
+(whether at least one resource is
 in a format this package can parse) and \code{has_schema} (whether at least one
 resource carries a pointer to a declared data schema, whose per-variable
 documentation is exposed by \code{\link[=dg_schema]{dg_schema()}}); these are \code{NA} when

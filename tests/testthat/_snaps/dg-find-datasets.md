@@ -11,5 +11,5 @@
       #   quality_flags <chr>, views <int>, resources_downloads <int>,
       #   access_type <chr>, frequency <chr>, spatial_granularity <chr>,
       #   temporal_start <chr>, temporal_end <chr>, archived <lgl>, featured <lgl>,
-      #   n_resources <int>, formats <chr>, has_table <lgl>, has_schema <lgl>
+      #   n_resources <int>, formats <list>, has_table <lgl>, has_schema <lgl>
 

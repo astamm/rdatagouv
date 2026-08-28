@@ -1,5 +1,12 @@
 # rdatagouv 0.0.0.9000
 
+- The `formats` column of `dg_find_datasets()` is now a **list-column**: each
+  element is a character vector of the dataset's distinct file formats, instead
+  of a single comma-joined string. This makes per-format filtering
+  straightforward (e.g. `purrr::map_lgl(formats, ~ "parquet" %in% .x)` or
+  `lapply(formats, ...)`) instead of parsing a delimited string. As before, the
+  column is only filled when `resources = TRUE` (it is `NULL` otherwise, and a
+  dataset with no recorded format has an empty vector).
 - `dg_find_datasets(schema_only = TRUE)` no longer silently returns an
   unfiltered catalog. Because `schema_only` selects client-side on `has_schema`
   — which needs the per-dataset resource fetch — calling it without
