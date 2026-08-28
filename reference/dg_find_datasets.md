@@ -151,11 +151,11 @@ always non-`NA`; the `id` column holds the stable, unique dataset
 identifier used to address a dataset with
 [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md).
 When `resources = TRUE`, the columns also include `n_resources` (number
-of files/resources), `formats` (distinct file formats found among them),
-`has_table` (whether at least one resource is in a format this package
-can parse) and `has_schema` (whether at least one resource carries a
-pointer to a declared data schema, whose per-variable documentation is
-exposed by
+of files/resources), `formats` (a list-column whose elements are the
+distinct file formats found among them), `has_table` (whether at least
+one resource is in a format this package can parse) and `has_schema`
+(whether at least one resource carries a pointer to a declared data
+schema, whose per-variable documentation is exposed by
 [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md));
 these are `NA` when `resources = FALSE` (the default) unless
 `schema_only = TRUE`, which forces the fetch so `has_schema` is filled

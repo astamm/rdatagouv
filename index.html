@@ -73,11 +73,11 @@
 <span><span class="co">#&gt; # A tibble: 5 × 5</span></span>
 <span><span class="co">#&gt;   title                                   id    organization quality_score views</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;                                   &lt;chr&gt; &lt;chr&gt;                &lt;dbl&gt; &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7143</span></span>
-<span><span class="co">#&gt; 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7960</span></span>
-<span><span class="co">#&gt; 3 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16132</span></span>
-<span><span class="co">#&gt; 4 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2253</span></span>
-<span><span class="co">#&gt; 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8564</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7173</span></span>
+<span><span class="co">#&gt; 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7978</span></span>
+<span><span class="co">#&gt; 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2255</span></span>
+<span><span class="co">#&gt; 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16181</span></span>
+<span><span class="co">#&gt; 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8580</span></span></code></pre></div>
 <p><code>id</code> is the stable identifier you use to download; <code>quality_score</code> and <code>views</code> are among the rich per-dataset metadata the v2 search API embeds inline (see <code>license</code>, <code>access_type</code>, <code>frequency</code>, <code>temporal_start</code>/<code>end</code> and <code>featured</code> too). Because v2 search does not inline a dataset’s resources, the resource-based columns <code>n_resources</code>, <code>formats</code>, <code>has_table</code> and <code>has_schema</code> are <code>NA</code> by default; pass <code>resources = TRUE</code> to opt into the per-dataset resource fetch and fill them exactly. <code>schema_only = TRUE</code> forces that fetch (and tells you about it) so the filter works out of the box. You can restrict the catalog to datasets that carry at least one resource in a given format — e.g. only the more compact <code>parquet</code> files, which are quicker to download:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">parquet_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"parquet"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
@@ -126,7 +126,7 @@
 <span><span class="co">#&gt; # A tibble: 3 × 3</span></span>
 <span><span class="co">#&gt;   id                       name                                       n_elements</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;                    &lt;chr&gt;                                           &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         27</span></span>
+<span><span class="co">#&gt; 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         28</span></span>
 <span><span class="co">#&gt; 2 68da7823bc643f6ea5cae5a0 🚎 Tarification sociale/solidaire des tran…          0</span></span>
 <span><span class="co">#&gt; 3 673cba35210c475e77ef3e38 Catalogue des données sur l'immobilier lo…        135</span></span>
 <span></span>
@@ -173,10 +173,10 @@
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="va">g</span><span class="op">$</span><span class="va">metrics</span></span>
 <span><span class="co">#&gt; $views</span></span>
-<span><span class="co">#&gt; [1] 549</span></span>
+<span><span class="co">#&gt; [1] 568</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $resources_downloads</span></span>
-<span><span class="co">#&gt; [1] 43</span></span>
+<span><span class="co">#&gt; [1] 57</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $followers</span></span>
 <span><span class="co">#&gt; [1] 0</span></span>
@@ -279,9 +279,11 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
+<li>Magali Berland <br><small class="roles"> Author </small>   </li>
 <li>Pierre Gloaguen <br><small class="roles"> Author </small>   </li>
 <li>Arthur Leroy <br><small class="roles"> Author </small>   </li>
 <li>Mahendra Mariadassou <br><small class="roles"> Author </small>   </li>
+<li>Cédric Midoux <br><small class="roles"> Author </small>   </li>
 <li>Jean-François Rey <br><small class="roles"> Author </small>   </li>
 <li>Aymeric Stamm <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-8725-3654" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
@@ -302,7 +304,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Pierre Gloaguen, Arthur Leroy, Mahendra Mariadassou, Jean-François Rey, Aymeric Stamm.</p>
+  <p>Developed by Magali Berland, Pierre Gloaguen, Arthur Leroy, Mahendra Mariadassou, Cédric Midoux, Jean-François Rey, Aymeric Stamm.</p>
 </div>
 
 <div class="pkgdown-footer-right">

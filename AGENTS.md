@@ -48,7 +48,9 @@ the vignette `vignettes/rdatagouv.qmd` document usage for end users.
   -\> tibble with robust columns
   `title, id, description, slug, organization, license, quality_score, quality_flags, views, resources_downloads, access_type, frequency, spatial_granularity, temporal_start, temporal_end, archived, featured`
   plus the resource-derived
-  `n_resources, formats, has_table, has_schema`. `q` is server-side
+  `n_resources, formats, has_table, has_schema` (`formats` is a
+  **list-column** — each element a `character` vector of distinct file
+  formats, `NULL` when `resources = FALSE`). `q` is server-side
   full-text search; `n = Inf` fetches as much as the API allows
   (**capped at 10,000** by data.gouv); `format` narrows to datasets
   holding a resource in one of the given formats — the v2 API matches
@@ -228,6 +230,20 @@ unions/deduplicates by dataset id. - `supported_formats()` =
 — everything a direct pull can parse. JSON/TSV/TXT are intentionally NOT
 in the catalog (not guaranteed tabular) but remain parseable when
 addressed directly.
+
+**Delimited-text parsing (`parse_resource_file()`).** All delimited
+formats (CSV, CSV.GZ, TSV, TXT) are read with a single
+[`vroom::vroom()`](https://vroom.tidyverse.org/reference/vroom.html)
+call instead of the individual `readr` readers; `readr` is **not** an
+import. The delimiter is still probed first by `guess_delimiter()`
+because vroom’s own guesser is comma-first and would silently corrupt
+European-style files (semicolon separator with a comma decimal mark —
+the commas in the numbers would be read as extra field separators);
+`.csv` with a `;` delimiter gets a comma-decimal locale via
+`vroom::locale(decimal_mark = ",")`, reproducing the `read_csv2`
+behaviour it replaces. `vroom` is invoked with `altrep = FALSE` so the
+returned table is materialised eagerly and does not lazily reference the
+temporary file that `download_resource()` unlinks on exit.
 
 **Lightest-file selection.** When a dataset offers the *same table* in
 several formats (same base file name, different extension),

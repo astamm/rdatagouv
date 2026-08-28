@@ -32,11 +32,11 @@ hits[, c("title", "id", "organization", "quality_score", "views")]
 #> # A tibble: 5 × 5
 #>   title                                   id    organization quality_score views
 #>   <chr>                                   <chr> <chr>                <dbl> <int>
-#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7143
-#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7960
-#> 3 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16132
-#> 4 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2253
-#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8564
+#> 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7173
+#> 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7978
+#> 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2255
+#> 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16181
+#> 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8580
 ```
 
 `id` is the stable identifier you use to download; `quality_score` and
@@ -116,7 +116,7 @@ topics[, c("id", "name", "n_elements")]
 #> # A tibble: 3 × 3
 #>   id                       name                                       n_elements
 #>   <chr>                    <chr>                                           <int>
-#> 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         27
+#> 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         28
 #> 2 68da7823bc643f6ea5cae5a0 🚎 Tarification sociale/solidaire des tran…          0
 #> 3 673cba35210c475e77ef3e38 Catalogue des données sur l'immobilier lo…        135
 
@@ -172,10 +172,10 @@ g$quality
 #> [1] TRUE
 g$metrics
 #> $views
-#> [1] 549
+#> [1] 568
 #> 
 #> $resources_downloads
-#> [1] 43
+#> [1] 57
 #> 
 #> $followers
 #> [1] 0

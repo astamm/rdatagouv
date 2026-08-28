@@ -189,8 +189,9 @@ values <code>"public-service"</code>, <code>"local-authority"</code>, <code>"com
 <code>title</code> and <code>id</code> columns are always non-<code>NA</code>; the <code>id</code> column holds the
 stable, unique dataset identifier used to address a dataset with
 <code><a href="dg_pull_dataset.html">dg_pull_dataset()</a></code>. When <code>resources = TRUE</code>, the columns also include
-<code>n_resources</code> (number of files/resources), <code>formats</code> (distinct file
-formats found among them), <code>has_table</code> (whether at least one resource is
+<code>n_resources</code> (number of files/resources), <code>formats</code> (a list-column
+whose elements are the distinct file formats found among them), <code>has_table</code>
+(whether at least one resource is
 in a format this package can parse) and <code>has_schema</code> (whether at least one
 resource carries a pointer to a declared data schema, whose per-variable
 documentation is exposed by <code><a href="dg_schema.html">dg_schema()</a></code>); these are <code>NA</code> when
@@ -252,7 +253,7 @@ exactly.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Pierre Gloaguen, Arthur Leroy, Mahendra Mariadassou, Jean-François Rey, Aymeric Stamm.</p>
+  <p>Developed by Magali Berland, Pierre Gloaguen, Arthur Leroy, Mahendra Mariadassou, Cédric Midoux, Jean-François Rey, Aymeric Stamm.</p>
 </div>
 
 <div class="pkgdown-footer-right">

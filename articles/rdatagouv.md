@@ -83,7 +83,7 @@ head(datasets)
     # ℹ 13 more variables: views <int>, resources_downloads <int>,
     #   access_type <chr>, frequency <chr>, spatial_granularity <chr>,
     #   temporal_start <chr>, temporal_end <chr>, archived <lgl>, featured <lgl>,
-    #   n_resources <int>, formats <chr>, has_table <lgl>, has_schema <lgl>
+    #   n_resources <int>, formats <list>, has_table <lgl>, has_schema <lgl>
 
 The columns are chosen to help you decide, at a glance, whether a
 dataset is worth pulling:
@@ -174,17 +174,17 @@ parquet[, c("title", "formats")]
 
     # A tibble: 10 × 2
        title                                                                 formats
-       <chr>                                                                 <chr>
-     1 "Bases statistiques communale, départementale et régionale de la dél… <NA>
-     2 "Géolocalisation des établissements du répertoire SIRENE-pour les ét… <NA>
-     3 "Bureaux de vote et adresses de leurs électeurs"                      <NA>
-     4 "Base Sirene des entreprises et de leurs établissements (SIREN, SIRE… <NA>
-     5 "Données sur la localisation et l’accès de la population aux équipem… <NA>
-     6 "Base sur la qualité et la sécurité des soins (anciennement Scope Sa… <NA>
-     7 "Données des élections agrégées"                                      <NA>
-     8 "Paris 2024 - Sites de compétition"                                   <NA>
-     9 "Agrégation des fichiers des personnes décédées"                      <NA>
-    10 "Données financières détaillées des entreprises (format parquet)"     <NA>   
+       <chr>                                                                 <list>
+     1 "Bases statistiques communale, départementale et régionale de la dél… <NULL>
+     2 "Géolocalisation des établissements du répertoire SIRENE-pour les ét… <NULL>
+     3 "Bureaux de vote et adresses de leurs électeurs"                      <NULL>
+     4 "Base Sirene des entreprises et de leurs établissements (SIREN, SIRE… <NULL>
+     5 "Données sur la localisation et l’accès de la population aux équipem… <NULL>
+     6 "Base sur la qualité et la sécurité des soins (anciennement Scope Sa… <NULL>
+     7 "Données des élections agrégées"                                      <NULL>
+     8 "Paris 2024 - Sites de compétition"                                   <NULL>
+     9 "Agrégation des fichiers des personnes décédées"                      <NULL>
+    10 "Données financières détaillées des entreprises (format parquet)"     <NULL> 
 
 Multiple formats can be requested at once; each is queried server-side
 and the results are combined.
@@ -265,11 +265,11 @@ topics[, c("name", "n_elements")]
     # A tibble: 5 × 2
       name                                                                n_elements
       <chr>                                                                    <int>
-    1 Indicateurs du tableau de bord des mobilités durables                       27
+    1 Indicateurs du tableau de bord des mobilités durables                       28
     2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
     3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-    4 Véhicules électriques                                                       27
-    5 Lutte contre la vacance des logements                                        8
+    4 Lutte contre la vacance des logements                                        8
+    5 Véhicules électriques                                                       27
 
 Pass a theme’s id to `dg_find_datasets(topic =)` to narrow a catalog
 search to datasets grouped under it (the same single-valued server-side
@@ -334,18 +334,6 @@ tbl <- dg_pull_dataset(table_id)
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 225173 Columns: 52
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-    dttm  (2): last_modified, created_at
-    date  (1): date_maj
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
 ``` r
 
 schema <- dg_schema(tbl)
@@ -384,22 +372,6 @@ a **single tibble**:
 ``` r
 
 tbl <- dg_pull_dataset("6397c0ff56d3963118a18345")
-```
-
-    ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.
-
-    Rows: 82 Columns: 16
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ";"
-    chr (8): name, physical_configuration, altitude, address, rental_methods, sh...
-    dbl (6): station_id, post_code, capacity, is_charging_station, geofenced_cap...
-    num (2): lat, lon
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
-
 head(tbl)
 ```
 
@@ -459,22 +431,6 @@ address always resolves to the same table:
 ``` r
 
 tbl <- dg_pull_dataset("6397c0ff56d3963118a18345")
-```
-
-    ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.
-
-    Rows: 82 Columns: 16
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ";"
-    chr (8): name, physical_configuration, altitude, address, rental_methods, sh...
-    dbl (6): station_id, post_code, capacity, is_charging_station, geofenced_cap...
-    num (2): lat, lon
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
-
 table_id <- dg_table_id(tbl)
 table_id
 ```
@@ -487,18 +443,51 @@ table_id
 again <- dg_refetch(tbl)
 ```
 
-    ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.
-    Rows: 82 Columns: 16── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ";"
-    chr (8): name, physical_configuration, altitude, address, rental_methods, sh...
-    dbl (6): station_id, post_code, capacity, is_charging_station, geofenced_cap...
-    num (2): lat, lon
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
 [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 accepts the table id (URI) directly, so you can store it in a script or
 a database and reproduce the pull without re-searching the catalog.
+
+### Why a stable id beats a file name
+
+Datasets on data.gouv are *living*: producers re-upload files, correct
+typos, and re-run pipelines. The file a human-readable name or title
+points at can therefore change between the day you pull it and the day
+you re-run your analysis. The table id, by contrast, is a stable address
+built from the platform’s own identifiers, and
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+uses it to get back **the same table you fetched originally** — not
+whatever the resource happens to contain today.
+
+To make this concrete with no network, imagine a producer’s `bikes.csv`
+that you pulled last month, and the slightly updated file they publish
+today:
+
+``` r
+
+# In-memory illustration of resource drift — no network, no rdatagouv calls.
+# The file you pulled on day one.
+pulled_last_month <- tibble::tibble(city = c("Caen", "Lyon"), bikes = c(42L, 17L))
+
+# The same-named file, re-uploaded by the producer the next month.
+published_today <- tibble::tibble(city = c("Caen", "Lyon"), bikes = c(43L, 18L))
+
+# A lookup by file name gives you whatever is current now (drifted):
+name_based <- published_today
+
+# A lookup by the stable id saved at pull time gives you the table you
+# actually analysed. In a real session that is exactly what happens:
+#   saved_id <- dg_table_id(pulled)   # a stable URI, e.g.
+#   # `https://www.data.gouv.fr/datasets/<id>#<resource>`
+#   back <- dg_refetch(saved_id)      # -> pulled_last_month, not published_today
+id_based <- pulled_last_month
+```
+
+The table id is what makes your analysis reproducible over time: save it
+alongside your results, and the pull you ran is the pull a future
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+gets back — even if the file name, its contents, or the surrounding
+catalog have drifted in the meantime. A file name captures only *where
+something is now*; the stable id captures *what you actually observed*.
 
 ## Summarising datasets
 
@@ -581,18 +570,6 @@ dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 225173 Columns: 52
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-    dttm  (2): last_modified, created_at
-    date  (1): date_maj
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
     # A tibble: 40 × 5
        name                  title description                         type  example
        <chr>                 <chr> <chr>                               <chr> <chr>
@@ -634,18 +611,6 @@ tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |
       dat <- vroom(...)
       problems(dat)
 
-    Rows: 225173 Columns: 52
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-    dttm  (2): last_modified, created_at
-    date  (1): date_maj
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
 ``` r
 
 # Save the stable address, then re-fetch the exact same table later.
@@ -657,18 +622,6 @@ again <- dg_refetch(tbl_id)
     e.g.:
       dat <- vroom(...)
       problems(dat)
-
-    Rows: 225173 Columns: 52
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-    dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-    lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-    dttm  (2): last_modified, created_at
-    date  (1): date_maj
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
 

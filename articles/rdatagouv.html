@@ -141,7 +141,7 @@
 # ℹ 13 more variables: views &lt;int&gt;, resources_downloads &lt;int&gt;,
 #   access_type &lt;chr&gt;, frequency &lt;chr&gt;, spatial_granularity &lt;chr&gt;,
 #   temporal_start &lt;chr&gt;, temporal_end &lt;chr&gt;, archived &lt;lgl&gt;, featured &lt;lgl&gt;,
-#   n_resources &lt;int&gt;, formats &lt;chr&gt;, has_table &lt;lgl&gt;, has_schema &lt;lgl&gt;</code></pre>
+#   n_resources &lt;int&gt;, formats &lt;list&gt;, has_table &lt;lgl&gt;, has_schema &lt;lgl&gt;</code></pre>
 </div>
 </div>
 <p>The columns are chosen to help you decide, at a glance, whether a dataset is worth pulling:</p>
@@ -206,17 +206,17 @@
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 2
    title                                                                 formats
-   &lt;chr&gt;                                                                 &lt;chr&gt;
- 1 "Bases statistiques communale, départementale et régionale de la dél… &lt;NA&gt;
- 2 "Géolocalisation des établissements du répertoire SIRENE-pour les ét… &lt;NA&gt;
- 3 "Bureaux de vote et adresses de leurs électeurs"                      &lt;NA&gt;
- 4 "Base Sirene des entreprises et de leurs établissements (SIREN, SIRE… &lt;NA&gt;
- 5 "Données sur la localisation et l’accès de la population aux équipem… &lt;NA&gt;
- 6 "Base sur la qualité et la sécurité des soins (anciennement Scope Sa… &lt;NA&gt;
- 7 "Données des élections agrégées"                                      &lt;NA&gt;
- 8 "Paris 2024 - Sites de compétition"                                   &lt;NA&gt;
- 9 "Agrégation des fichiers des personnes décédées"                      &lt;NA&gt;
-10 "Données financières détaillées des entreprises (format parquet)"     &lt;NA&gt;   </code></pre>
+   &lt;chr&gt;                                                                 &lt;list&gt;
+ 1 "Bases statistiques communale, départementale et régionale de la dél… &lt;NULL&gt;
+ 2 "Géolocalisation des établissements du répertoire SIRENE-pour les ét… &lt;NULL&gt;
+ 3 "Bureaux de vote et adresses de leurs électeurs"                      &lt;NULL&gt;
+ 4 "Base Sirene des entreprises et de leurs établissements (SIREN, SIRE… &lt;NULL&gt;
+ 5 "Données sur la localisation et l’accès de la population aux équipem… &lt;NULL&gt;
+ 6 "Base sur la qualité et la sécurité des soins (anciennement Scope Sa… &lt;NULL&gt;
+ 7 "Données des élections agrégées"                                      &lt;NULL&gt;
+ 8 "Paris 2024 - Sites de compétition"                                   &lt;NULL&gt;
+ 9 "Agrégation des fichiers des personnes décédées"                      &lt;NULL&gt;
+10 "Données financières détaillées des entreprises (format parquet)"     &lt;NULL&gt; </code></pre>
 </div>
 </div>
 <p>Multiple formats can be requested at once; each is queried server-side and the results are combined.</p>
@@ -282,11 +282,11 @@
 <pre><code># A tibble: 5 × 2
   name                                                                n_elements
   &lt;chr&gt;                                                                    &lt;int&gt;
-1 Indicateurs du tableau de bord des mobilités durables                       27
+1 Indicateurs du tableau de bord des mobilités durables                       28
 2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
 3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-4 Véhicules électriques                                                       27
-5 Lutte contre la vacance des logements                                        8</code></pre>
+4 Lutte contre la vacance des logements                                        8
+5 Véhicules électriques                                                       27</code></pre>
 </div>
 </div>
 <p>Pass a theme’s id to <code>dg_find_datasets(topic =)</code> to narrow a catalog search to datasets grouped under it (the same single-valued server-side filter that <code>organization</code>/<code>geozone</code> use; it takes a topic id, not a name/slug):</p>
@@ -333,20 +333,7 @@ e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 225173 Columns: 52
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-dttm  (2): last_modified, created_at
-date  (1): date_maj
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">schema</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_schema.html">dg_schema</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Human-readable titles and descriptions of every column:</span></span>
@@ -369,24 +356,9 @@ date  (1): date_maj
 </h2>
 <p><code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the first parseable tabular resource of a dataset and returns a <strong>single tibble</strong>:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 82 Columns: 16
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ";"
-chr (8): name, physical_configuration, altitude, address, rental_methods, sh...
-dbl (6): station_id, post_code, capacity, is_charging_station, geofenced_cap...
-num (2): lat, lon
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 16
   station_id name          physical_configuration    lat    lon altitude address
@@ -402,7 +374,7 @@ num (2): lat, lon
 #   is_virtual_station &lt;dbl&gt;, short_name &lt;chr&gt;, rental_uris &lt;chr&gt;,
 #   point_geo &lt;chr&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
@@ -419,48 +391,47 @@ num (2): lat, lon
 </h2>
 <p>This is what makes your analysis reproducible over time. The table’s id is a URI built from the platform’s own stable identifiers — <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;</code> (plus <code>/&lt;file&gt;</code> for a file inside a ZIP). Unlike a human-readable title, this address always resolves to the same table:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 82 Columns: 16
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ";"
-chr (8): name, physical_configuration, altitude, address, rental_methods, sh...
-dbl (6): station_id, post_code, capacity, is_charging_station, geofenced_cap...
-num (2): lat, lon
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">table_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
+<div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span>
+<span><span class="va">table_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="va">table_id</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Re-fetch the exact same table later:</span></span>
 <span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>ℹ Using "','" as decimal and "'.'" as grouping mark. Use `read_delim()` for more control.
-Rows: 82 Columns: 16── Column specification ────────────────────────────────────────────────────────
-Delimiter: ";"
-chr (8): name, physical_configuration, altitude, address, rental_methods, sh...
-dbl (6): station_id, post_code, capacity, is_charging_station, geofenced_cap...
-num (2): lat, lon
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
 </div>
 <p><code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> accepts the table id (URI) directly, so you can store it in a script or a database and reproduce the pull without re-searching the catalog.</p>
-</section><section class="level2"><h2 id="summarising-datasets">Summarising datasets<a class="anchor" aria-label="anchor" href="#summarising-datasets"></a>
+<section class="level3"><h3 id="why-a-stable-id-beats-a-file-name">Why a stable id beats a file name<a class="anchor" aria-label="anchor" href="#why-a-stable-id-beats-a-file-name"></a>
+</h3>
+<p>Datasets on data.gouv are <em>living</em>: producers re-upload files, correct typos, and re-run pipelines. The file a human-readable name or title points at can therefore change between the day you pull it and the day you re-run your analysis. The table id, by contrast, is a stable address built from the platform’s own identifiers, and <code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> uses it to get back <strong>the same table you fetched originally</strong> — not whatever the resource happens to contain today.</p>
+<p>To make this concrete with no network, imagine a producer’s <code>bikes.csv</code> that you pulled last month, and the slightly updated file they publish today:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># In-memory illustration of resource drift — no network, no rdatagouv calls.</span></span>
+<span><span class="co"># The file you pulled on day one.</span></span>
+<span><span class="va">pulled_last_month</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>city <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Caen"</span>, <span class="st">"Lyon"</span><span class="op">)</span>, bikes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">42L</span>, <span class="fl">17L</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The same-named file, re-uploaded by the producer the next month.</span></span>
+<span><span class="va">published_today</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>city <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Caen"</span>, <span class="st">"Lyon"</span><span class="op">)</span>, bikes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">43L</span>, <span class="fl">18L</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># A lookup by file name gives you whatever is current now (drifted):</span></span>
+<span><span class="va">name_based</span> <span class="op">&lt;-</span> <span class="va">published_today</span></span>
+<span></span>
+<span><span class="co"># A lookup by the stable id saved at pull time gives you the table you</span></span>
+<span><span class="co"># actually analysed. In a real session that is exactly what happens:</span></span>
+<span><span class="co">#   saved_id &lt;- dg_table_id(pulled)   # a stable URI, e.g.</span></span>
+<span><span class="co">#   # `https://www.data.gouv.fr/datasets/&lt;id&gt;#&lt;resource&gt;`</span></span>
+<span><span class="co">#   back &lt;- dg_refetch(saved_id)      # -&gt; pulled_last_month, not published_today</span></span>
+<span><span class="va">id_based</span> <span class="op">&lt;-</span> <span class="va">pulled_last_month</span></span></code></pre></div>
+</div>
+<p>The table id is what makes your analysis reproducible over time: save it alongside your results, and the pull you ran is the pull a future <code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> gets back — even if the file name, its contents, or the surrounding catalog have drifted in the meantime. A file name captures only <em>where something is now</em>; the stable id captures <em>what you actually observed</em>.</p>
+</section></section><section class="level2"><h2 id="summarising-datasets">Summarising datasets<a class="anchor" aria-label="anchor" href="#summarising-datasets"></a>
 </h2>
 <p><code><a href="../reference/dg_summary.html">dg_summary()</a></code> computes metrics for a single table:</p>
 <div class="cell" data-dg="dg_summary">
-<div class="sourceCode cell-code" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The call is wrapped in try() as a low-level backstop: neither knitr's</span></span>
 <span><span class="co"># `error: true` option nor the DATAGOUV_LIVE/get() gate can contain a</span></span>
 <span><span class="co"># present-but-unforceable lazy-load export (the Windows/R-devel failure,</span></span>
@@ -484,7 +455,7 @@ num (2): lat, lon
 <li>or <code>NULL</code> to download and summarise the first <code>n</code> datasets of the catalog.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In-memory tables — no network needed</span></span>
 <span><span class="co">#| dg: dg_summarise</span></span>
 <span><span class="co">#| error: true</span></span>
@@ -501,7 +472,7 @@ num (2): lat, lon
 </h2>
 <p>Because every step returns something the next one can consume, the whole “find → judge → fetch” pipeline can be written as a single pipe. See how the table flows from one step to the next without any intermediate variables:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Find a dataset, take its first id, pull it into a table and read its schema.</span></span>
 <span><span class="fu"><a href="../reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"recharge électrique"</span>, schema_only <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">pull</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -517,19 +488,6 @@ num (2): lat, lon
 e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 225173 Columns: 52
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-dttm  (2): last_modified, created_at
-date  (1): date_maj
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 40 × 5
@@ -550,7 +508,7 @@ date  (1): date_maj
 </div>
 <p><code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> always returns a single tibble (a ZIP yields its first parseable file), so the pipe keeps flowing whether or not the dataset is an archive — <code><a href="../reference/dg_schema.html">dg_schema()</a></code> and <code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> read the table’s stable id from its attribute automatically. The same id lets you reproduce the exact table later in a fresh session, no matter how the catalog changes in the meantime:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"recharge électrique"</span>, schema_only <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">pull</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -565,20 +523,7 @@ e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 225173 Columns: 52
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-dttm  (2): last_modified, created_at
-date  (1): date_maj
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Save the stable address, then re-fetch the exact same table later.</span></span>
 <span><span class="va">tbl_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl_id</span><span class="op">)</span></span></code></pre></div>
@@ -588,20 +533,7 @@ e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 225173 Columns: 52
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (41): nom_amenageur, contact_amenageur, nom_operateur, contact_operateu...
-dbl   (5): siren_amenageur, nbre_pdc, puissance_nominale, consolidated_longi...
-lgl   (3): consolidated_is_lon_lat_correct, consolidated_is_code_insee_verif...
-dttm  (2): last_modified, created_at
-date  (1): date_maj
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">again</span>, <span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] TRUE</code></pre>
@@ -697,7 +629,7 @@ date  (1): date_maj
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Pierre Gloaguen, Arthur Leroy, Mahendra Mariadassou, Jean-François Rey, Aymeric Stamm.</p>
+  <p>Developed by Magali Berland, Pierre Gloaguen, Arthur Leroy, Mahendra Mariadassou, Cédric Midoux, Jean-François Rey, Aymeric Stamm.</p>
 </div>
 
 <div class="pkgdown-footer-right">

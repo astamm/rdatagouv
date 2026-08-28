@@ -2,6 +2,30 @@
 
 ## rdatagouv 0.0.0.9000
 
+- Delimited resources (`csv`, `csv.gz`, `tsv`, `txt`) are now parsed
+  with
+  [`vroom::vroom()`](https://vroom.tidyverse.org/reference/vroom.html)
+  instead of the individual `readr` readers
+  (`read_csv`/`read_tsv`/`read_csv2`/`read_delim`). `readr` is no longer
+  an import; the delimiter is still probed first by `guess_delimiter()`
+  (vroom’s own guesser is comma-first and would mis-read European-style
+  files with a semicolon separator and comma decimal mark), and
+  semicolon files keep the comma-decimal locale (`read_csv2` behaviour).
+  `vroom` reads with `altrep = FALSE` so the returned table materialises
+  eagerly and does not reference the temporary file that is unlinked on
+  exit.
+
+- The `formats` column of
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md)
+  is now a **list-column**: each element is a character vector of the
+  dataset’s distinct file formats, instead of a single comma-joined
+  string. This makes per-format filtering straightforward
+  (e.g. `purrr::map_lgl(formats, ~ "parquet" %in% .x)` or
+  `lapply(formats, ...)`) instead of parsing a delimited string. As
+  before, the column is only filled when `resources = TRUE` (it is
+  `NULL` otherwise, and a dataset with no recorded format has an empty
+  vector).
+
 - `dg_find_datasets(schema_only = TRUE)` no longer silently returns an
   unfiltered catalog. Because `schema_only` selects client-side on
   `has_schema` — which needs the per-dataset resource fetch — calling it
