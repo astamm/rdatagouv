@@ -51,6 +51,7 @@ workflow:
 | Find / search the catalog | [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md), [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.md), [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md) |
 | Judge documented columns | [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md) |
 | Download tabular resources | [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md) |
+| Inspect parsing problems | [`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md) |
 | Summarise table contents | [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.md), [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.md) |
 | Re-fetch a table reproducibly | [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md) |
 
@@ -114,8 +115,8 @@ cycle[, c("title", "n_resources", "has_table", "has_schema")]
        <chr>                                              <int> <lgl>     <lgl>
      1 "Statistiques de subventions d’achat de vél…           2 TRUE      FALSE
      2 "Fréquentation mesurée dans les Parkings Vé…           2 TRUE      FALSE
-     3 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
-     4 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+     3 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+     4 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
      5 "Plan Vélo 2021-2026"                                  4 TRUE      FALSE
      6 "Aménagements vélo en Île-de-France"                  21 TRUE      FALSE
      7 "Comptages vélo et piétons"                            5 TRUE      FALSE
@@ -305,9 +306,39 @@ the `n_datasets`/`n_dataservices`/`n_reuses` columns are `NA` otherwise.
 
 ## Judging whether a dataset is usable
 
-The judged usefulness of a dataset hinges on whether the columns mean
-what you think they mean. That information comes from the producer’s
-*schema* on schema.data.gouv.fr.
+A quick way to judge a dataset before pulling it is
+[`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.md).
+It takes a dataset id — or, like the other functions, a pulled table
+(its id is read automatically) — and returns a named list of the
+v2-inline metadata the fetch path does not surface directly: the
+dataset’s `quality` score and flags, its usage `metrics`, and its
+`context` (license, frequency, coverage, …):
+
+``` r
+
+glimpse <- dg_glimpse("6a6be5976a05df136d48fb7a")
+glimpse$quality$score             # 0..1 quality score
+```
+
+    [1] 0.5555556
+
+``` r
+
+glimpse$metrics$views             # how often the dataset is looked at
+```
+
+    [1] 578
+
+``` r
+
+glimpse$context$license           # e.g. "open" / "notspecified"
+```
+
+    [1] "notspecified"
+
+The judged usefulness of a dataset also hinges on whether the columns
+mean what you think they mean. That information comes from the
+producer’s *schema* on schema.data.gouv.fr.
 [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
 takes a table (its id is read automatically) or a composed table id and
 returns the documented fields:
@@ -327,15 +358,6 @@ table_id <- documented$id[!is.na(documented$id)][[1]]
 
 # Pull it, then inspect the schema of the returned table.
 tbl <- dg_pull_dataset(table_id)
-```
-
-    Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    e.g.:
-      dat <- vroom(...)
-      problems(dat)
-
-``` r
-
 schema <- dg_schema(tbl)
 
 # Human-readable titles and descriptions of every column:
@@ -376,18 +398,17 @@ head(tbl)
 ```
 
     # A tibble: 6 × 16
-      station_id name          physical_configuration    lat    lon altitude address
-           <dbl> <chr>         <chr>                   <dbl>  <dbl> <chr>    <chr>
-    1          4 04 UCA - Cam… REGULAR                4.58e8 3.11e7 0.0      26 Ave…
-    2          7 07 - Delille  REGULAR                4.58e7 3.09e5 0.0      Place …
-    3          8 08A - Gailla… REGULAR                4.58e7 3.08e6 0.0      29 Rue…
-    4          9 09 - Chamali… REGULAR                4.58e7 3.07e6 0.0      Rue Ch…
-    5         14 14 - Les Car… REGULAR                4.58e7 3.09e6 0.0      12 Pla…
-    6         19 19 - Amboise  REGULAR                4.58e7 3.09e6 0.0      25-13 …
-    # ℹ 9 more variables: post_code <dbl>, capacity <dbl>,
-    #   is_charging_station <dbl>, geofenced_capacity <dbl>, rental_methods <chr>,
-    #   is_virtual_station <dbl>, short_name <chr>, rental_uris <chr>,
-    #   point_geo <chr>
+      station_id name  physical_configuration   lat   lon altitude address post_code
+           <int> <chr> <chr>                  <dbl> <dbl>    <dbl> <chr>   <chr>
+    1          4 04 U… REGULAR                   NA    NA       NA 26 Ave… 63170
+    2          7 07 -… REGULAR                   NA    NA       NA Place … 63000
+    3          8 08A … REGULAR                   NA    NA       NA 29 Rue… 63000
+    4          9 09 -… REGULAR                   NA    NA       NA Rue Ch… 63400
+    5         14 14 -… REGULAR                   NA    NA       NA 12 Pla… 63000
+    6         19 19 -… REGULAR                   NA    NA       NA 25-13 … 63000
+    # ℹ 8 more variables: capacity <int>, is_charging_station <lgl>,
+    #   geofenced_capacity <lgl>, rental_methods <chr>, is_virtual_station <lgl>,
+    #   short_name <chr>, rental_uris <chr>, point_geo <chr>
 
 ``` r
 
@@ -419,6 +440,158 @@ A few things to know about pulling:
 - Every returned table carries its stable, unique address as an `id`
   attribute, readable with
   [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md).
+- Column types are seeded from data.gouv’s own `csv-detective` profile
+  by default (`use_tabular_types = TRUE`), then remaining inference is
+  left to vroom. The profile is best-effort — it only exists for
+  single-file resources indexed by the tabular service, so a missing
+  profile (or a ZIP member) falls back to type inference; pass
+  `use_tabular_types = FALSE` to disable seeding entirely. You can
+  always force specific columns with `col_types = c(col_name = "Date")`
+  (shorthand: `"character"`, `"double"`/`"numeric"`, `"integer"`,
+  `"logical"`, `"Date"`, `"datetime"`, `"skip"`, `"guess"`; explicit
+  `col_types` always win). This is handy when vroom guesses a type the
+  data does not fully match — e.g. a mostly-padded ISO date column with
+  a few non-padded stragglers like `2021-7-01`, which vroom would
+  otherwise flag as a parsing issue; forcing `"Date"` turns those
+  stragglers into `NA`.
+- Any parsing issues vroom encountered are attached to the table as an
+  `rdatagouv_problems` attribute instead of a noisy per-cell warning.
+  Read them with `dg_problems(tbl)` (a data frame of `row`, `col`,
+  `expected`, `actual`, or `NULL` when the table parsed cleanly).
+
+## When pulling goes wrong: parsing issues
+
+A table is *pulled* by guessing how each column should be read — its
+type (integer, double, date, …) is inferred from the values it contains.
+Real-world open data rarely cooperates perfectly: a column can hold
+mixed content, and the guess can be wrong. This section explains how
+`rdatagouv` surfaces those problems and how you can fix them.
+
+### Detecting a parsing problem
+
+While it reads a delimited file, vroom reports every cell it cannot
+reconcile with the column type it committed to. Rather than blasting
+these one-by-one as warnings, `rdatagouv` silences the noisy per-cell
+messages and keeps the underlying record on the table, readable with
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md):
+
+``` r
+
+# In-memory demo of the problems attribute. A real pull works the same way:
+#   tbl <- dg_pull_dataset("<id>")
+#   dg_problems(tbl)
+try({
+  # A column declared "double" but holding some non-numeric cells.
+  csv <- tempfile(fileext = ".csv")
+  writeLines(c("x,y", "1,2", "2,oops", "3,4"), csv)
+  pr <- vroom::problems(vroom::vroom(csv, col_types = vroom::cols(
+    x = "d", y = "d"
+  )))
+  pr[, c("row", "col", "expected", "actual")]
+})
+```
+
+    Warning: One or more parsing issues, call `problems()` on your data frame for details,
+    e.g.:
+      dat <- vroom(...)
+      problems(dat)
+
+    # A tibble: 1 × 4
+        row   col expected actual
+      <int> <int> <chr>    <chr>
+    1     3     2 a double oops  
+
+A *clean* pull — one where every cell matched its inferred type —
+returns `NULL` from
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md);
+a table with issues returns a data frame with one row per problem and
+the columns `row`, `col`, `expected` and `actual`:
+
+| Column     | Meaning                                              |
+|------------|------------------------------------------------------|
+| `row`      | 1-based row (of the file) where the problem occurred |
+| `col`      | column name (or number) that could not be parsed     |
+| `expected` | the type vroom had committed to (e.g. `a double`)    |
+| `actual`   | the raw value that failed, e.g. `oops`               |
+
+The attribute is only attached when there is something to report, so a
+healthy table stays lightweight and ordinary data frames (not produced
+by a pull) return `NULL`.
+
+### A common trigger: mostly-padded ISO dates
+
+A frequent real-world case is a date column such as `2021-07-01` that is
+*padded* (two-digit month/day) for almost every row, with a few
+non-padded stragglers like `2021-7-01` or `2024-11-5`. vroom sees
+mostly-padded ISO dates, commits to a `Date` collector, and flags each
+straggler as a parsing issue. The stragglers parse to `NA` and the
+warning count is often large — the trigger that motivated this feature.
+This is a *data* quality issue, not a bug in the pull.
+
+### Solving it: forcing column types
+
+You can take control of the guess with `col_types`, which overrides
+vroom’s inference for the named columns (shorthand: `"character"`,
+`"double"`/ `"numeric"`, `"integer"`, `"logical"`, `"Date"`,
+`"datetime"`, `"skip"`, `"guess"`). Two ways to fix the mixed-date case:
+
+1.  **Force the stragglers to text** with `"character"` — nothing is
+    lost and no value becomes `NA`; you can parse the dates yourself
+    afterwards. The IRVE charging-points dataset is a good real example:
+    its `date_mise_en_service` and `date_maj` columns are mostly padded
+    with a few stragglers like `2021-7-01`:
+
+    ``` r
+
+    tbl <- dg_pull_dataset("5448d3e0c751df01f85d0572",
+      col_types = c(date_mise_en_service = "character", date_maj = "character"))
+    dg_problems(tbl)          # NULL — nothing is flagged any more
+    ```
+
+2.  **Force `"Date"`** and accept that the stragglers become `NA` —
+    right when a few unparsed dates are acceptable for your analysis:
+
+    ``` r
+
+    tbl <- dg_refetch(tbl,
+      col_types = c(date_mise_en_service = "Date", date_maj = "Date"))
+    ```
+
+Both
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
+and
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+accept `col_types` (including inside a ZIP with `all_files = TRUE`), so
+you can correct the same table every time you re-fetch it:
+
+``` r
+
+# Pull the IRVE charging-points table once, inspect its parsing issues with
+# dg_problems(), then re-fetch the same table with the mixed-date columns
+# forced to text so nothing is flagged.
+tbl <- dg_pull_dataset("5448d3e0c751df01f85d0572")
+nrow(dg_problems(tbl))                    # how many mixed-date stragglers
+```
+
+    [1] 278
+
+``` r
+
+tbl <- dg_refetch(tbl,
+  col_types = c(date_mise_en_service = "character", date_maj = "character"))
+dg_problems(tbl)                          # NULL — clean re-fetch
+```
+
+    NULL
+
+The general workflow is: pull, inspect with
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md),
+spot the offending column in `col`, choose a `col_types` entry that
+matches how you intend to use the data, and re-pull or re-fetch. If the
+problem is a non-numeric value inside a numeric column, forcing
+`"character"` keeps the raw text; forcing `"double"` turns it into `NA`.
+Either choice lets you move on with a table whose columns behave
+predictably.
 
 ## Re-fetching the same table reproducibly
 
@@ -565,11 +738,6 @@ dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |>
     Forcing `resources = TRUE` because `schema_only = TRUE` selects on
     `has_schema`, which needs the per-dataset resource fetch.
 
-    Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    e.g.:
-      dat <- vroom(...)
-      problems(dat)
-
     # A tibble: 40 × 5
        name                  title description                         type  example
        <chr>                 <chr> <chr>                               <chr> <chr>
@@ -606,25 +774,11 @@ tbl <- dg_find_datasets(q = "recharge électrique", schema_only = TRUE, n = 5) |
     Forcing `resources = TRUE` because `schema_only = TRUE` selects on
     `has_schema`, which needs the per-dataset resource fetch.
 
-    Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    e.g.:
-      dat <- vroom(...)
-      problems(dat)
-
 ``` r
 
 # Save the stable address, then re-fetch the exact same table later.
 tbl_id <- dg_table_id(tbl)
 again <- dg_refetch(tbl_id)
-```
-
-    Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    e.g.:
-      dat <- vroom(...)
-      problems(dat)
-
-``` r
-
 identical(again, tbl)
 ```
 

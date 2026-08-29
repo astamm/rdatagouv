@@ -107,12 +107,16 @@
 <td><code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code></td>
 </tr>
 <tr class="even">
+<td>Inspect parsing problems</td>
+<td><code><a href="../reference/dg_problems.html">dg_problems()</a></code></td>
+</tr>
+<tr class="odd">
 <td>Summarise table contents</td>
 <td>
 <code><a href="../reference/dg_summary.html">dg_summary()</a></code>, <code><a href="../reference/dg_summarise.html">dg_summarise()</a></code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Re-fetch a table reproducibly</td>
 <td><code><a href="../reference/dg_refetch.html">dg_refetch()</a></code></td>
 </tr>
@@ -168,8 +172,8 @@
    &lt;chr&gt;                                              &lt;int&gt; &lt;lgl&gt;     &lt;lgl&gt;
  1 "Statistiques de subventions d’achat de vél…           2 TRUE      FALSE
  2 "Fréquentation mesurée dans les Parkings Vé…           2 TRUE      FALSE
- 3 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
- 4 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+ 3 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+ 4 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
  5 "Plan Vélo 2021-2026"                                  4 TRUE      FALSE
  6 "Aménagements vélo en Île-de-France"                  21 TRUE      FALSE
  7 "Comptages vélo et piétons"                            5 TRUE      FALSE
@@ -313,28 +317,40 @@
 <p>By default <code><a href="../reference/dg_find_topics.html">dg_find_topics()</a></code> reports <code>n_elements</code> — the theme’s declared total element count (datasets, reuses, dataservices, …). To see how that total breaks down by kind, pass <code>elements = TRUE</code> (costing one extra request per topic); the <code>n_datasets</code>/<code>n_dataservices</code>/<code>n_reuses</code> columns are <code>NA</code> otherwise.</p>
 </section></section><section class="level2"><h2 id="judging-whether-a-dataset-is-usable">Judging whether a dataset is usable<a class="anchor" aria-label="anchor" href="#judging-whether-a-dataset-is-usable"></a>
 </h2>
-<p>The judged usefulness of a dataset hinges on whether the columns mean what you think they mean. That information comes from the producer’s <em>schema</em> on schema.data.gouv.fr. <code><a href="../reference/dg_schema.html">dg_schema()</a></code> takes a table (its id is read automatically) or a composed table id and returns the documented fields:</p>
+<p>A quick way to judge a dataset before pulling it is <code><a href="../reference/dg_glimpse.html">dg_glimpse()</a></code>. It takes a dataset id — or, like the other functions, a pulled table (its id is read automatically) — and returns a named list of the v2-inline metadata the fetch path does not surface directly: the dataset’s <code>quality</code> score and flags, its usage <code>metrics</code>, and its <code>context</code> (license, frequency, coverage, …):</p>
 <div class="cell" data-live="true">
 <div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">glimpse</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_glimpse.html">dg_glimpse</a></span><span class="op">(</span><span class="st">"6a6be5976a05df136d48fb7a"</span><span class="op">)</span></span>
+<span><span class="va">glimpse</span><span class="op">$</span><span class="va">quality</span><span class="op">$</span><span class="va">score</span>             <span class="co"># 0..1 quality score</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5555556</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">glimpse</span><span class="op">$</span><span class="va">metrics</span><span class="op">$</span><span class="va">views</span>             <span class="co"># how often the dataset is looked at</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 578</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">glimpse</span><span class="op">$</span><span class="va">context</span><span class="op">$</span><span class="va">license</span>           <span class="co"># e.g. "open" / "notspecified"</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "notspecified"</code></pre>
+</div>
+</div>
+<p>The judged usefulness of a dataset also hinges on whether the columns mean what you think they mean. That information comes from the producer’s <em>schema</em> on schema.data.gouv.fr. <code><a href="../reference/dg_schema.html">dg_schema()</a></code> takes a table (its id is read automatically) or a composed table id and returns the documented fields:</p>
+<div class="cell" data-live="true">
+<div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># schema_only filters client-side, so request a batch and take the first hit.</span></span>
 <span><span class="va">documented</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>schema_only <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Forcing `resources = TRUE` because `schema_only = TRUE` selects on
 `has_schema`, which needs the per-dataset resource fetch.</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">table_id</span> <span class="op">&lt;-</span> <span class="va">documented</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">documented</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span></span>
 <span><span class="co"># Pull it, then inspect the schema of the returned table.</span></span>
-<span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="va">table_id</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
-e.g.:
-  dat &lt;- vroom(...)
-  problems(dat)</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">schema</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_schema.html">dg_schema</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
+<span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="va">table_id</span><span class="op">)</span></span>
+<span><span class="va">schema</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_schema.html">dg_schema</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Human-readable titles and descriptions of every column:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">schema</span><span class="op">)</span></span></code></pre></div>
@@ -356,25 +372,24 @@ e.g.:
 </h2>
 <p><code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the first parseable tabular resource of a dataset and returns a <strong>single tibble</strong>:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 16
-  station_id name          physical_configuration    lat    lon altitude address
-       &lt;dbl&gt; &lt;chr&gt;         &lt;chr&gt;                   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;
-1          4 04 UCA - Cam… REGULAR                4.58e8 3.11e7 0.0      26 Ave…
-2          7 07 - Delille  REGULAR                4.58e7 3.09e5 0.0      Place …
-3          8 08A - Gailla… REGULAR                4.58e7 3.08e6 0.0      29 Rue…
-4          9 09 - Chamali… REGULAR                4.58e7 3.07e6 0.0      Rue Ch…
-5         14 14 - Les Car… REGULAR                4.58e7 3.09e6 0.0      12 Pla…
-6         19 19 - Amboise  REGULAR                4.58e7 3.09e6 0.0      25-13 …
-# ℹ 9 more variables: post_code &lt;dbl&gt;, capacity &lt;dbl&gt;,
-#   is_charging_station &lt;dbl&gt;, geofenced_capacity &lt;dbl&gt;, rental_methods &lt;chr&gt;,
-#   is_virtual_station &lt;dbl&gt;, short_name &lt;chr&gt;, rental_uris &lt;chr&gt;,
-#   point_geo &lt;chr&gt;</code></pre>
+  station_id name  physical_configuration   lat   lon altitude address post_code
+       &lt;int&gt; &lt;chr&gt; &lt;chr&gt;                  &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;
+1          4 04 U… REGULAR                   NA    NA       NA 26 Ave… 63170
+2          7 07 -… REGULAR                   NA    NA       NA Place … 63000
+3          8 08A … REGULAR                   NA    NA       NA 29 Rue… 63000
+4          9 09 -… REGULAR                   NA    NA       NA Rue Ch… 63400
+5         14 14 -… REGULAR                   NA    NA       NA 12 Pla… 63000
+6         19 19 -… REGULAR                   NA    NA       NA 25-13 … 63000
+# ℹ 8 more variables: capacity &lt;int&gt;, is_charging_station &lt;lgl&gt;,
+#   geofenced_capacity &lt;lgl&gt;, rental_methods &lt;chr&gt;, is_virtual_station &lt;lgl&gt;,
+#   short_name &lt;chr&gt;, rental_uris &lt;chr&gt;, point_geo &lt;chr&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
@@ -387,18 +402,121 @@ e.g.:
 <li>Declared formats are not always accurate, and a candidate may fail to parse (e.g. a <code>json</code> resource that actually serves an API metadata document). <code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> skips non-parseable resources and falls back to the next tabular one instead of erroring.</li>
 <li>When a dataset offers the <em>same table</em> in several formats (same file name, different extension, e.g. <code>data.csv</code> vs <code>data.xlsx</code>), the lightest advertised file is downloaded so the pull is as small as possible; resources with distinct names keep their declared order.</li>
 <li>Every returned table carries its stable, unique address as an <code>id</code> attribute, readable with <code><a href="../reference/dg_table_id.html">dg_table_id()</a></code>.</li>
-</ul></section><section class="level2"><h2 id="re-fetching-the-same-table-reproducibly">Re-fetching the same table reproducibly<a class="anchor" aria-label="anchor" href="#re-fetching-the-same-table-reproducibly"></a>
+<li>Column types are seeded from data.gouv’s own <code>csv-detective</code> profile by default (<code>use_tabular_types = TRUE</code>), then remaining inference is left to vroom. The profile is best-effort — it only exists for single-file resources indexed by the tabular service, so a missing profile (or a ZIP member) falls back to type inference; pass <code>use_tabular_types = FALSE</code> to disable seeding entirely. You can always force specific columns with <code>col_types = c(col_name = "Date")</code> (shorthand: <code>"character"</code>, <code>"double"</code>/<code>"numeric"</code>, <code>"integer"</code>, <code>"logical"</code>, <code>"Date"</code>, <code>"datetime"</code>, <code>"skip"</code>, <code>"guess"</code>; explicit <code>col_types</code> always win). This is handy when vroom guesses a type the data does not fully match — e.g. a mostly-padded ISO date column with a few non-padded stragglers like <code>2021-7-01</code>, which vroom would otherwise flag as a parsing issue; forcing <code>"Date"</code> turns those stragglers into <code>NA</code>.</li>
+<li>Any parsing issues vroom encountered are attached to the table as an <code>rdatagouv_problems</code> attribute instead of a noisy per-cell warning. Read them with <code>dg_problems(tbl)</code> (a data frame of <code>row</code>, <code>col</code>, <code>expected</code>, <code>actual</code>, or <code>NULL</code> when the table parsed cleanly).</li>
+</ul></section><section class="level2"><h2 id="when-pulling-goes-wrong-parsing-issues">When pulling goes wrong: parsing issues<a class="anchor" aria-label="anchor" href="#when-pulling-goes-wrong-parsing-issues"></a>
+</h2>
+<p>A table is <em>pulled</em> by guessing how each column should be read — its type (integer, double, date, …) is inferred from the values it contains. Real-world open data rarely cooperates perfectly: a column can hold mixed content, and the guess can be wrong. This section explains how <code>rdatagouv</code> surfaces those problems and how you can fix them.</p>
+<section class="level3"><h3 id="detecting-a-parsing-problem">Detecting a parsing problem<a class="anchor" aria-label="anchor" href="#detecting-a-parsing-problem"></a>
+</h3>
+<p>While it reads a delimited file, vroom reports every cell it cannot reconcile with the column type it committed to. Rather than blasting these one-by-one as warnings, <code>rdatagouv</code> silences the noisy per-cell messages and keeps the underlying record on the table, readable with <code><a href="../reference/dg_problems.html">dg_problems()</a></code>:</p>
+<div class="cell" data-dg="dg_problems">
+<div class="sourceCode cell-code" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># In-memory demo of the problems attribute. A real pull works the same way:</span></span>
+<span><span class="co">#   tbl &lt;- dg_pull_dataset("&lt;id&gt;")</span></span>
+<span><span class="co">#   dg_problems(tbl)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="co"># A column declared "double" but holding some non-numeric cells.</span></span>
+<span>  <span class="va">csv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".csv"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x,y"</span>, <span class="st">"1,2"</span>, <span class="st">"2,oops"</span>, <span class="st">"3,4"</span><span class="op">)</span>, <span class="va">csv</span><span class="op">)</span></span>
+<span>  <span class="va">pr</span> <span class="op">&lt;-</span> <span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.tidyverse.org/reference/problems.html" class="external-link">problems</a></span><span class="op">(</span><span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.tidyverse.org/reference/vroom.html" class="external-link">vroom</a></span><span class="op">(</span><span class="va">csv</span>, col_types <span class="op">=</span> <span class="fu">vroom</span><span class="fu">::</span><span class="fu"><a href="https://vroom.tidyverse.org/reference/cols.html" class="external-link">cols</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="st">"d"</span>, y <span class="op">=</span> <span class="st">"d"</span></span>
+<span>  <span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">pr</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"row"</span>, <span class="st">"col"</span>, <span class="st">"expected"</span>, <span class="st">"actual"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
+e.g.:
+  dat &lt;- vroom(...)
+  problems(dat)</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+    row   col expected actual
+  &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;
+1     3     2 a double oops  </code></pre>
+</div>
+</div>
+<p>A <em>clean</em> pull — one where every cell matched its inferred type — returns <code>NULL</code> from <code><a href="../reference/dg_problems.html">dg_problems()</a></code>; a table with issues returns a data frame with one row per problem and the columns <code>row</code>, <code>col</code>, <code>expected</code> and <code>actual</code>:</p>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>row</code></td>
+<td>1-based row (of the file) where the problem occurred</td>
+</tr>
+<tr class="even">
+<td><code>col</code></td>
+<td>column name (or number) that could not be parsed</td>
+</tr>
+<tr class="odd">
+<td><code>expected</code></td>
+<td>the type vroom had committed to (e.g. <code>a double</code>)</td>
+</tr>
+<tr class="even">
+<td><code>actual</code></td>
+<td>the raw value that failed, e.g. <code>oops</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The attribute is only attached when there is something to report, so a healthy table stays lightweight and ordinary data frames (not produced by a pull) return <code>NULL</code>.</p>
+</section><section class="level3"><h3 id="a-common-trigger-mostly-padded-iso-dates">A common trigger: mostly-padded ISO dates<a class="anchor" aria-label="anchor" href="#a-common-trigger-mostly-padded-iso-dates"></a>
+</h3>
+<p>A frequent real-world case is a date column such as <code>2021-07-01</code> that is <em>padded</em> (two-digit month/day) for almost every row, with a few non-padded stragglers like <code>2021-7-01</code> or <code>2024-11-5</code>. vroom sees mostly-padded ISO dates, commits to a <code>Date</code> collector, and flags each straggler as a parsing issue. The stragglers parse to <code>NA</code> and the warning count is often large — the trigger that motivated this feature. This is a <em>data</em> quality issue, not a bug in the pull.</p>
+</section><section class="level3"><h3 id="solving-it-forcing-column-types">Solving it: forcing column types<a class="anchor" aria-label="anchor" href="#solving-it-forcing-column-types"></a>
+</h3>
+<p>You can take control of the guess with <code>col_types</code>, which overrides vroom’s inference for the named columns (shorthand: <code>"character"</code>, <code>"double"</code>/ <code>"numeric"</code>, <code>"integer"</code>, <code>"logical"</code>, <code>"Date"</code>, <code>"datetime"</code>, <code>"skip"</code>, <code>"guess"</code>). Two ways to fix the mixed-date case:</p>
+<ol type="1">
+<li>
+<p><strong>Force the stragglers to text</strong> with <code>"character"</code> — nothing is lost and no value becomes <code>NA</code>; you can parse the dates yourself afterwards. The IRVE charging-points dataset is a good real example: its <code>date_mise_en_service</code> and <code>date_maj</code> columns are mostly padded with a few stragglers like <code>2021-7-01</code>:</p>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"5448d3e0c751df01f85d0572"</span>,</span>
+<span>  col_types <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>date_mise_en_service <span class="op">=</span> <span class="st">"character"</span>, date_maj <span class="op">=</span> <span class="st">"character"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/dg_problems.html">dg_problems</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span>          <span class="co"># NULL — nothing is flagged any more</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Force <code>"Date"</code></strong> and accept that the stragglers become <code>NA</code> — right when a few unparsed dates are acceptable for your analysis:</p>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl</span>,</span>
+<span>  col_types <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>date_mise_en_service <span class="op">=</span> <span class="st">"Date"</span>, date_maj <span class="op">=</span> <span class="st">"Date"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</li>
+</ol>
+<p>Both <code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> and <code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> accept <code>col_types</code> (including inside a ZIP with <code>all_files = TRUE</code>), so you can correct the same table every time you re-fetch it:</p>
+<div class="cell" data-live="true">
+<div class="sourceCode cell-code" id="cb38"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Pull the IRVE charging-points table once, inspect its parsing issues with</span></span>
+<span><span class="co"># dg_problems(), then re-fetch the same table with the mixed-date columns</span></span>
+<span><span class="co"># forced to text so nothing is flagged.</span></span>
+<span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"5448d3e0c751df01f85d0572"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="fu"><a href="../reference/dg_problems.html">dg_problems</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span><span class="op">)</span>                    <span class="co"># how many mixed-date stragglers</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 278</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl</span>,</span>
+<span>  col_types <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>date_mise_en_service <span class="op">=</span> <span class="st">"character"</span>, date_maj <span class="op">=</span> <span class="st">"character"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/dg_problems.html">dg_problems</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span>                          <span class="co"># NULL — clean re-fetch</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code><span><span class="cn">NULL</span></span></code></pre>
+</div>
+</div>
+<p>The general workflow is: pull, inspect with <code><a href="../reference/dg_problems.html">dg_problems()</a></code>, spot the offending column in <code>col</code>, choose a <code>col_types</code> entry that matches how you intend to use the data, and re-pull or re-fetch. If the problem is a non-numeric value inside a numeric column, forcing <code>"character"</code> keeps the raw text; forcing <code>"double"</code> turns it into <code>NA</code>. Either choice lets you move on with a table whose columns behave predictably.</p>
+</section></section><section class="level2"><h2 id="re-fetching-the-same-table-reproducibly">Re-fetching the same table reproducibly<a class="anchor" aria-label="anchor" href="#re-fetching-the-same-table-reproducibly"></a>
 </h2>
 <p>This is what makes your analysis reproducible over time. The table’s id is a URI built from the platform’s own stable identifiers — <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&gt;</code> (plus <code>/&lt;file&gt;</code> for a file inside a ZIP). Unlike a human-readable title, this address always resolves to the same table:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span></span>
 <span><span class="va">table_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="va">table_id</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Re-fetch the exact same table later:</span></span>
 <span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -408,7 +526,7 @@ e.g.:
 <p>Datasets on data.gouv are <em>living</em>: producers re-upload files, correct typos, and re-run pipelines. The file a human-readable name or title points at can therefore change between the day you pull it and the day you re-run your analysis. The table id, by contrast, is a stable address built from the platform’s own identifiers, and <code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> uses it to get back <strong>the same table you fetched originally</strong> — not whatever the resource happens to contain today.</p>
 <p>To make this concrete with no network, imagine a producer’s <code>bikes.csv</code> that you pulled last month, and the slightly updated file they publish today:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In-memory illustration of resource drift — no network, no rdatagouv calls.</span></span>
 <span><span class="co"># The file you pulled on day one.</span></span>
 <span><span class="va">pulled_last_month</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>city <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Caen"</span>, <span class="st">"Lyon"</span><span class="op">)</span>, bikes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">42L</span>, <span class="fl">17L</span><span class="op">)</span><span class="op">)</span></span>
@@ -431,7 +549,7 @@ e.g.:
 </h2>
 <p><code><a href="../reference/dg_summary.html">dg_summary()</a></code> computes metrics for a single table:</p>
 <div class="cell" data-dg="dg_summary">
-<div class="sourceCode cell-code" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The call is wrapped in try() as a low-level backstop: neither knitr's</span></span>
 <span><span class="co"># `error: true` option nor the DATAGOUV_LIVE/get() gate can contain a</span></span>
 <span><span class="co"># present-but-unforceable lazy-load export (the Windows/R-devel failure,</span></span>
@@ -455,7 +573,7 @@ e.g.:
 <li>or <code>NULL</code> to download and summarise the first <code>n</code> datasets of the catalog.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In-memory tables — no network needed</span></span>
 <span><span class="co">#| dg: dg_summarise</span></span>
 <span><span class="co">#| error: true</span></span>
@@ -472,7 +590,7 @@ e.g.:
 </h2>
 <p>Because every step returns something the next one can consume, the whole “find → judge → fetch” pipeline can be written as a single pipe. See how the table flows from one step to the next without any intermediate variables:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Find a dataset, take its first id, pull it into a table and read its schema.</span></span>
 <span><span class="fu"><a href="../reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"recharge électrique"</span>, schema_only <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">pull</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -482,12 +600,6 @@ e.g.:
 <div class="cell-output cell-output-stderr">
 <pre><code>Forcing `resources = TRUE` because `schema_only = TRUE` selects on
 `has_schema`, which needs the per-dataset resource fetch.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
-e.g.:
-  dat &lt;- vroom(...)
-  problems(dat)</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 40 × 5
@@ -508,7 +620,7 @@ e.g.:
 </div>
 <p><code><a href="../reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> always returns a single tibble (a ZIP yields its first parseable file), so the pipe keeps flowing whether or not the dataset is an archive — <code><a href="../reference/dg_schema.html">dg_schema()</a></code> and <code><a href="../reference/dg_refetch.html">dg_refetch()</a></code> read the table’s stable id from its attribute automatically. The same id lets you reproduce the exact table later in a fresh session, no matter how the catalog changes in the meantime:</p>
 <div class="cell" data-live="true">
-<div class="sourceCode cell-code" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"recharge électrique"</span>, schema_only <span class="op">=</span> <span class="cn">TRUE</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">pull</span><span class="op">(</span><span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -517,24 +629,11 @@ e.g.:
 <pre><code>Forcing `resources = TRUE` because `schema_only = TRUE` selects on
 `has_schema`, which needs the per-dataset resource fetch.</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
-e.g.:
-  dat &lt;- vroom(...)
-  problems(dat)</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Save the stable address, then re-fetch the exact same table later.</span></span>
 <span><span class="va">tbl_id</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
-<span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl_id</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
-e.g.:
-  dat &lt;- vroom(...)
-  problems(dat)</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">again</span>, <span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl_id</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">again</span>, <span class="va">tbl</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] TRUE</code></pre>
 </div>

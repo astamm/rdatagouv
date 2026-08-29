@@ -61,189 +61,85 @@
 <span><span class="co"># remotes::install_github("astamm/rdatagouv")</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="try-it-in-seconds">Try it in seconds<a class="anchor" aria-label="anchor" href="#try-it-in-seconds"></a>
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p>The examples below hit the live data.gouv.fr API and show real results.</p>
-<p>Find datasets matching a topic — <code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code> searches titles and descriptions server-side:</p>
+<p><code>rdatagouv</code> revolves around a simple workflow: <strong>find</strong> a dataset, <strong>judge</strong> whether it is usable, <strong>fetch</strong> it into a table, and later <strong>re-fetch the exact same table</strong> reproducibly. The examples below hit the live data.gouv.fr API and show real results.</p>
+<div class="section level3">
+<h3 id="id_1-find">1. Find<a class="anchor" aria-label="anchor" href="#id_1-find"></a>
+</h3>
+<p><code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code> searches the catalog by keyword and returns one row per dataset, with metadata (<code>quality_score</code>, <code>views</code>, <code>license</code>, …) to help you choose:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://astamm.github.io/rdatagouv/">rdatagouv</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">hits</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"vélo"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">hits</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"title"</span>, <span class="st">"id"</span>, <span class="st">"organization"</span>, <span class="st">"quality_score"</span>, <span class="st">"views"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; # A tibble: 5 × 5</span></span>
-<span><span class="co">#&gt;   title                                   id    organization quality_score views</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;                                   &lt;chr&gt; &lt;chr&gt;                &lt;dbl&gt; &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1 "Statistiques de subventions d’achat d… 63a3… ile-de-fran…         0.889  7173</span></span>
-<span><span class="co">#&gt; 2 "Fréquentation mesurée dans les Parkin… 63a3… ile-de-fran…         0.889  7978</span></span>
-<span><span class="co">#&gt; 3 "Nombre de places de stationnement vél… 67ca… ecolab-1             0.889  2255</span></span>
-<span><span class="co">#&gt; 4 "Vélib - Vélos et bornes - Disponibili… 5a4e… ville-de-pa…         0.889 16181</span></span>
-<span><span class="co">#&gt; 5 "Plan Vélo 2021-2026"                   6271… ville-de-pa…         0.778  8580</span></span></code></pre></div>
-<p><code>id</code> is the stable identifier you use to download; <code>quality_score</code> and <code>views</code> are among the rich per-dataset metadata the v2 search API embeds inline (see <code>license</code>, <code>access_type</code>, <code>frequency</code>, <code>temporal_start</code>/<code>end</code> and <code>featured</code> too). Because v2 search does not inline a dataset’s resources, the resource-based columns <code>n_resources</code>, <code>formats</code>, <code>has_table</code> and <code>has_schema</code> are <code>NA</code> by default; pass <code>resources = TRUE</code> to opt into the per-dataset resource fetch and fill them exactly. <code>schema_only = TRUE</code> forces that fetch (and tells you about it) so the filter works out of the box. You can restrict the catalog to datasets that carry at least one resource in a given format — e.g. only the more compact <code>parquet</code> files, which are quicker to download:</p>
+<span><span class="va">hits</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"title"</span>, <span class="st">"id"</span>, <span class="st">"organization"</span>, <span class="st">"quality_score"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; # A tibble: 5 × 4</span></span>
+<span><span class="co">#&gt;   title                                         id    organization quality_score</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;                                         &lt;chr&gt; &lt;chr&gt;                &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 "Statistiques de subventions d’achat de vélo… 63a3… ile-de-fran…         0.889</span></span>
+<span><span class="co">#&gt; 2 "Fréquentation mesurée dans les Parkings Vél… 63a3… ile-de-fran…         0.889</span></span>
+<span><span class="co">#&gt; 3 "Nombre de places de stationnement vélo "     67ca… ecolab-1             0.889</span></span>
+<span><span class="co">#&gt; 4 "Vélib - Vélos et bornes - Disponibilité tem… 5a4e… ville-de-pa…         0.889</span></span>
+<span><span class="co">#&gt; 5 "Plan Vélo 2021-2026"                         6271… ville-de-pa…         0.778</span></span></code></pre></div>
+<p>You can also discover producers with <code><a href="reference/dg_find_organization.html">dg_find_organization()</a></code> or curated themes with <code><a href="reference/dg_find_topics.html">dg_find_topics()</a></code>, and narrow a search to one of them via the <code>organization</code> / <code>topic</code> arguments.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2-judge">2. Judge<a class="anchor" aria-label="anchor" href="#id_2-judge"></a>
+</h3>
+<p>Before pulling, glimpse a dataset’s health and engagement in one call, or read its documented columns with <code><a href="reference/dg_schema.html">dg_schema()</a></code>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">parquet_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"parquet"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">parquet_only</span><span class="op">$</span><span class="va">title</span></span>
-<span><span class="co">#&gt; [1] "Bases statistiques communale, départementale et régionale de la délinquance enregistrée par la police et la gendarmerie nationales "</span></span>
-<span><span class="co">#&gt; [2] "Géolocalisation des établissements du répertoire SIRENE-pour les études statistiques"                                               </span></span>
-<span><span class="co">#&gt; [3] "Bureaux de vote et adresses de leurs électeurs"                                                                                     </span></span>
-<span><span class="co">#&gt; [4] "Base Sirene des entreprises et de leurs établissements (SIREN, SIRET)"                                                              </span></span>
-<span><span class="co">#&gt; [5] "Données sur la localisation et l’accès de la population aux équipements"</span></span></code></pre></div>
-<p>You can also narrow a search to a single producer. Pass the producer’s exact name or slug — it is resolved to its stable id for you — or look producers up first with <code><a href="reference/dg_find_organization.html">dg_find_organization()</a></code> to see which exist and how their names are spelled:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">orgs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_organization.html">dg_find_organization</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"SNCF"</span><span class="op">)</span></span>
-<span><span class="va">orgs</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"datasets"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; # A tibble: 17 × 3</span></span>
-<span><span class="co">#&gt;    id                       name                                        datasets</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;                    &lt;chr&gt;                                          &lt;int&gt;</span></span>
-<span><span class="co">#&gt;  1 534fffb0a3a7292c64a78115 SNCF                                             183</span></span>
-<span><span class="co">#&gt;  2 568e5e9488ee38033aaf0bf4 Île-de-France Mobilités                           97</span></span>
-<span><span class="co">#&gt;  3 5d823fd98b4c411e38e820b4 Fluo Grand Est                                    50</span></span>
-<span><span class="co">#&gt;  4 5db983ac8b4c4167f275d526 AlertesRER                                         1</span></span>
-<span><span class="co">#&gt;  5 5d0b7e3f6f44412d6d301778 Etablissement public d'aménagement Bordeau…        1</span></span>
-<span><span class="co">#&gt;  6 66f6b1c0668db6794d377dfb SFERIS                                             1</span></span>
-<span><span class="co">#&gt;  7 5a2023c388ee383e1dea3b3f Mairie de St NICOLAS DE REDON                      1</span></span>
-<span><span class="co">#&gt;  8 5f8581d1414580f029f22ec7 Isomaps                                            0</span></span>
-<span><span class="co">#&gt;  9 693fcf26eb48b48f67a2fbf6 SNCF Connect                                       0</span></span>
-<span><span class="co">#&gt; 10 679df2bff83a64dbfdf3ea6b Fleury-sur-Orne                                   37</span></span>
-<span><span class="co">#&gt; 11 6788e513830b33588b9529c2 SNCF Gares &amp; Connexions                            0</span></span>
-<span><span class="co">#&gt; 12 5b87edb0634f41368b820b86 Toucan Toco                                        0</span></span>
-<span><span class="co">#&gt; 13 5d00c25a8b4c417012fd62c2 Tictactrip                                         0</span></span>
-<span><span class="co">#&gt; 14 5d6a3fef634f417b657b2279 viaTransit                                         0</span></span>
-<span><span class="co">#&gt; 15 6a0de9ce491d351c8f8764f0 MaxRail                                            0</span></span>
-<span><span class="co">#&gt; 16 5d56018d6f444123160357a1 Kombo                                              0</span></span>
-<span><span class="co">#&gt; 17 6a21d93a76e2d715124ebcc8 Trayn                                              0</span></span>
-<span></span>
-<span><span class="va">sncf</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>organization <span class="op">=</span> <span class="st">"sncf"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">sncf</span><span class="op">$</span><span class="va">title</span></span>
-<span><span class="co">#&gt; [1] "HORAIRES SNCF"                                        </span></span>
-<span><span class="co">#&gt; [2] "Fichier de formes des voies du Réseau Ferré National" </span></span>
-<span><span class="co">#&gt; [3] "Horaires des gares"                                   </span></span>
-<span><span class="co">#&gt; [4] "Liste des gares"                                      </span></span>
-<span><span class="co">#&gt; [5] "Fichier de formes des lignes du Réseau Ferré National"</span></span></code></pre></div>
-<p>You can likewise narrow a search to a curated <em>theme</em>. Discover which themes exist with <code><a href="reference/dg_find_topics.html">dg_find_topics()</a></code> (which also reports how many elements each groups), then filter the catalog by a theme’s id:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">topics</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_topics.html">dg_find_topics</a></span><span class="op">(</span>q <span class="op">=</span> <span class="st">"mobilité"</span>, n <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="va">topics</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"name"</span>, <span class="st">"n_elements"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; # A tibble: 3 × 3</span></span>
-<span><span class="co">#&gt;   id                       name                                       n_elements</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;                    &lt;chr&gt;                                           &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1 6811e889b455bf5bbde45517 Indicateurs du tableau de bord des mobili…         28</span></span>
-<span><span class="co">#&gt; 2 68da7823bc643f6ea5cae5a0 🚎 Tarification sociale/solidaire des tran…          0</span></span>
-<span><span class="co">#&gt; 3 673cba35210c475e77ef3e38 Catalogue des données sur l'immobilier lo…        135</span></span>
-<span></span>
-<span><span class="va">mobility</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_find_datasets.html">dg_find_datasets</a></span><span class="op">(</span>topic <span class="op">=</span> <span class="va">topics</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">mobility</span><span class="op">$</span><span class="va">title</span></span>
-<span><span class="co">#&gt; [1] "Nombre de places de stationnement vélo "                                  </span></span>
-<span><span class="co">#&gt; [2] "Flux domicile-travail selon le mode de transport principal utilisé"       </span></span>
-<span><span class="co">#&gt; [3] "Distance domicile-travail moyenne, selon le mode de déplacement principal"</span></span>
-<span><span class="co">#&gt; [4] "Nombre de stations de transports en commun selon le type de réseau"       </span></span>
-<span><span class="co">#&gt; [5] "Nombre de flux domicile-travail"</span></span></code></pre></div>
-<p>Glimpse a dataset’s health and engagement metadata before deciding to pull it. <code><a href="reference/dg_glimpse.html">dg_glimpse()</a></code> surfaces the v2-inline <code>quality</code> score and flags, <code>metrics</code> (views, downloads, followers, …) and context that the fetch path does not expose:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_glimpse.html">dg_glimpse</a></span><span class="op">(</span><span class="st">"6a6be5976a05df136d48fb7a"</span><span class="op">)</span></span>
-<span><span class="va">g</span><span class="op">$</span><span class="va">quality</span></span>
-<span><span class="co">#&gt; $score</span></span>
-<span><span class="co">#&gt; [1] 0.5555556</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags</span></span>
-<span><span class="co">#&gt; $flags$license</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$temporal_coverage</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$spatial</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$update_frequency</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$dataset_description_quality</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$has_resources</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$has_open_format</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$all_resources_available</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $flags$resources_documentation</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="va">g</span><span class="op">$</span><span class="va">metrics</span></span>
-<span><span class="co">#&gt; $views</span></span>
-<span><span class="co">#&gt; [1] 568</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $resources_downloads</span></span>
-<span><span class="co">#&gt; [1] 57</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $followers</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $discussions</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $reuses</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $dataservices</span></span>
-<span><span class="co">#&gt; [1] 2</span></span></code></pre></div>
-<p>Download a dataset and inspect it. The result is a single table whose stable address is attached as an <code>id</code> attribute:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<span><span class="va">g</span><span class="op">$</span><span class="va">quality</span><span class="op">$</span><span class="va">score</span></span>
+<span><span class="co">#&gt; [1] 0.5555556</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_3-fetch">3. Fetch<a class="anchor" aria-label="anchor" href="#id_3-fetch"></a>
+</h3>
+<p><code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the dataset’s first tabular resource and returns a single tibble, with a stable table id attached as an attribute:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6397c0ff56d3963118a18345"</span><span class="op">)</span>     <span class="co"># C.vélo bike stations</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 6 × 6</span></span>
-<span><span class="co">#&gt;   station_id name                  physical_configuration    lat    lon altitude</span></span>
-<span><span class="co">#&gt;        &lt;dbl&gt; &lt;chr&gt;                 &lt;chr&gt;                   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   </span></span>
-<span><span class="co">#&gt; 1          4 04 UCA - Campus Céze… REGULAR                4.58e8 3.11e7 0.0     </span></span>
-<span><span class="co">#&gt; 2          7 07 - Delille          REGULAR                4.58e7 3.09e5 0.0     </span></span>
-<span><span class="co">#&gt; 3          8 08A - Gaillard        REGULAR                4.58e7 3.08e6 0.0     </span></span>
-<span><span class="co">#&gt; 4          9 09 - Chamalières Mai… REGULAR                4.58e7 3.07e6 0.0     </span></span>
-<span><span class="co">#&gt; 5         14 14 - Les Carmes       REGULAR                4.58e7 3.09e6 0.0     </span></span>
-<span><span class="co">#&gt; 6         19 19 - Amboise          REGULAR                4.58e7 3.09e6 0.0</span></span>
+<span><span class="co">#&gt;   station_id name                    physical_configuration   lat   lon altitude</span></span>
+<span><span class="co">#&gt;        &lt;int&gt; &lt;chr&gt;                   &lt;chr&gt;                  &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1          4 04 UCA - Campus Cézeaux REGULAR                   NA    NA       NA</span></span>
+<span><span class="co">#&gt; 2          7 07 - Delille            REGULAR                   NA    NA       NA</span></span>
+<span><span class="co">#&gt; 3          8 08A - Gaillard          REGULAR                   NA    NA       NA</span></span>
+<span><span class="co">#&gt; 4          9 09 - Chamalières Mairie REGULAR                   NA    NA       NA</span></span>
+<span><span class="co">#&gt; 5         14 14 - Les Carmes         REGULAR                   NA    NA       NA</span></span>
+<span><span class="co">#&gt; 6         19 19 - Amboise            REGULAR                   NA    NA       NA</span></span>
 <span><span class="fu"><a href="reference/dg_table_id.html">dg_table_id</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "https://www.data.gouv.fr/datasets/6397c0ff56d3963118a18345#01f5b3da-8d58-42c6-a07d-202538ad6672"</span></span></code></pre></div>
-<p>Judge whether the columns mean what you think. <code><a href="reference/dg_schema.html">dg_schema()</a></code> resolves the dataset’s declared schema and returns human-readable column documentation (pass the table directly — its id is read automatically):</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Find a schema-documented dataset, then look at its documented columns.</span></span>
-<span><span class="va">irve</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_pull_dataset.html">dg_pull_dataset</a></span><span class="op">(</span><span class="st">"6a84778d27ac6d44d5fabe1f"</span><span class="op">)</span>     <span class="co"># IRVE charging points</span></span>
-<span><span class="fu"><a href="reference/dg_schema.html">dg_schema</a></span><span class="op">(</span><span class="va">irve</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"name"</span>, <span class="st">"description"</span>, <span class="st">"type"</span>, <span class="st">"example"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt; # A tibble: 40 × 4</span></span>
-<span><span class="co">#&gt;    name                  description                               type  example</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;                 &lt;chr&gt;                                     &lt;chr&gt; &lt;chr&gt;  </span></span>
-<span><span class="co">#&gt;  1 nom_amenageur         "La dénomination sociale du nom de l'amé… stri… Sociét…</span></span>
-<span><span class="co">#&gt;  2 siren_amenageur       "Le numero SIREN de l'aménageur issue de… stri… 130025…</span></span>
-<span><span class="co">#&gt;  3 contact_amenageur     "Adresse courriel de l'aménageur. Favori… stri… contac…</span></span>
-<span><span class="co">#&gt;  4 nom_operateur         "La dénomination sociale de l'opérateur.… stri… Sociét…</span></span>
-<span><span class="co">#&gt;  5 contact_operateur     "Adresse courriel de l'opérateur. Favori… stri… contac…</span></span>
-<span><span class="co">#&gt;  6 telephone_operateur   "Numéro de téléphone permettant de conta… stri… 011111…</span></span>
-<span><span class="co">#&gt;  7 nom_enseigne          "Le nom commercial du réseau."            stri… Réseau…</span></span>
-<span><span class="co">#&gt;  8 id_station_itinerance "L'identifiant de la station délivré sel… stri… FRA68P…</span></span>
-<span><span class="co">#&gt;  9 id_station_local      "Identifiant de la station utilisé local… stri… 01F2KM…</span></span>
-<span><span class="co">#&gt; 10 nom_station           "Le nom de la station."                   stri… Picpus…</span></span>
-<span><span class="co">#&gt; # ℹ 30 more rows</span></span></code></pre></div>
-<p>Re-fetch the exact same table later, reproducibly, from its stored id — no matter how the catalog changes underneath you:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+</div>
+<div class="section level3">
+<h3 id="id_4-re-fetch-reproducibly">4. Re-fetch reproducibly<a class="anchor" aria-label="anchor" href="#id_4-re-fetch-reproducibly"></a>
+</h3>
+<p>Save that id, and <code><a href="reference/dg_refetch.html">dg_refetch()</a></code> gets back the exact same table later — no matter how titles or file names drift on the platform:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">again</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dg_refetch.html">dg_refetch</a></span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">again</span>, <span class="va">tbl</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<p>And compute summary metrics — size, columns, rows and missing-value rate — on one table or several at once:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+</div>
+<div class="section level3">
+<h3 id="id_5-summarise">5. Summarise<a class="anchor" aria-label="anchor" href="#id_5-summarise"></a>
+</h3>
+<p><code><a href="reference/dg_summary.html">dg_summary()</a></code> computes metrics for one table (size, columns, rows, missing-value rate), and <code><a href="reference/dg_summarise.html">dg_summarise()</a></code> does the same for many at once — even an entire <code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code> result:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/dg_summarise.html">dg_summarise</a></span><span class="op">(</span>datasets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iris <span class="op">=</span> <span class="va">iris</span>, mtcars <span class="op">=</span> <span class="va">mtcars</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 2 × 7</span></span>
 <span><span class="co">#&gt;   dataset size_kb n_vars n_numeric n_non_numeric n_rows prop_missing</span></span>
 <span><span class="co">#&gt; * &lt;chr&gt;     &lt;dbl&gt;  &lt;int&gt;     &lt;int&gt;         &lt;int&gt;  &lt;int&gt;        &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 iris       7.09      5         4             1    150            0</span></span>
 <span><span class="co">#&gt; 2 mtcars     7.04     11        11             0     32            0</span></span></code></pre></div>
+<p>For a deeper tour — including column-type control and handling parsing problems — see the <a href="https://astamm.github.io/rdatagouv/articles/rdatagouv.html">vignette</a>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="supported-formats">Supported formats<a class="anchor" aria-label="anchor" href="#supported-formats"></a>
 </h2>
-<p><code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the first tabular resource of a dataset among CSV, CSV.GZ, XLS, XLSX, PARQUET, TSV, TXT and JSON, and returns the parsed table as a single tibble. A ZIP resource is unpacked and its first parseable file is returned by default; <code>all_files = TRUE</code> keeps every contained file in one of these formats as a named list — one element per file. The delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe, …), so both standard and European-style (semicolon/comma-decimal) files are handled without special configuration.</p>
+<p><code><a href="reference/dg_pull_dataset.html">dg_pull_dataset()</a></code> downloads the first tabular resource of a dataset among CSV, CSV.GZ, XLS, XLSX, PARQUET, TSV, TXT and JSON, and returns the parsed table as a single tibble. A ZIP resource is unpacked and its first parseable file is returned by default; <code>all_files = TRUE</code> keeps every contained file in one of these formats as a named list — one element per file. The delimiter of CSV/TXT resources is auto-detected (comma, semicolon, tab, pipe, …), so both standard and European-style (semicolon/comma-decimal) files are handled without special configuration. Column types are inferred by vroom, but seeded by default from data.gouv’s own <code>csv-detective</code> profile (<code>use_tabular_types = TRUE</code>) and you can force specific columns with <code>col_types = c(col = "Date")</code> (e.g. to make a mostly-padded ISO date column with a few non-padded stragglers read as <code>Date</code>, turning the stragglers into <code>NA</code>; explicit <code>col_types</code> always win). The profile is a best-effort signal — it only exists for single-file resources indexed by the tabular service, and a missing profile (or a ZIP member) falls back to type inference; pass <code>use_tabular_types = FALSE</code> to disable seeding entirely. Any parsing issues are attached to the returned table as an <code>rdatagouv_problems</code> attribute — read them with <code>dg_problems(tbl)</code> — rather than a noisy per-cell warning.</p>
 <p>The discovery catalog (<code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code>) is restricted to the official tabular formats data.gouv.fr itself indexes (<code>csv</code>, <code>csv.gz</code>, <code>xls</code>, <code>xlsx</code>, <code>parquet</code>), so every listed dataset is in principle openable as a table. Use the <code>format</code> argument to narrow the catalog to datasets with a resource in a specific format (the v2 search API matches several formats as a server-side union). The exact <code>n_resources</code>/<code>formats</code>/<code>has_table</code>/<code>has_schema</code> resource columns are populated by passing <code>resources = TRUE</code>. Direct pulls additionally accept <code>tsv</code>, <code>txt</code> and <code>json</code> resources.</p>
-<p>See the <a href="https://astamm.github.io/rdatagouv/articles/rdatagouv.html">vignette</a> for the full workflow and API reference.</p>
 </div>
 <div class="section level2">
 <h2 id="disclaimer">Disclaimer<a class="anchor" aria-label="anchor" href="#disclaimer"></a>

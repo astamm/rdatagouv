@@ -21,6 +21,8 @@ tabular resources into tidy tables.
   : Re-fetch a single parsed table by its stable address
 - [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md)
   : Documented schema of a parsed table's columns
+- [`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md)
+  : Return the parsing problems of a downloaded table
 
 ## Summaries
 

@@ -42,7 +42,7 @@ currently behaves; exploratory/optional and superseded-alternative
 sections in the design doc are historical, not normative. The README and
 the vignette `vignettes/rdatagouv.qmd` document usage for end users.
 
-## Public API (10 exports)
+## Public API (11 exports)
 
 - `dg_find_datasets(q = NULL, n = 1000, format = catalog_formats(), schema_only = FALSE, organization = NULL, geozone = NULL, access_type = NULL, license = NULL, tag = NULL, topic = NULL, granularity = NULL, last_update = NULL, producer_type = NULL, resources = FALSE)`
   -\> tibble with robust columns
@@ -124,15 +124,54 @@ the vignette `vignettes/rdatagouv.qmd` document usage for end users.
   read); `table = TRUE` also includes the resource list via
   `fetch_resource_subsection(id)` (N+1). Uses internal
   `fetch_dataset_v2(id)`.
-- `dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE)` -\> a
-  **single tibble** (the first parseable resource; a ZIP yields its
-  first parseable file). `all_files = TRUE` returns a named list (one
-  element per ZIP file). Every table carries its composed id as an `id`
-  **attribute** (not a column), set by `table_attr()` and read by
+- `dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE, col_types = NULL, use_tabular_types = TRUE)`
+  -\> a **single tibble** (the first parseable resource; a ZIP yields
+  its first parseable file). `all_files = TRUE` returns a named list
+  (one element per ZIP file). Every table carries its composed id as an
+  `id` **attribute** (not a column), set by `table_attr()` and read by
   [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)/`table_id_from_attr()`.
-- `dg_refetch(x, remove_na = FALSE)` -\> a **single tibble** re-fetched
-  from a composed id; `x` may be a table (its `id` attribute is read) or
-  a bare id string.
+  `col_types` is a named vector of shorthand strings
+  (e.g. `c(date_mise_en_service = "Date")`) that forces vroom’s column
+  typing for the named columns (translated by internal
+  `col_types_to_spec()` to a
+  [`vroom::cols()`](https://vroom.tidyverse.org/reference/cols.html)
+  spec — no readr dependency); unnamed columns keep inference.
+  `use_tabular_types = TRUE` (the default) seeds vroom’s `col_types`
+  from data.gouv’s own `csv-detective` profile
+  (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`), resolved
+  **per resource inside the parse loop** — the leaf `read_resource()`
+  that actually parses the addressed resource calls internal
+  `tabular_types_for_resource(resource, use_tabular_types)` (+
+  `python_type_to_col`/`tabular_profile_col_types`/`merge_col_types`),
+  so a multi-resource dataset uses each resource’s actual profile, not a
+  first-candidate guess (`first_tabular_candidate()` was removed). The
+  profile only exists for single-file resources indexed by the tabular
+  service: ZIP members and unindexed/oversized files fall back to
+  inference (the arg is a no-op on
+  `read_one_zip_file()`/`read_zip_resource()`), a 404/network failure
+  degrades silently, and a per-column detection whose confidence `score`
+  falls below `tabular_profile_col_types()`’s `min_score = 0.5` default
+  is left **out** of the `col_types` map so vroom infers that column
+  instead of pinning a low-confidence type (a missing `score` passes
+  through). Explicit `col_types` always win on collision. Any vroom
+  parsing problems are stored as an `rdatagouv_problems` attribute on
+  the returned table (a plain data frame, temp-file path stripped — it
+  survives
+  [`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+  in `format_tibble()`, unlike the vroom class).
+- `dg_refetch(x, remove_na = FALSE, col_types = NULL, use_tabular_types = TRUE)`
+  -\> a **single tibble** re-fetched from a composed id; `x` may be a
+  table (its `id` attribute is read) or a bare id string. `col_types`
+  behaves as in
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md),
+  as does `use_tabular_types` (forwarded to `read_resource()` for a
+  single file / `read_one_zip_file()` for a ZIP member, where it is a
+  no-op).
+- `dg_problems(x)` -\> the data frame of vroom parsing issues
+  (`row, col, expected, actual`, or `NULL` when the table parsed
+  cleanly) for a table returned by
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md),
+  read from the `rdatagouv_problems` attribute.
 - `dg_schema(x)` -\> tibble (`name, title, description, type, example`)
   of a table’s documented columns, with `schema_title`/`schema_name`
   attributes; `NULL` + message when the resource declares no schema;
@@ -158,16 +197,17 @@ tests).
   `fetch_all_datasets`, `fetch_dataset`, `find_dataset`,
   `supported_formats()`, `catalog_formats()`, `resource_has_schema()`,
   `read_first_parseable_resource`, `prefer_lightest_file`,
-  `guess_delimiter`, `read_json_file`, `parse_resource_file`,
-  `read_zip_resource`, `read_one_zip_file`, `read_resource`,
-  `download_resource`, `format_tibble`, `compose_table_id` /
-  `parse_table_id`, `table_attr` / `table_id_from_attr` /
-  `resolve_table_id`, `%||%`, `uniquify_names`, `is_dataset_id`, plus
-  the organization-source helpers `datagouv_organizations_url()`,
-  `fetch_organization_page()`, `fetch_organizations_all()` and
-  `resolve_organization_id()`, and the topic-source helpers
-  `datagouv_topics_url()`, `fetch_topic_page()`, `fetch_topics_all()`,
-  `fetch_topic_elements()` and `topic_element_counts()`.
+  `guess_delimiter`, `read_json_file`, `col_types_to_spec`,
+  `parse_resource_file`, `read_zip_resource`, `read_one_zip_file`,
+  `read_resource`, `download_resource`, `format_tibble`,
+  `compose_table_id` / `parse_table_id`, `table_attr` /
+  `table_id_from_attr` / `resolve_table_id`, `%||%`, `uniquify_names`,
+  `is_dataset_id`, plus the organization-source helpers
+  `datagouv_organizations_url()`, `fetch_organization_page()`,
+  `fetch_organizations_all()` and `resolve_organization_id()`, and the
+  topic-source helpers `datagouv_topics_url()`, `fetch_topic_page()`,
+  `fetch_topics_all()`, `fetch_topic_elements()` and
+  `topic_element_counts()`.
 - `R/dg-find-datasets.R` —
   [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md).
 - `R/dg-find-organization.R` —
@@ -243,7 +283,22 @@ the commas in the numbers would be read as extra field separators);
 `vroom::locale(decimal_mark = ",")`, reproducing the `read_csv2`
 behaviour it replaces. `vroom` is invoked with `altrep = FALSE` so the
 returned table is materialised eagerly and does not lazily reference the
-temporary file that `download_resource()` unlinks on exit.
+temporary file that `download_resource()` unlinks on exit. vroom’s
+per-cell parsing warnings (which fire once it commits to a collector and
+meets a value it cannot convert, e.g. a mostly-padded ISO date column
+with a few non-padded stragglers like `2021-7-01`) are **muffled** with
+`withCallingHandlers`, and the underlying issues are captured with
+[`vroom::problems()`](https://vroom.tidyverse.org/reference/problems.html)
+and attached to the result as an `rdatagouv_problems` attribute
+(temp-file `file` column dropped; only attached when non-empty) — read
+by the exported
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md).
+This is deliberate: a muffled
+[`vroom::problems()`](https://vroom.tidyverse.org/reference/problems.html)
+still works on the *vroom* object itself, whereas on the
+`format_tibble()`-converted table the vroom class is stripped so
+[`vroom::problems()`](https://vroom.tidyverse.org/reference/problems.html)
+would fail — the per-cell warning was a dead-end for end users.
 
 **Lightest-file selection.** When a dataset offers the *same table* in
 several formats (same base file name, different extension),
@@ -297,9 +352,23 @@ resources 404 on the tabular service).
 - All HTTP goes through `req_data_gouv()` + `http_perform()` (consistent
   user-agent, timeouts, retries).
 - Tests: testthat edition 3, files in `tests/testthat/` (`test-dg-*.R`,
-  `test-dg-summary.R`, `test-dg-summarise.R`, `test-utils.R`); mocks in
-  `helper-data.R` (`mock_dataset`, `mock_resource`, `mock_csv_data`);
-  snapshots under `_snaps/`. Run `devtools::test()`.
+  `test-dg-summary.R`, `test-dg-summarise.R`, `test-tabular-types.R`,
+  `test-utils.R`); mocks in `helper-data.R` (`mock_dataset`,
+  `mock_resource`, `mock_csv_data`); snapshots under `_snaps/`. Run
+  `devtools::test()`. **Resolved flake (fix landed this branch; was
+  pre-existing, unrelated to tabular types):** the tests that rely on
+  `local_messy_date_csv(5000)` producing vroom parsing problems
+  (`test-dg-problems.R` “returns a tibble with a problems-bearing
+  table”, `test-utils.R` “muffles warnings and stores problems”,
+  `test-dg-pull-dataset.R` “surfaces parsing problems”) used to fail
+  intermittently — whether vroom commits to a date collector for the
+  random ~5000-row sample, and thus how many stragglers it flags, varied
+  run to run (measured ~10% failure rate on unchanged HEAD).
+  `local_messy_date_csv()` now seeds the RNG with
+  `withr::local_seed(2021)`, making the sampled dates and straggler
+  positions deterministic per call and the reported problems stable
+  (verified 5/5 consecutive green runs). The failures were
+  `dg_problems(tbl)` returning NULL.
 - **Opt-in live tests** (`test-live-api.R`): verify URL addressing
   against the real data.gouv API — the one thing mocks cannot prove.
   Skipped unless `DATAGOUV_LIVE=1`; run with
@@ -308,7 +377,24 @@ resources 404 on the tabular service).
   default `skip_if_offline()` (which probes `captive.apple.com` and can
   be unreachable even when data.gouv works). Fixtures: dataset
   `6a6be5976a05df136d48fb7a` (Caen GTFS), ZIP resource
-  `a5a8f046-e282-4010-91c5-82bc1f70ff73`, member `stops.txt`.
+  `a5a8f046-e282-4010-91c5-82bc1f70ff73`, member `stops.txt`; and a
+  single-file CSV dataset whose resource is indexed by the tabular
+  service (profile-seeding fixture) `5a4651eb88ee380bb9eff81e` (Indices
+  Qualité de l’air Citeair), CSV resource
+  `da7a4869-b584-48ad-8a81-784a02eb297a` — used to verify
+  [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)’s
+  `use_tabular_types = TRUE` applies each profile column’s type to the
+  pulled table (all score \> 0.5). The Citeair test also **pins the
+  empirical mapping exactly** to
+  `o3/no2/pm10/ninsee → integer, date → Date`. And a schema+profile
+  coexistence fixture: dataset `5448d3e0c751df01f85d0572` (Base
+  nationale des IRVE data.gouv), CSV resource
+  `eb76d20a-8501-400e-b336-d85724de5435`, whose `schema` pointer
+  resolves to the irve-statique Table Schema (types
+  `string, geopoint, integer, number, boolean, date` —
+  `geopoint`/`number` have no `col_types` shorthand) yet is also indexed
+  by the tabular service; its live test asserts the **profile** (not the
+  schema) seeds the pulled table’s column types.
 - **Examples in roxygen**: use `@examples` for network-free code (e.g.
   `dg_summary`, and the in-memory branch of `dg_summarise`) and
   `@examplesIf interactive()` for anything that hits the live API (a

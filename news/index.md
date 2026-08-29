@@ -2,6 +2,86 @@
 
 ## rdatagouv 0.0.0.9000
 
+- All package messages, warnings and errors are now emitted through
+  `cli`
+  ([`cli::cli_inform()`](https://cli.r-lib.org/reference/cli_abort.html),
+  [`cli::cli_warn()`](https://cli.r-lib.org/reference/cli_abort.html)
+  and
+  [`cli::cli_abort()`](https://cli.r-lib.org/reference/cli_abort.html)
+  respectively) instead of base R
+  [`message()`](https://rdrr.io/r/base/message.html)/[`warning()`](https://rdrr.io/r/base/warning.html)/[`stop()`](https://rdrr.io/r/base/stop.html).
+  Conditions get styled inline markup (column/filename/argument names,
+  quoted values, function references) and carry `datagouv_*` condition
+  classes, so [`tryCatch()`](https://rdrr.io/r/base/conditions.html) and
+  `testthat::expect_*()` on the message text keep working while the
+  output is prettier and more consistent.
+
+- Documentation refresh. The README now leads with a five-step “find →
+  judge → fetch → re-fetch → summarise” quick start rather than a dense
+  gallery of every filter, keeping `organization`/`topic`/`format`
+  narrowing to a brief mention and pointing readers at the vignette for
+  the full tour. The vignette now exemplifies *every* exported function
+  — adding a missing
+  [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.md)
+  worked example in the “Judging whether a dataset is usable” section —
+  and the `col_types` parsing-issues example uses a real fixture (the
+  IRVE charging-points dataset) whose `date_mise_en_service`/`date_maj`
+  columns genuinely reproduce the mixed-date straggler problem it
+  illustrates, instead of pointing at columns that had since drifted on
+  the platform.
+
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
+  and
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+  gain a `use_tabular_types` argument (default `TRUE`) that seeds column
+  types from data.gouv’s tabular API profile
+  (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`), a
+  schema-independent per-column type detection computed by data.gouv’s
+  own `csv-detective` detector. It is now on by default; pass `FALSE` to
+  disable. The profile is resolved *per resource inside the parse loop*
+  (at the leaf `read_resource()` that actually parses the addressed
+  resource), so a multi-resource dataset uses each resource’s own
+  profile rather than a first-candidate guess. The detected types fill
+  in any column `col_types` does not pin (explicit `col_types` always
+  win); the profile is best-effort — it only exists for single-file
+  resources indexed by the tabular service, and a missing profile (or a
+  ZIP member) silently falls back to type inference. Each column’s
+  detection is also gated on its confidence `score`: a detection below
+  the default threshold (`min_score = 0.5`) is left out so vroom infers
+  that column instead of pinning a low-confidence type.
+
+- When a resource carries both a tabular profile and a declared schema,
+  the *profile* remains the column-typing source even when the schema is
+  co-present: the pulled table’s column types come from the empirical
+  csv-detective detection, while the schema keeps its separate
+  documentation role via
+  [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.md).
+  (Schema-declared types use a looser vocabulary — e.g. `year`,
+  `geopoint`, `array` — outside the `col_types` shorthand, and are often
+  all-`string` or stale, so they are not used to seed vroom’s types.)
+
+- [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
+  and
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+  gain a `col_types` argument to force the type of specific columns
+  instead of letting vroom infer them, e.g.
+  `col_types = c(date_mise_en_service = "Date")`. Values are shorthand
+  strings (`"character"`, `"double"`/`"numeric"`, `"integer"`,
+  `"logical"`, `"Date"`, `"datetime"`, `"skip"`, `"guess"`); unnamed
+  columns keep type inference. This resolves the case of a mostly-padded
+  ISO date column with a few non-padded stragglers (e.g. `2021-7-01`),
+  which vroom would otherwise flag as a parsing issue: forcing `"Date"`
+  turns the stragglers into `NA`.
+
+- The noisy per-cell `vroom` parsing warnings are now suppressed by
+  default during a pull, and the underlying issues are attached to the
+  returned table as an `rdatagouv_problems` attribute instead. Read them
+  with the new export `dg_problems(tbl)`, which returns a data frame of
+  `{row, col, expected, actual}`, or `NULL` when the table parsed
+  cleanly. (Previously the warning told you to call `problems()`, but
+  `format_tibble()` stripped vroom’s class, so that call always failed
+  on a pulled table.)
+
 - Delimited resources (`csv`, `csv.gz`, `tsv`, `txt`) are now parsed
   with
   [`vroom::vroom()`](https://vroom.tidyverse.org/reference/vroom.html)

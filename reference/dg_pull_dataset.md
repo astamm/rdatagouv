@@ -11,7 +11,13 @@ resolved by searching the platform.
 ## Usage
 
 ``` r
-dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE)
+dg_pull_dataset(
+  id,
+  all_files = FALSE,
+  remove_na = FALSE,
+  col_types = NULL,
+  use_tabular_types = TRUE
+)
 ```
 
 ## Arguments
@@ -35,6 +41,32 @@ dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE)
   Whether to drop rows containing any `NA` value (passed to
   `format_tibble()`). Defaults to `FALSE`.
 
+- col_types:
+
+  Optional named vector of column types to force on specific columns
+  instead of letting vroom infer them, e.g.
+  `c(date_mise_en_service = "Date")`. Values are shorthand strings:
+  `"character"`, `"double"`/`"numeric"`, `"integer"`, `"logical"`,
+  `"Date"`, `"datetime"`, `"skip"` or `"guess"`. Unnamed columns keep
+  type inference. This is useful when a mostly-padded ISO date column
+  has a few non-padded stragglers that vroom would otherwise flag
+  (forcing `"Date"` turns those into `NA`). Defaults to `NULL` (no
+  column overrides).
+
+- use_tabular_types:
+
+  Whether to seed column types from data.gouv's tabular API profile
+  (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`), a
+  schema-independent per-column type detection computed by data.gouv's
+  own `csv-detective` detector. Defaults to `TRUE`. The detected types
+  are used as vroom's `col_types` for any column `col_types` does not
+  already pin (explicit `col_types` always win on collision). The
+  profile is looked up per resource inside the parse loop, so the
+  resource that is actually parsed supplies the types. It is
+  best-effort: it only exists for single-file resources indexed by the
+  tabular service (not ZIP members, and not oversized/unindexed files),
+  and a missing profile silently falls back to type inference.
+
 ## Value
 
 A
@@ -48,6 +80,9 @@ attribute — a URI of the form
 [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 and readable with
 [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md).
+Any parsing issues vroom encountered are attached as an
+`rdatagouv_problems` attribute (a data frame), readable with
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md).
 
 ## Details
 

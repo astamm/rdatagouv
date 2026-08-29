@@ -55,7 +55,7 @@ independent of the human-readable list keys.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dg_refetch</span><span class="op">(</span><span class="va">x</span>, remove_na <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dg_refetch</span><span class="op">(</span><span class="va">x</span>, remove_na <span class="op">=</span> <span class="cn">FALSE</span>, col_types <span class="op">=</span> <span class="cn">NULL</span>, use_tabular_types <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -73,12 +73,29 @@ URI <code>https://www.data.gouv.fr/datasets/&lt;dataset_id&gt;#&lt;resource_id&g
 <dd><p>Whether to drop rows containing any <code>NA</code> value (passed to
 <code>format_tibble()</code>). Defaults to <code>FALSE</code>.</p></dd>
 
+
+<dt id="arg-col-types">col_types<a class="anchor" aria-label="anchor" href="#arg-col-types"></a></dt>
+<dd><p>Optional named vector of column types to force on specific
+columns instead of letting vroom infer them, e.g.
+<code>c(date_mise_en_service = "Date")</code>. See <code><a href="dg_pull_dataset.html">dg_pull_dataset()</a></code> for the
+accepted shorthand values. Defaults to <code>NULL</code> (no column overrides).</p></dd>
+
+
+<dt id="arg-use-tabular-types">use_tabular_types<a class="anchor" aria-label="anchor" href="#arg-use-tabular-types"></a></dt>
+<dd><p>Whether to seed column types from data.gouv's
+tabular API profile, as in <code><a href="dg_pull_dataset.html">dg_pull_dataset()</a></code> (column types <code>col_types</code>
+does not pin are taken from the profile when it is available). Defaults to
+<code>TRUE</code>. Applies to single-file resources only — the profile of the
+addressed resource is used; a missing or inapplicable profile (including
+any ZIP member) falls back to type inference.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble::tibble()</a></code> — the single re-fetched table (the id addresses
 one table, not a multi-file ZIP as a whole). The table's id is attached as
-an <code>id</code> attribute.</p>
+an <code>id</code> attribute; parsing issues are attached as an <code>rdatagouv_problems</code>
+attribute, readable with <code><a href="dg_problems.html">dg_problems()</a></code>.</p>
     </div>
 
     <div class="section level2">
