@@ -3,6 +3,6 @@
     Code
       dg_summarise(datasets = 42)
     Condition
-      Error:
-      ! `datasets` must be a list of tibbles, a character vector or NULL.
+      Error in `dg_summarise()`:
+      ! `datasets` must be a list of <tibble>s, a character vector or NULL.
 

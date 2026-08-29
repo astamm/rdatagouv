@@ -402,21 +402,20 @@ resolve_organization_id <- function(organization) {
       is.na(organization) ||
       !nzchar(organization)
   ) {
-    stop(
-      "`organization` must be a 24-hex id, an organization slug or an exact ",
-      "organization name.",
-      call. = FALSE
+    cli::cli_abort(
+      "{.arg organization} must be a 24-hex id, an organization slug or an \\
+       exact organization name.",
+      class = "datagouv_invalid_organization"
     )
   }
 
   candidates <- fetch_organizations_all(q = organization, n = 100)
   if (length(candidates) == 0) {
-    stop(
-      "No organization matched '",
-      organization,
-      "' on data.gouv.fr. ",
-      "Search producers with dg_find_organization() and pass its `id`.",
-      call. = FALSE
+    cli::cli_abort(
+      "No organization matched {.val {organization}} on data.gouv.fr. ",
+      "i" = "Search producers with {.fn dg_find_organization} and pass its \\
+        {.field id}.",
+      class = "datagouv_no_organization"
     )
   }
 
@@ -449,23 +448,21 @@ resolve_organization_id <- function(organization) {
     collapse = "\n"
   )
   if (length(hits) == 0) {
-    stop(
-      "No organization named exactly '",
-      organization,
-      "' was found on ",
-      "data.gouv.fr. Did you mean one of these?\n",
-      listing,
-      "\nPass the exact `id` of the intended producer to `organization`.",
-      call. = FALSE
+    cli::cli_abort(
+      c(
+        "No organization named exactly {.val {organization}} was found on \\
+         data.gouv.fr.",
+        "i" = "Did you mean one of these?\n{listing}\nPass the exact \\
+          {.field id} of the intended producer to {.arg organization}."
+      ),
+      class = "datagouv_ambiguous_organization"
     )
   }
-  stop(
-    "Several organizations match '",
-    organization,
-    "' exactly; pass the ",
-    "intended id to disambiguate:\n",
-    listing,
-    call. = FALSE
+  cli::cli_abort(
+    "Several organizations match {.val {organization}} exactly; pass the \\
+     intended id to disambiguate:",
+    "x" = listing,
+    class = "datagouv_ambiguous_organization"
   )
 }
 
@@ -618,9 +615,9 @@ topic_element_counts <- function(topic_id) {
 fetch_resource_subsection <- function(subsection) {
   href <- subsection$href
   if (is.null(href)) {
-    stop(
-      "The resources pointer carries no 'href' to fetch from.",
-      call. = FALSE
+    cli::cli_abort(
+      "The resources pointer carries no {.field href} to fetch from.",
+      class = "datagouv_no_resource_href"
     )
   }
   all <- list()
@@ -718,11 +715,10 @@ find_dataset <- function(id) {
 
   hits <- Filter(function(d) identical(d$title, id), body$data)
   if (length(hits) == 0) {
-    stop(
-      "No dataset titled '",
-      id,
-      "' was found on data.gouv.fr. Check the name with dg_find_datasets().",
-      call. = FALSE
+    cli::cli_abort(
+      "No dataset titled {.val {id}} was found on data.gouv.fr.",
+      "i" = "Check the name with {.fn dg_find_datasets}.",
+      class = "datagouv_no_dataset_title"
     )
   }
   hits[[1]]
@@ -824,13 +820,10 @@ read_first_parseable_resource <- function(
   )
   if (length(candidates) == 0) {
     supported <- paste(supported_formats(), collapse = ", ")
-    stop(
-      "Dataset '",
-      dataset$title,
-      "' has no resource in a supported format (",
-      supported,
-      ").",
-      call. = FALSE
+    cli::cli_abort(
+      "Dataset {.val {dataset$title}} has no resource in a supported format \\
+       ({supported}).",
+      class = "datagouv_no_supported_format"
     )
   }
   candidates <- prefer_lightest_file(candidates)
@@ -851,14 +844,15 @@ read_first_parseable_resource <- function(
       first_error <- data
     }
   }
-  stop(
-    "None of the ",
-    length(candidates),
-    " tabular resource(s) of dataset '",
-    dataset$title,
-    "' could be parsed into a table. First failure: ",
-    conditionMessage(first_error),
-    call. = FALSE
+  cli::cli_abort(
+    c(
+      "None of the {length(candidates)} tabular resource{?s} of dataset
+       {.val {dataset$title}} could be parsed into a table.",
+      "x" = "First failure: {conditionMessage(first_error)}",
+      "i" = "Try another resource of the dataset, e.g. via
+             {.fn dg_find_datasets} or {.fn dg_refetch}."
+    ),
+    class = "datagouv_unparseable"
   )
 }
 
@@ -908,14 +902,15 @@ read_json_file <- function(path) {
     return(tryCatch(
       tibble::as_tibble(out),
       error = function(e) {
-        stop(
-          "JSON object is not tabular data: ",
-          conditionMessage(e),
-          ". ",
-          "This resource declares `json` but does not contain a table (it is ",
-          "likely an API metadata document). Try another resource of the ",
-          "dataset, e.g. via dg_find_datasets() or dg_refetch().",
-          call. = FALSE
+        cli::cli_abort(
+          c(
+            "JSON object is not tabular data: {conditionMessage(e)}.",
+            "i" = "This resource declares {.code json} but does not contain a
+                   table (it is likely an API metadata document). Try another
+                   resource of the dataset, e.g. via {.fn dg_find_datasets} or
+                   {.fn dg_refetch}."
+          ),
+          class = "datagouv_json_not_tabular"
         )
       }
     ))
@@ -934,10 +929,10 @@ col_types_to_spec <- function(col_types) {
     return(NULL)
   }
   if (is.null(names(col_types)) || any(names(col_types) == "")) {
-    stop(
-      "`col_types` must be a named vector of column types, e.g. ",
-      "c(date_mise_en_service = \"Date\").",
-      call. = FALSE
+    cli::cli_abort(
+      "{.arg col_types} must be a named vector of column types, e.g.
+       {.code c(date_mise_en_service = \"Date\")}.",
+      class = "datagouv_col_types_unnamed"
     )
   }
   map <- c(
@@ -959,14 +954,14 @@ col_types_to_spec <- function(col_types) {
   )
   unknown <- setdiff(unique(col_types), names(map))
   if (length(unknown) > 0) {
-    stop(
-      "Unknown column type",
-      if (length(unknown) > 1) "s" else "",
-      ": ",
-      paste(unknown, collapse = ", "),
-      ". Valid types: character, double/numeric, integer, logical, Date, ",
-      "datetime, skip, guess.",
-      call. = FALSE
+    cli::cli_abort(
+      c(
+        "Unknown column type{?s}: {.val {unknown}}.",
+        "i" = "Valid types: {.field character}, {.field double}/{.field numeric},
+               {.field integer}, {.field logical}, {.field Date},
+               {.field datetime}, {.field skip}, {.field guess}."
+      ),
+      class = "datagouv_col_types_unknown"
     )
   }
   collectors <- lapply(col_types, function(t) {
@@ -1238,19 +1233,19 @@ resolve_table_id <- function(x) {
     if (!is.null(id)) {
       return(id)
     }
-    stop(
-      "This table carries no table id. Pull it with dg_pull_dataset() so its ",
-      "stable id is attached, or pass a composed id string directly.",
-      call. = FALSE
+    cli::cli_abort(
+      "This table carries no table id. Pull it with {.fn dg_pull_dataset} so
+       its stable id is attached, or pass a composed id string directly.",
+      class = "datagouv_no_table_id"
     )
   }
   if (is.character(x) && length(x) == 1) {
     return(x)
   }
-  stop(
-    "`x` must be a table returned by dg_pull_dataset() (with its id attached) ",
-    "or a composed id string.",
-    call. = FALSE
+  cli::cli_abort(
+    "{.arg x} must be a table returned by {.fn dg_pull_dataset} (with its id
+     attached) or a composed id string.",
+    class = "datagouv_invalid_table_ref"
   )
 }
 
@@ -1263,7 +1258,10 @@ resolve_table_id <- function(x) {
 # inside a ZIP (`#<resource_id>/<file>`).
 parse_table_id <- function(id) {
   if (!is.character(id) || length(id) != 1 || is.na(id)) {
-    stop("Invalid table id: expected a single non-NA string.", call. = FALSE)
+    cli::cli_abort(
+      "Invalid table id: expected a single non-NA string.",
+      class = "datagouv_invalid_table_id"
+    )
   }
   hex <- "[0-9a-fA-F]{24}"
   uuid <- "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -1287,12 +1285,12 @@ parse_table_id <- function(id) {
       file = if (length(m) >= 4 && nzchar(m[[4]])) m[[4]] else NULL
     ))
   }
-  stop(
-    "Invalid table id '",
-    id,
-    "': expected the URI 'https://www.data.gouv.fr/datasets/<dataset>",
-    "#<resource>(/<file>)'.",
-    call. = FALSE
+  cli::cli_abort(
+    c(
+      "Invalid table id {.val {id}}: expected the URI
+       {.url https://www.data.gouv.fr/datasets/<dataset>#<resource>(/<file>)}."
+    ),
+    class = "datagouv_invalid_table_id"
   )
 }
 
@@ -1316,11 +1314,9 @@ read_one_zip_file <- function(
   path <- file.path(dir, name)
   fmt <- format_from_path(path)
   if (is.na(fmt)) {
-    stop(
-      "File '",
-      name,
-      "' inside the ZIP is not in a supported format.",
-      call. = FALSE
+    cli::cli_abort(
+      "File {.file {name}} inside the ZIP is not in a supported format.",
+      class = "datagouv_unsupported_zip_format"
     )
   }
   parse_resource_file(path, fmt, col_types = col_types)
@@ -1332,7 +1328,10 @@ read_one_zip_file <- function(
 # optionally, drops all rows that contain at least one missing value.
 format_tibble <- function(x, remove_na = FALSE) {
   if (!is.data.frame(x)) {
-    stop("`x` must be a data frame or tibble.", call. = FALSE)
+    cli::cli_abort(
+      "{.arg x} must be a data frame or {.cls tibble}.",
+      class = "datagouv_invalid_data_frame"
+    )
   }
   out <- tibble::as_tibble(x)
   if (remove_na) {
@@ -1363,7 +1362,10 @@ read_resource <- function(
   }
   # Guard against formats the candidate filter should have already removed.
   if (!fmt %in% supported_formats()) {
-    stop("Unsupported format: ", resource$format, call. = FALSE)
+    cli::cli_abort(
+      "Unsupported format: {.val {resource$format}}.",
+      class = "datagouv_unsupported_format"
+    )
   }
   # Merge the user's explicit col_types with the tabular profile for THIS
   # resource; user choices win on collision, the profile fills the rest.

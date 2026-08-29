@@ -1,5 +1,12 @@
 # rdatagouv 0.0.0.9000
 
+- All package messages, warnings and errors are now emitted through `cli`
+  (`cli::cli_inform()`, `cli::cli_warn()` and `cli::cli_abort()` respectively)
+  instead of base R `message()`/`warning()`/`stop()`. Conditions get styled
+  inline markup (column/filename/argument names, quoted values, function
+  references) and carry `datagouv_*` condition classes, so `tryCatch()` and
+  `testthat::expect_*()` on the message text keep working while the output is
+  prettier and more consistent.
 - Documentation refresh. The README now leads with a five-step "find → judge →
   fetch → re-fetch → summarise" quick start rather than a dense gallery of
   every filter, keeping `organization`/`topic`/`format` narrowing to a brief

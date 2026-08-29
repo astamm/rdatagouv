@@ -38,13 +38,10 @@ dg_schema <- function(x) {
   resources <- dataset$resources %||% list()
   hit <- Filter(function(r) identical(r$id, parts$resource_id), resources)
   if (length(hit) == 0) {
-    stop(
-      "Resource '",
-      parts$resource_id,
-      "' was not found on dataset '",
-      parts$dataset_id,
-      "'.",
-      call. = FALSE
+    cli::cli_abort(
+      "Resource {.val {parts$resource_id}} was not found on dataset
+       {.val {parts$dataset_id}}.",
+      class = "datagouv_resource_not_found"
     )
   }
   resource <- hit[[1]]
@@ -52,14 +49,14 @@ dg_schema <- function(x) {
   pointer <- resource$schema %||% list()
   url <- pointer$url %||% resolve_schema_url(pointer$name)
   if (is.null(url)) {
-    message(
-      "Resource '",
-      parts$resource_id,
-      "' of dataset '",
-      dataset$title,
-      "' has no declared schema; no variable documentation available. ",
-      "Search with dg_find_datasets(schema_only = TRUE) to find documented ",
-      "resources."
+    cli::cli_inform(
+      c(
+        "Resource {.val {parts$resource_id}} of dataset {.val {dataset$title}}
+         has no declared schema; no variable documentation available.",
+        "i" = "Search with {.fn dg_find_datasets}({.code schema_only = TRUE})
+               to find documented resources."
+      ),
+      class = "datagouv_no_schema"
     )
     return(NULL)
   }
@@ -124,10 +121,9 @@ resolve_schema_url <- function(name) {
   schemas <- body$schemas %||% list()
   hits <- Filter(function(s) identical(s$name, name), schemas)
   if (length(hits) == 0) {
-    message(
-      "Schema '",
-      name,
-      "' was not found in the schema.data.gouv.fr catalog."
+    cli::cli_inform(
+      "Schema {.val {name}} was not found in the schema.data.gouv.fr catalog.",
+      class = "datagouv_schema_not_found"
     )
     return(NULL)
   }

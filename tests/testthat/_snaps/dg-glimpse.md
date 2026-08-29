@@ -3,6 +3,6 @@
     Code
       dg_glimpse(123)
     Condition
-      Error:
+      Error in `resolve_dataset_id()`:
       ! `id` must be a dataset id (24-hex), a composed table id, or a pulled table.
 

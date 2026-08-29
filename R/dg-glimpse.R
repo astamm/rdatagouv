@@ -97,9 +97,9 @@ resolve_dataset_id <- function(id) {
   if (is.data.frame(id)) {
     tid <- attr(id, "id")
     if (is.null(tid)) {
-      stop(
+      cli::cli_abort(
         "This table carries no table id; pass a dataset id directly.",
-        call. = FALSE
+        class = "datagouv_no_table_id"
       )
     }
     return(parse_table_id(tid)$dataset_id)
@@ -110,9 +110,9 @@ resolve_dataset_id <- function(id) {
     }
     return(parse_table_id(id)$dataset_id)
   }
-  stop(
-    "`id` must be a dataset id (24-hex), a composed table id, or a pulled ",
-    "table.",
-    call. = FALSE
+  cli::cli_abort(
+    "{.arg id} must be a dataset id (24-hex), a composed table id, or a
+     pulled table.",
+    class = "datagouv_invalid_dataset_id"
   )
 }

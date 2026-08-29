@@ -45,13 +45,10 @@ dg_refetch <- function(
   resources <- dataset$resources
   hit <- Filter(function(r) identical(r$id, parts$resource_id), resources)
   if (length(hit) == 0) {
-    stop(
-      "Resource '",
-      parts$resource_id,
-      "' was not found on dataset '",
-      parts$dataset_id,
-      "'.",
-      call. = FALSE
+    cli::cli_abort(
+      "Resource {.val {parts$resource_id}} was not found on dataset
+       {.val {parts$dataset_id}}.",
+      class = "datagouv_resource_not_found"
     )
   }
   resource <- hit[[1]]
