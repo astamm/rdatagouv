@@ -115,8 +115,8 @@ cycle[, c("title", "n_resources", "has_table", "has_schema")]
        <chr>                                              <int> <lgl>     <lgl>
      1 "Statistiques de subventions d’achat de vél…           2 TRUE      FALSE
      2 "Fréquentation mesurée dans les Parkings Vé…           2 TRUE      FALSE
-     3 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
-     4 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
+     3 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
+     4 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
      5 "Plan Vélo 2021-2026"                                  4 TRUE      FALSE
      6 "Aménagements vélo en Île-de-France"                  21 TRUE      FALSE
      7 "Comptages vélo et piétons"                            5 TRUE      FALSE

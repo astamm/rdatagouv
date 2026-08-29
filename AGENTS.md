@@ -29,18 +29,21 @@ Four workflow steps, each mapping to exported functions:
 The design rationale and full history live in `DESIGN-discovery.md`
 (top-level, ignored by R CMD build). Treat that file as a
 proposal/decision log: its `*(implemented)*` phasing markers and change
-map reflect status, but the `TOPIC-SUPPORT-SKETCH.md` (top-level) is a
-related decision log that sketched and confirmed the topic-support work
+map reflect status, but the “Core design concepts”, [Public
+API](#public-api-7-exports) and architecture sections of *this*
+AGENTS.md are the source of truth for how the package currently behaves;
+exploratory/optional and superseded-alternative sections in the design
+doc are historical, not normative. The topic-support work
 ([`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.md) +
 the `topic` filter on
-[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md));
-like `DESIGN-discovery.md` it is also Rbuildignore’d so it never trips
-`R CMD check`. Both logs track status/decisions, but the “Core design
-concepts”, [Public API](#public-api-7-exports) and architecture sections
-of *this* AGENTS.md are the source of truth for how the package
-currently behaves; exploratory/optional and superseded-alternative
-sections in the design doc are historical, not normative. The README and
-the vignette `vignettes/rdatagouv.qmd` document usage for end users.
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.md))
+was sketched in a separate `TOPIC-SUPPORT-SKETCH.md` decision log that
+has been **removed** now that the work is fully shipped (its
+implementation lives in the source and docs; see git history for the
+sketch). A second vignette, `vignettes/rdatagouv-howto.qmd`, is a French
+architecture/development guide (separate from the user-facing
+getting-started vignette `vignettes/rdatagouv.qmd`). The README and the
+vignette `vignettes/rdatagouv.qmd` document usage for end users.
 
 ## Public API (11 exports)
 
