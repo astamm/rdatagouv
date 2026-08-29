@@ -57,6 +57,7 @@ Imports:
     vroom
 Suggests:
     dplyr,
+    gt,
     knitr,
     pkgdown,
     quarto,

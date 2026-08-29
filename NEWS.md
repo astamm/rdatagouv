@@ -1,5 +1,15 @@
 # rdatagouv 0.0.0.9000
 
+- New technical vignette, *Documentation technique du package rdatagouv* —
+  a French architecture/development guide (in French) previously maintained as
+  an Rbuildignore'd root document. It now ships as a real vignette
+  (`vignettes/rdatagouv-howto.qmd`), is registered under `articles` on the
+  pkgdown site, and gains a section on column parsing (`col_types`,
+  `use_tabular_types` and the `csv-detective` profile seeding, and
+  `dg_problems()`). Its stale API signatures and recap table were brought in
+  line with the current exports. The superseded `TOPIC-SUPPORT-SKETCH.md`
+  decision log was removed (its `topic =`/`dg_find_topics()` work is fully
+  shipped).
 - All package messages, warnings and errors are now emitted through `cli`
   (`cli::cli_inform()`, `cli::cli_warn()` and `cli::cli_abort()` respectively)
   instead of base R `message()`/`warning()`/`stop()`. Conditions get styled
