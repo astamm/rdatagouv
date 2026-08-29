@@ -553,7 +553,7 @@ test_that("dg_find_datasets() errors listing candidates when no slug/name matche
 
   expect_error(
     dg_find_datasets(organization = "wrong-slug"),
-    "No organization named exactly 'wrong-slug'"
+    "No organization named exactly \"wrong-slug\""
   )
   expect_error(
     dg_find_datasets(organization = "wrong-slug"),
@@ -581,6 +581,6 @@ test_that("dg_find_datasets() errors when several organizations match exactly", 
 
   expect_error(
     dg_find_datasets(organization = "Ambiguous"),
-    "Several organizations match 'Ambiguous' exactly"
+    "Several organizations match \"Ambiguous\" exactly"
   )
 })

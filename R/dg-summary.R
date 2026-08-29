@@ -19,7 +19,10 @@
 #' dg_summary(iris, name = "iris")
 dg_summary <- function(x, name = NULL) {
   if (!is.data.frame(x)) {
-    stop("`x` must be a data frame or tibble.", call. = FALSE)
+    cli::cli_abort(
+      "{.arg x} must be a data frame or {.cls tibble}.",
+      class = "datagouv_invalid_data_frame"
+    )
   }
   if (is.null(name)) {
     name <- deparse(substitute(x))

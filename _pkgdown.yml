@@ -15,6 +15,7 @@ reference:
   - dg_table_id
   - dg_refetch
   - dg_schema
+  - dg_problems
 - title: Summaries
   desc: |
     Compute summary metrics (size, number of columns, missing-value rates, ...)

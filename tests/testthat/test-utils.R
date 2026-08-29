@@ -544,7 +544,11 @@ test_that("find_dataset() falls back to title search for non-id input", {
 
 test_that("read_first_parseable_resource() returns the first successful candidate", {
   local_mocked_bindings(
-    read_resource = function(resource) {
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
       if (resource$format == "pdf") {
         stop("cannot parse pdf")
       }
@@ -569,7 +573,11 @@ test_that("read_first_parseable_resource() skips a failing candidate and tries t
   # on to the CSV instead of erroring.
   attempt <- 0L
   local_mocked_bindings(
-    read_resource = function(resource) {
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
       if (resource$format == "json") {
         stop("Tibble columns must have compatible sizes")
       }
@@ -591,7 +599,13 @@ test_that("read_first_parseable_resource() skips a failing candidate and tries t
 
 test_that("read_first_parseable_resource() auto-selects a zip resource", {
   local_mocked_bindings(
-    read_resource = function(resource) mock_csv_data()
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
   )
   dataset <- mock_dataset(
     resources = list(
@@ -627,7 +641,15 @@ test_that("read_first_parseable_resource() picks the lightest of same-data forma
     filesize = 40000
   )
   dataset <- mock_dataset(resources = list(csv, xlsx))
-  local_mocked_bindings(read_resource = function(resource) mock_csv_data())
+  local_mocked_bindings(
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -644,7 +666,15 @@ test_that("read_first_parseable_resource() keeps declared order for distinct dat
   )
   income <- mock_resource(format = "csv", title = "income.csv", filesize = 1000)
   dataset <- mock_dataset(resources = list(pop, income))
-  local_mocked_bindings(read_resource = function(resource) mock_csv_data())
+  local_mocked_bindings(
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
+  )
 
   out <- read_first_parseable_resource(dataset)
 
@@ -694,7 +724,13 @@ test_that("prefer_lightest_file() leaves distinct resources in order", {
 
 test_that("read_first_parseable_resource() errors when every candidate fails", {
   local_mocked_bindings(
-    read_resource = function(resource) stop("boom")
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      stop("boom")
+    }
   )
   dataset <- mock_dataset(
     resources = list(
@@ -786,6 +822,88 @@ test_that("parse_resource_file() materialises eagerly (no lazy file reference)",
   unlink(path) # the file is gone, as it is after download_resource() returns
   expect_equal(out$a, c(1, 2))
   expect_equal(out$b, c("x", "y"))
+})
+
+test_that("parse_resource_file() muffles warnings and surfaces problems via attribute", {
+  path <- local_messy_date_csv(5000)
+  expect_no_warning(out <- parse_resource_file(path, "csv"))
+
+  problems <- attr(out, "rdatagouv_problems")
+  expect_false(is.null(problems))
+  expect_gt(nrow(problems), 0)
+  # The temp-file path must not leak into the user-facing problems table.
+  expect_false("file" %in% names(problems))
+  expect_equal(names(problems), c("row", "col", "expected", "actual"))
+})
+
+test_that("parse_resource_file() keeps no problems attribute for clean data", {
+  path <- tempfile(fileext = ".csv")
+  writeLines(c("a,b", "1,x", "2,y"), path)
+  out <- parse_resource_file(path, "csv")
+  expect_null(attr(out, "rdatagouv_problems"))
+})
+
+test_that("parse_resource_file() forces a column type via col_types", {
+  path <- local_messy_date_csv(5000)
+  out <- parse_resource_file(
+    path,
+    "csv",
+    col_types = c(date_mise_en_service = "Date")
+  )
+
+  expect_s3_class(out$date_mise_en_service, "Date")
+  # The stragglers that vroom could not convert to a padded-date format become
+  # NA rather than being flagged as problems.
+  expect_true(sum(is.na(out$date_mise_en_service)) > 0)
+  problems <- attr(out, "rdatagouv_problems")
+  expect_gt(nrow(problems), 0)
+})
+
+test_that("col_types_to_spec() maps shorthand strings to collectors", {
+  spec <- col_types_to_spec(c(a = "Date", b = "character", c = "integer"))
+
+  expect_s3_class(spec, "col_spec")
+  expect_s3_class(spec$cols$a, "collector_date")
+  expect_s3_class(spec$cols$b, "collector_character")
+  expect_s3_class(spec$cols$c, "collector_integer")
+  # Unnamed columns other than the named ones are inferred (col_guess default).
+  expect_s3_class(spec$default, "collector_guess")
+})
+
+test_that("col_types_to_spec() accepts every supported shorthand", {
+  expect_s3_class(col_types_to_spec(c(x = "double"))$cols$x, "collector_double")
+  expect_s3_class(
+    col_types_to_spec(c(x = "numeric"))$cols$x,
+    "collector_double"
+  )
+  expect_s3_class(
+    col_types_to_spec(c(x = "logical"))$cols$x,
+    "collector_logical"
+  )
+  expect_s3_class(
+    col_types_to_spec(c(x = "datetime"))$cols$x,
+    "collector_datetime"
+  )
+  expect_s3_class(col_types_to_spec(c(x = "skip"))$cols$x, "collector_skip")
+  expect_s3_class(col_types_to_spec(c(x = "guess"))$cols$x, "collector_guess")
+})
+
+test_that("col_types_to_spec() errors on unknown or unnamed types", {
+  expect_snapshot(error = TRUE, col_types_to_spec(c(a = "nautilus")))
+  expect_snapshot(error = TRUE, col_types_to_spec(c("Date")))
+})
+
+test_that("read_resource() threads col_types to the delimited parser", {
+  local_mocked_bindings(
+    download_resource = function(resource) local_messy_date_csv(5000)
+  )
+
+  out <- read_resource(
+    mock_resource("csv"),
+    col_types = c(date_mise_en_service = "Date")
+  )
+
+  expect_s3_class(out$date_mise_en_service, "Date")
 })
 
 test_that("read_json_file() parses one row per object in a JSON array", {

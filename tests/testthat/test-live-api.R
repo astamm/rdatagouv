@@ -49,6 +49,28 @@ live_zip_uri <- function(file = live_zip_member) {
   )
 }
 
+# A real single-file CSV dataset whose resource is indexed by the tabular
+# service, so it carries a csv-detective profile. Used to exercise
+# use_tabular_types = TRUE (profile-based column typing) against real data.
+# "Indices Qualité de l'air (Citeair) journaliers - Réglementaire" — the
+# resource's profile declares all five columns above the confidence threshold,
+# so `dg_pull_dataset()` should materialise them with the advertised types.
+# Update the ids if the dataset or its CSV resource changes.
+live_profile_dataset_id <- "5a4651eb88ee380bb9eff81e"
+live_profile_rid <- "da7a4869-b584-48ad-8a81-784a02eb297a"
+
+# A dataset whose tabular CSV resource carries BOTH a resolvable schema pointer
+# and a tabular (csv-detective) profile. "Base nationale des IRVE data.gouv"
+# (dataset 5448d3e0c751df01f85d0572) publishes the IRVE-station table as a CSV
+# resource (rid eb76d20a-...) whose `schema` pointer resolves to the
+# irve-statique Table Schema (schema.data.gouv.fr), and which the tabular
+# service also indexes (so it has a profile). This lets us pin the design
+# decision that the profile — not the schema — seeds column types even when a
+# schema is co-present. Update the ids if the dataset or its CSV resource
+# changes.
+live_coexist_dataset_id <- "5448d3e0c751df01f85d0572"
+live_coexist_rid <- "eb76d20a-8501-400e-b336-d85724de5435"
+
 test_that("the v2 datasets/search endpoint has the expected envelope", {
   skip_unless_live()
 
@@ -126,6 +148,116 @@ test_that("a refetched ZIP member matches a direct read of that file", {
   direct <- structure(direct, id = live_zip_uri())
 
   expect_identical(tbl, direct)
+})
+
+test_that("dg_pull_dataset() seeds column types from the live tabular profile", {
+  skip_unless_live()
+
+  # Default use_tabular_types = TRUE reads the resource's csv-detective profile
+  # (tabular-api...//resources/<rid>/profile/) and pins each column that passes
+  # the confidence threshold before handing the rest to vroom.
+  tbl <- dg_pull_dataset(live_profile_dataset_id)
+
+  # The table actually parsed (not an error page / empty download) and its id
+  # is the composed single-file URI of the addressed CSV resource.
+  expect_s3_class(tbl, "tbl_df")
+  expect_gt(nrow(tbl), 0)
+  expect_equal(
+    dg_table_id(tbl),
+    paste0(
+      "https://www.data.gouv.fr/datasets/",
+      live_profile_dataset_id,
+      "#",
+      live_profile_rid
+    )
+  )
+
+  # Every column in the live profile must have been applied to the pulled table
+  # (all scores exceed min_score = 0.5). Date stays a real date collector, and
+  # the numeric columns are typed integer rather than left as character.
+  tabular_profile <- getFromNamespace("tabular_profile", "rdatagouv")
+  tabular_profile_col_types <- getFromNamespace(
+    "tabular_profile_col_types",
+    "rdatagouv"
+  )
+  prof_types <- tabular_profile_col_types(tabular_profile(live_profile_rid))
+  expect_false(is.null(prof_types))
+
+  # Pin the empirical mapping exactly: the five columns resolve to integer for
+  # the four pollutant/station-id columns and Date for the date column (all
+  # profile scores >= 1.0, i.e. above min_score = 0.5).
+  expect_equal(
+    prof_types,
+    c(
+      o3 = "integer",
+      no2 = "integer",
+      date = "Date",
+      pm10 = "integer",
+      ninsee = "integer"
+    )
+  )
+
+  for (nm in names(prof_types)) {
+    expected <- switch(
+      prof_types[[nm]],
+      character = "character",
+      integer = "integer",
+      double = "double",
+      logical = "logical",
+      Date = "Date",
+      datetime = "POSIXct",
+      "character"
+    )
+    expect_true(
+      inherits(tbl[[nm]], expected),
+      info = paste("profile type", expected, "applied to", nm)
+    )
+    expect_true(nm %in% names(tbl), info = paste("column in table:", nm))
+  }
+})
+
+test_that("with a schema and profile co-present, the profile seeds types", {
+  skip_unless_live()
+
+  # The IRVE resource has a resolvable schema (dg_schema() must return real
+  # fields) AND is indexed by the tabular service. The schema's own `type`
+  # vocabulary is looser than csv-detective's (the irve-statique Table Schema
+  # declares `string, geopoint, integer, number, boolean, date` — `geopoint`
+  # and `number` have no col_types shorthand). Column typing must therefore
+  # come from the empirical profile, not the schema, which serves only its
+  # documentation role here.
+  schema <- dg_schema(
+    paste0(
+      "https://www.data.gouv.fr/datasets/",
+      live_coexist_dataset_id,
+      "#",
+      live_coexist_rid
+    )
+  )
+  expect_false(is.null(schema))
+  expect_gt(nrow(schema), 0)
+  expect_true(all(
+    c("name", "title", "description", "type", "example") %in%
+      names(schema)
+  ))
+  # A real, resolved schema bearing non-shorthand types confirms the fixture.
+  expect_true(any(schema$type %in% c("geopoint", "number")))
+
+  # The pulled table must apply the profile's types (logical/Date/integer/
+  # double), not be left as character or coerced from the schema.
+  tbl <- dg_pull_dataset(live_coexist_dataset_id)
+  expect_s3_class(tbl, "tbl_df")
+  expect_gt(nrow(tbl), 0)
+  parse_table_id <- getFromNamespace("parse_table_id", "rdatagouv")
+  expect_equal(parse_table_id(dg_table_id(tbl))$resource_id, live_coexist_rid)
+
+  # Sample the columns whose profile type is unambiguous and must have been
+  # applied irrespective of the schema's looser vocabulary.
+  expect_true(inherits(tbl[["gratuit"]], "logical"))
+  expect_true(inherits(tbl[["nbre_pdc"]], "integer"))
+  expect_true(inherits(tbl[["puissance_nominale"]], "numeric"))
+  expect_true(inherits(tbl[["date_maj"]], "Date"))
+  expect_true(inherits(tbl[["date_mise_en_service"]], "Date"))
 })
 
 # A stable, current producer used for the live organization-resolution tests.

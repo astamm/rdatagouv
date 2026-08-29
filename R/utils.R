@@ -402,21 +402,20 @@ resolve_organization_id <- function(organization) {
       is.na(organization) ||
       !nzchar(organization)
   ) {
-    stop(
-      "`organization` must be a 24-hex id, an organization slug or an exact ",
-      "organization name.",
-      call. = FALSE
+    cli::cli_abort(
+      "{.arg organization} must be a 24-hex id, an organization slug or an \\
+       exact organization name.",
+      class = "datagouv_invalid_organization"
     )
   }
 
   candidates <- fetch_organizations_all(q = organization, n = 100)
   if (length(candidates) == 0) {
-    stop(
-      "No organization matched '",
-      organization,
-      "' on data.gouv.fr. ",
-      "Search producers with dg_find_organization() and pass its `id`.",
-      call. = FALSE
+    cli::cli_abort(
+      "No organization matched {.val {organization}} on data.gouv.fr. ",
+      "i" = "Search producers with {.fn dg_find_organization} and pass its \\
+        {.field id}.",
+      class = "datagouv_no_organization"
     )
   }
 
@@ -449,23 +448,21 @@ resolve_organization_id <- function(organization) {
     collapse = "\n"
   )
   if (length(hits) == 0) {
-    stop(
-      "No organization named exactly '",
-      organization,
-      "' was found on ",
-      "data.gouv.fr. Did you mean one of these?\n",
-      listing,
-      "\nPass the exact `id` of the intended producer to `organization`.",
-      call. = FALSE
+    cli::cli_abort(
+      c(
+        "No organization named exactly {.val {organization}} was found on \\
+         data.gouv.fr.",
+        "i" = "Did you mean one of these?\n{listing}\nPass the exact \\
+          {.field id} of the intended producer to {.arg organization}."
+      ),
+      class = "datagouv_ambiguous_organization"
     )
   }
-  stop(
-    "Several organizations match '",
-    organization,
-    "' exactly; pass the ",
-    "intended id to disambiguate:\n",
-    listing,
-    call. = FALSE
+  cli::cli_abort(
+    "Several organizations match {.val {organization}} exactly; pass the \\
+     intended id to disambiguate:",
+    "x" = listing,
+    class = "datagouv_ambiguous_organization"
   )
 }
 
@@ -618,9 +615,9 @@ topic_element_counts <- function(topic_id) {
 fetch_resource_subsection <- function(subsection) {
   href <- subsection$href
   if (is.null(href)) {
-    stop(
-      "The resources pointer carries no 'href' to fetch from.",
-      call. = FALSE
+    cli::cli_abort(
+      "The resources pointer carries no {.field href} to fetch from.",
+      class = "datagouv_no_resource_href"
     )
   }
   all <- list()
@@ -718,11 +715,10 @@ find_dataset <- function(id) {
 
   hits <- Filter(function(d) identical(d$title, id), body$data)
   if (length(hits) == 0) {
-    stop(
-      "No dataset titled '",
-      id,
-      "' was found on data.gouv.fr. Check the name with dg_find_datasets().",
-      call. = FALSE
+    cli::cli_abort(
+      "No dataset titled {.val {id}} was found on data.gouv.fr.",
+      "i" = "Check the name with {.fn dg_find_datasets}.",
+      class = "datagouv_no_dataset_title"
     )
   }
   hits[[1]]
@@ -813,26 +809,34 @@ prefer_lightest_file <- function(resources) {
 # Candidates offering the same data in several formats are first reduced to
 # their lightest copy (see prefer_lightest_file()), so a dataset published as
 # both .csv and .xlsx downloads the smaller file.
-read_first_parseable_resource <- function(dataset) {
+read_first_parseable_resource <- function(
+  dataset,
+  col_types = NULL,
+  use_tabular_types = FALSE
+) {
   candidates <- Filter(
     function(r) tolower(r$format %||% "") %in% supported_formats(),
     dataset$resources %||% list()
   )
   if (length(candidates) == 0) {
     supported <- paste(supported_formats(), collapse = ", ")
-    stop(
-      "Dataset '",
-      dataset$title,
-      "' has no resource in a supported format (",
-      supported,
-      ").",
-      call. = FALSE
+    cli::cli_abort(
+      "Dataset {.val {dataset$title}} has no resource in a supported format \\
+       ({supported}).",
+      class = "datagouv_no_supported_format"
     )
   }
   candidates <- prefer_lightest_file(candidates)
   first_error <- NULL
   for (res in candidates) {
-    data <- tryCatch(read_resource(res), error = function(e) e)
+    data <- tryCatch(
+      read_resource(
+        res,
+        col_types = col_types,
+        use_tabular_types = use_tabular_types
+      ),
+      error = function(e) e
+    )
     if (!inherits(data, "error")) {
       return(list(data = data, resource = res))
     }
@@ -840,14 +844,15 @@ read_first_parseable_resource <- function(dataset) {
       first_error <- data
     }
   }
-  stop(
-    "None of the ",
-    length(candidates),
-    " tabular resource(s) of dataset '",
-    dataset$title,
-    "' could be parsed into a table. First failure: ",
-    conditionMessage(first_error),
-    call. = FALSE
+  cli::cli_abort(
+    c(
+      "None of the {length(candidates)} tabular resource{?s} of dataset
+       {.val {dataset$title}} could be parsed into a table.",
+      "x" = "First failure: {conditionMessage(first_error)}",
+      "i" = "Try another resource of the dataset, e.g. via
+             {.fn dg_find_datasets} or {.fn dg_refetch}."
+    ),
+    class = "datagouv_unparseable"
   )
 }
 
@@ -897,14 +902,15 @@ read_json_file <- function(path) {
     return(tryCatch(
       tibble::as_tibble(out),
       error = function(e) {
-        stop(
-          "JSON object is not tabular data: ",
-          conditionMessage(e),
-          ". ",
-          "This resource declares `json` but does not contain a table (it is ",
-          "likely an API metadata document). Try another resource of the ",
-          "dataset, e.g. via dg_find_datasets() or dg_refetch().",
-          call. = FALSE
+        cli::cli_abort(
+          c(
+            "JSON object is not tabular data: {conditionMessage(e)}.",
+            "i" = "This resource declares {.code json} but does not contain a
+                   table (it is likely an API metadata document). Try another
+                   resource of the dataset, e.g. via {.fn dg_find_datasets} or
+                   {.fn dg_refetch}."
+          ),
+          class = "datagouv_json_not_tabular"
         )
       }
     ))
@@ -913,10 +919,186 @@ read_json_file <- function(path) {
   jsonlite::stream_in(file(path), verbose = FALSE)
 }
 
+# Translate a named shorthand `col_types` vector into a vroom/readr `cols()`
+# spec. Names are column names; values are type shorthands mapped to the
+# corresponding `col_*()` collector. Columns given no entry keep vroom's type
+# inference (col_guess). An unnamed vector is an error: ambiguous which column
+# each type applies to.
+col_types_to_spec <- function(col_types) {
+  if (is.null(col_types)) {
+    return(NULL)
+  }
+  if (is.null(names(col_types)) || any(names(col_types) == "")) {
+    cli::cli_abort(
+      "{.arg col_types} must be a named vector of column types, e.g.
+       {.code c(date_mise_en_service = \"Date\")}.",
+      class = "datagouv_col_types_unnamed"
+    )
+  }
+  map <- c(
+    character = "col_character",
+    c = "col_character",
+    double = "col_double",
+    d = "col_double",
+    numeric = "col_double",
+    integer = "col_integer",
+    i = "col_integer",
+    logical = "col_logical",
+    l = "col_logical",
+    Date = "col_date",
+    D = "col_date",
+    date = "col_date",
+    datetime = "col_datetime",
+    skip = "col_skip",
+    guess = "col_guess"
+  )
+  unknown <- setdiff(unique(col_types), names(map))
+  if (length(unknown) > 0) {
+    cli::cli_abort(
+      c(
+        "Unknown column type{?s}: {.val {unknown}}.",
+        "i" = "Valid types: {.field character}, {.field double}/{.field numeric},
+               {.field integer}, {.field logical}, {.field Date},
+               {.field datetime}, {.field skip}, {.field guess}."
+      ),
+      class = "datagouv_col_types_unknown"
+    )
+  }
+  collectors <- lapply(col_types, function(t) {
+    get(map[[t]], envir = asNamespace("vroom"))()
+  })
+  do.call(vroom::cols, c(list(.default = vroom::col_guess()), collectors))
+}
+
+# Map a `python_type` emitted by the tabular API's csv-detective profile to the
+# shorthand accepted by `col_types_to_spec()`. The
+# profile vocabulary (string/int/float/bool/date/datetime/timestamp/time/...) is
+# closed and small; anything without a native vroom collector (json, geojson,
+# uuid, latlon, ...) falls back to `character`, which is always a safe circuit
+# breaker because vroom never errors on character. Returns the shorthand string.
+python_type_to_col <- function(py) {
+  switch(
+    as.character(py %||% "string"),
+    string = "character",
+    int = "integer",
+    float = "double",
+    bool = "logical",
+    date = "Date",
+    datetime = "datetime",
+    timestamp = "datetime",
+    time = "datetime",
+    "character"
+  )
+}
+
+# Fetch the tabular API profile of a resource by its resource id (rid).
+#
+# The profile (generated by data.gouv's own csv-detective detector, independent
+# of any declared schema) carries a per-column `python_type`, a business
+# `format` and a detection-confidence `score`; it is therefore a schema-free
+# source of column types. Only resources indexed by the tabular service have a
+# profile (the docs list per-format size caps and a short indexing delay);
+# anything else 404s and returns NULL so callers fall back to type inference.
+tabular_profile <- function(rid) {
+  url <- paste0(
+    "https://tabular-api.data.gouv.fr/api/resources/",
+    rid,
+    "/profile/"
+  )
+  resp <- httr2::resp_body_json(
+    http_perform(req_data_gouv(httr2::request(url)))
+  )
+  resp$profile
+}
+
+# Build a named shorthand `col_types` vector from a tabular API profile: each
+# column's detected `python_type` mapped to the equivalent collector. Returns
+# NULL when the profile carries no usable column map.
+#
+# `min_score` is a confidence threshold on the per-column detection `score`.
+# csv-detective reports each detection's score in [0, 1]; a low score means the
+# detector is unsure of the type, so pinning it could override a more sensible
+# vroom guess. Columns whose score is present and strictly below the threshold
+# are therefore left OUT of the returned map so the caller lets vroom infer
+# them (rather than forcing `character`, which would discard real signal). A
+# missing score is treated as pass-through (do not skip).
+tabular_profile_col_types <- function(profile, min_score = 0.5) {
+  cols <- profile$columns
+  if (is.null(cols) || length(cols) == 0) {
+    return(NULL)
+  }
+  types <- vapply(
+    cols,
+    function(c) python_type_to_col(c$python_type),
+    character(1)
+  )
+  keep <- vapply(
+    cols,
+    function(c) {
+      s <- c$score
+      is.null(s) || s >= min_score
+    },
+    logical(1)
+  )
+  cols_dedupe <- types[keep]
+  if (length(cols_dedupe) == 0) {
+    return(NULL)
+  }
+  names(cols_dedupe) <- names(cols)[keep]
+  cols_dedupe
+}
+
+# Fetch the tabular profile of a resource and turn it into a shorthand col_types
+# vector, returning NULL (fall back to inference) whenever the profile is
+# unavailable or maps to no columns.
+#
+# `resource` must carry a `$id` (the rid) and the caller opts in via
+# `use_tabular_types = TRUE`; the tabular API only addresses single-file,
+# non-ZIP resources, so anything else is skipped. The profile request is
+# best-effort: a 404 (resource not indexed), a network error, or an empty
+# column map all degrade to NULL rather than aborting the pull.
+tabular_types_for_resource <- function(resource, use_tabular_types = FALSE) {
+  if (!use_tabular_types || is.null(resource$id)) {
+    return(NULL)
+  }
+  if (tolower(resource$format %||% "") == "zip") {
+    # ZIP members are not addressed by rid on the tabular service, so their
+    # per-file types are not available there.
+    return(NULL)
+  }
+  prof <- tryCatch(tabular_profile(resource$id), error = function(e) NULL)
+  tabular_profile_col_types(prof)
+}
+
+# Merge a user-supplied `col_types` vector (explicit overrides) with the types
+# inferred from a tabular profile, so the profile fills in any column the user
+# did not pin while user choices always win on collision. Returns the merged
+# named vector (or the original when there is nothing to merge).
+merge_col_types <- function(col_types, tabular) {
+  if (is.null(tabular)) {
+    return(col_types)
+  }
+  if (is.null(col_types) || length(col_types) == 0) {
+    return(tabular)
+  }
+  merged <- tabular
+  # User-specified columns override the profile; any user-only columns are kept.
+  merged[names(col_types)] <- col_types
+  merged
+}
+
 # Parse a local file of a known supported format into a data frame. The file
 # must already be on disk; callers are responsible for downloading (or
 # extracting) it and for cleaning it up.
-parse_resource_file <- function(path, fmt) {
+#
+# For delimited text, an optional named `col_types` vector (shorthand strings)
+# overrides vroom's type inference for the named columns; see
+# col_types_to_spec(). The noisy per-cell parsing warnings (e.g. a mostly-ISO
+# date column with a few non-padded stragglers) are muffled by default, and the
+# underlying problems are attached to the result as the `rdatagouv_problems`
+# attribute (a plain data frame, so it survives tibble::as_tibble()), readable
+# with dg_problems().
+parse_resource_file <- function(path, fmt, col_types = NULL) {
   if (fmt == "xlsx" || fmt == "xls") {
     return(readxl::read_excel(path))
   }
@@ -942,13 +1124,36 @@ parse_resource_file <- function(path, fmt) {
   } else {
     vroom::default_locale()
   }
-  vroom::vroom(
-    path,
-    delim = delim,
-    locale = locale,
-    altrep = FALSE,
-    show_col_types = FALSE
+  spec <- col_types_to_spec(col_types)
+  # withCallingHandlers muffles the per-cell parsing warnings (they fire during
+  # strict conversion once vroom commits to a collector, e.g. a date column) yet
+  # the result still carries the problems, recovered with vroom::problems().
+  out <- withCallingHandlers(
+    vroom::vroom(
+      path,
+      delim = delim,
+      locale = locale,
+      altrep = FALSE,
+      show_col_types = FALSE,
+      col_types = spec
+    ),
+    warning = function(w) {
+      if (grepl("parsing issues", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
   )
+  problems <- tryCatch(vroom::problems(out), error = function(e) NULL)
+  # A clean parse still carries an (empty) problems tibble; only attach the
+  # attribute when there is at least one actual parsing issue.
+  if (!is.null(problems) && nrow(problems) > 0) {
+    # Strip the temp-file path from the problems (it is meaningless to end
+    # users) and store as a plain data frame attribute that survives
+    # tibble::as_tibble() in format_tibble().
+    problems$file <- NULL
+    attr(out, "rdatagouv_problems") <- as.data.frame(problems)
+  }
+  out
 }
 
 # Map a file path to a supported resource format by its extension, or NA if
@@ -966,7 +1171,7 @@ format_from_path <- function(path) {
 # skipping the rest. The result is a named list with one element per parsed
 # file (names made unique in case two files share a base name); it is empty
 # when the archive holds nothing readable.
-read_zip_resource <- function(resource) {
+read_zip_resource <- function(resource, col_types = NULL) {
   zip <- download_resource(resource)
   on.exit(unlink(zip))
   dir <- tempfile(pattern = "rdatagouv-zip-")
@@ -977,7 +1182,12 @@ read_zip_resource <- function(resource) {
   files <- list.files(dir, full.names = TRUE, recursive = TRUE)
   fmt <- vapply(files, format_from_path, character(1))
   keep <- !is.na(fmt)
-  parsed <- Map(parse_resource_file, files[keep], fmt[keep])
+  parsed <- Map(
+    parse_resource_file,
+    files[keep],
+    fmt[keep],
+    MoreArgs = list(col_types = col_types)
+  )
   names(parsed) <- uniquify_names(basename(files[keep]))
   parsed
 }
@@ -1023,19 +1233,19 @@ resolve_table_id <- function(x) {
     if (!is.null(id)) {
       return(id)
     }
-    stop(
-      "This table carries no table id. Pull it with dg_pull_dataset() so its ",
-      "stable id is attached, or pass a composed id string directly.",
-      call. = FALSE
+    cli::cli_abort(
+      "This table carries no table id. Pull it with {.fn dg_pull_dataset} so
+       its stable id is attached, or pass a composed id string directly.",
+      class = "datagouv_no_table_id"
     )
   }
   if (is.character(x) && length(x) == 1) {
     return(x)
   }
-  stop(
-    "`x` must be a table returned by dg_pull_dataset() (with its id attached) ",
-    "or a composed id string.",
-    call. = FALSE
+  cli::cli_abort(
+    "{.arg x} must be a table returned by {.fn dg_pull_dataset} (with its id
+     attached) or a composed id string.",
+    class = "datagouv_invalid_table_ref"
   )
 }
 
@@ -1048,7 +1258,10 @@ resolve_table_id <- function(x) {
 # inside a ZIP (`#<resource_id>/<file>`).
 parse_table_id <- function(id) {
   if (!is.character(id) || length(id) != 1 || is.na(id)) {
-    stop("Invalid table id: expected a single non-NA string.", call. = FALSE)
+    cli::cli_abort(
+      "Invalid table id: expected a single non-NA string.",
+      class = "datagouv_invalid_table_id"
+    )
   }
   hex <- "[0-9a-fA-F]{24}"
   uuid <- "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -1072,19 +1285,26 @@ parse_table_id <- function(id) {
       file = if (length(m) >= 4 && nzchar(m[[4]])) m[[4]] else NULL
     ))
   }
-  stop(
-    "Invalid table id '",
-    id,
-    "': expected the URI 'https://www.data.gouv.fr/datasets/<dataset>",
-    "#<resource>(/<file>)'.",
-    call. = FALSE
+  cli::cli_abort(
+    c(
+      "Invalid table id {.val {id}}: expected the URI
+       {.url https://www.data.gouv.fr/datasets/<dataset>#<resource>(/<file>)}."
+    ),
+    class = "datagouv_invalid_table_id"
   )
 }
 
 # Parse a single named file out of a ZIP resource and return its data frame,
 # skipping nothing else. Used by dg_refetch() to re-read exactly one table.
 # `name` is a base file name within the archive.
-read_one_zip_file <- function(resource, name) {
+read_one_zip_file <- function(
+  resource,
+  name,
+  col_types = NULL,
+  use_tabular_types = FALSE
+) {
+  # ZIP members are not addressed by rid on the tabular service, so
+  # use_tabular_types is a no-op here (accepted for signature symmetry only).
   zip <- download_resource(resource)
   on.exit(unlink(zip))
   dir <- tempfile(pattern = "rdatagouv-zip-")
@@ -1094,14 +1314,12 @@ read_one_zip_file <- function(resource, name) {
   path <- file.path(dir, name)
   fmt <- format_from_path(path)
   if (is.na(fmt)) {
-    stop(
-      "File '",
-      name,
-      "' inside the ZIP is not in a supported format.",
-      call. = FALSE
+    cli::cli_abort(
+      "File {.file {name}} inside the ZIP is not in a supported format.",
+      class = "datagouv_unsupported_zip_format"
     )
   }
-  parse_resource_file(path, fmt)
+  parse_resource_file(path, fmt, col_types = col_types)
 }
 
 # Parse a resource into a tidy tibble.
@@ -1110,7 +1328,10 @@ read_one_zip_file <- function(resource, name) {
 # optionally, drops all rows that contain at least one missing value.
 format_tibble <- function(x, remove_na = FALSE) {
   if (!is.data.frame(x)) {
-    stop("`x` must be a data frame or tibble.", call. = FALSE)
+    cli::cli_abort(
+      "{.arg x} must be a data frame or {.cls tibble}.",
+      class = "datagouv_invalid_data_frame"
+    )
   }
   out <- tibble::as_tibble(x)
   if (remove_na) {
@@ -1123,18 +1344,38 @@ format_tibble <- function(x, remove_na = FALSE) {
 # Download a resource and parse it into a data frame. ZIP resources are
 # unpacked first: each contained file in a supported format becomes one
 # element of the returned named list.
-read_resource <- function(resource) {
+#
+# For a single-file (non-ZIP) resource, `use_tabular_types = TRUE` seeds the
+# column types from the tabular API's csv-detective profile (see
+# tabular_types_for_resource()); the resolution happens here, at the leaf that
+# actually parses the addressed resource, so the profile matched is always the
+# one for the resource being read (not a best-guess "first candidate"). ZIP
+# members have no rid-scoped profile and fall back to inference.
+read_resource <- function(
+  resource,
+  col_types = NULL,
+  use_tabular_types = FALSE
+) {
   fmt <- tolower(resource$format %||% "")
   if (fmt == "zip") {
-    return(read_zip_resource(resource))
+    return(read_zip_resource(resource, col_types = col_types))
   }
   # Guard against formats the candidate filter should have already removed.
   if (!fmt %in% supported_formats()) {
-    stop("Unsupported format: ", resource$format, call. = FALSE)
+    cli::cli_abort(
+      "Unsupported format: {.val {resource$format}}.",
+      class = "datagouv_unsupported_format"
+    )
   }
+  # Merge the user's explicit col_types with the tabular profile for THIS
+  # resource; user choices win on collision, the profile fills the rest.
+  col_types <- merge_col_types(
+    col_types,
+    tabular_types_for_resource(resource, use_tabular_types)
+  )
   path <- download_resource(resource)
   on.exit(unlink(path))
-  parse_resource_file(path, fmt)
+  parse_resource_file(path, fmt, col_types = col_types)
 }
 
 # Download a resource to a temporary file and return its path.

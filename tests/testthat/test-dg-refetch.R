@@ -11,7 +11,13 @@ test_that("dg_refetch() re-fetches a single-file table by its URI", {
         resources = list(mock_resource("csv", id = rid))
       )
     },
-    read_resource = function(resource) mock_csv_data()
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
   )
 
   out <- dg_refetch(uri)
@@ -35,7 +41,13 @@ test_that("dg_refetch() accepts a table and reads its id attribute", {
         resources = list(mock_resource("csv", id = rid))
       )
     },
-    read_resource = function(resource) mock_csv_data()
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
   )
 
   tbl <- structure(data.frame(a = 1, b = "x"), id = uri)
@@ -64,7 +76,14 @@ test_that("dg_refetch() re-fetches one file out of a ZIP", {
         resources = list(mock_resource("zip", id = rid))
       )
     },
-    read_one_zip_file = function(resource, name) data.frame(c = 1, d = "x")
+    read_one_zip_file = function(
+      resource,
+      name,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      data.frame(c = 1, d = "x")
+    }
   )
 
   out <- dg_refetch(uri)
@@ -96,7 +115,12 @@ test_that("a file inside a ZIP is addressable via its URI", {
         resources = list(mock_resource("zip", id = rid))
       )
     },
-    read_one_zip_file = function(resource, name) {
+    read_one_zip_file = function(
+      resource,
+      name,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
       # The requested file name determines the returned data.
       data.frame(c = 1, d = name)
     }
@@ -127,7 +151,13 @@ test_that("dg_refetch() forwards remove_na to format_tibble()", {
         resources = list(mock_resource("csv", id = rid))
       )
     },
-    read_resource = function(resource) mock_csv_data()
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      mock_csv_data()
+    }
   )
 
   out <- dg_refetch(uri, remove_na = TRUE)
@@ -167,4 +197,34 @@ test_that("dg_refetch() errors when the resource is not found", {
 
 test_that("dg_refetch() errors on a table without an id attribute", {
   expect_error(dg_refetch(data.frame(a = 1)), "carries no table id")
+})
+
+test_that("dg_refetch() forwards col_types to the parse step", {
+  did <- "aaaaaaaaaaaaaaaaaaaaaaaa"
+  rid <- "99999999-9999-4999-8999-999999999999"
+  uri <- paste0("https://www.data.gouv.fr/datasets/", did, "#", rid)
+
+  captured <- NULL
+  local_mocked_bindings(
+    fetch_dataset = function(id) {
+      mock_dataset(
+        title = id,
+        id = id,
+        resources = list(mock_resource("csv", id = rid))
+      )
+    },
+    read_resource = function(
+      resource,
+      col_types = NULL,
+      use_tabular_types = FALSE
+    ) {
+      captured <<- col_types
+      mock_csv_data()
+    }
+  )
+
+  out <- dg_refetch(uri, col_types = c(date = "Date"))
+
+  expect_equal(captured, c(date = "Date"))
+  expect_s3_class(out, "tbl_df")
 })

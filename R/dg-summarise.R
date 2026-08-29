@@ -43,9 +43,10 @@ dg_summarise <- function(datasets = NULL, n = 100) {
     datasets <- stats::setNames(datasets, datasets)
     datasets <- lapply(datasets, dg_pull_dataset)
   } else if (!is.list(datasets)) {
-    stop(
-      "`datasets` must be a list of tibbles, a character vector or NULL.",
-      call. = FALSE
+    cli::cli_abort(
+      "{.arg datasets} must be a list of {.cls tibble}s, a character vector or
+       NULL.",
+      class = "datagouv_invalid_datasets"
     )
   }
 

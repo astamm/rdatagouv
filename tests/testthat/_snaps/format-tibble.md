@@ -3,6 +3,6 @@
     Code
       format_tibble(1:10)
     Condition
-      Error:
-      ! `x` must be a data frame or tibble.
+      Error in `format_tibble()`:
+      ! `x` must be a data frame or <tibble>.
 

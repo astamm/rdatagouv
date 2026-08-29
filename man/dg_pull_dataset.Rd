@@ -4,7 +4,13 @@
 \alias{dg_pull_dataset}
 \title{Download a dataset from data.gouv.fr}
 \usage{
-dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE)
+dg_pull_dataset(
+  id,
+  all_files = FALSE,
+  remove_na = FALSE,
+  col_types = NULL,
+  use_tabular_types = TRUE
+)
 }
 \arguments{
 \item{id}{The identifier of the dataset to download (or, as a fallback, its
@@ -19,6 +25,27 @@ multi-file ZIP, \code{TRUE} keeps every parseable file, one named element each.}
 
 \item{remove_na}{Whether to drop rows containing any \code{NA} value (passed to
 \code{format_tibble()}). Defaults to \code{FALSE}.}
+
+\item{col_types}{Optional named vector of column types to force on specific
+columns instead of letting vroom infer them, e.g.
+\code{c(date_mise_en_service = "Date")}. Values are shorthand strings:
+\code{"character"}, \code{"double"}/\code{"numeric"}, \code{"integer"}, \code{"logical"}, \code{"Date"},
+\code{"datetime"}, \code{"skip"} or \code{"guess"}. Unnamed columns keep type inference.
+This is useful when a mostly-padded ISO date column has a few non-padded
+stragglers that vroom would otherwise flag (forcing \code{"Date"} turns those
+into \code{NA}). Defaults to \code{NULL} (no column overrides).}
+
+\item{use_tabular_types}{Whether to seed column types from data.gouv's
+tabular API profile (\verb{tabular-api.data.gouv.fr/api/resources/<rid>/profile/}),
+a schema-independent per-column type detection computed by data.gouv's own
+\code{csv-detective} detector. Defaults to \code{TRUE}. The detected types are used as
+vroom's \code{col_types} for any column \code{col_types} does not already pin
+(explicit \code{col_types} always win on collision). The profile is looked up
+per resource inside the parse loop, so the resource that is actually parsed
+supplies the types. It is best-effort: it only exists for single-file
+resources indexed by the tabular service (not ZIP members, and not
+oversized/unindexed files), and a missing profile silently falls back to
+type inference.}
 }
 \value{
 A \code{\link[tibble:tibble]{tibble::tibble()}} (default) or, when \code{all_files = TRUE} and the
@@ -27,7 +54,9 @@ parseable file, named after it). Every table carries its stable, unique
 address as an \code{id} attribute — a URI of the form
 \verb{https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>} (plus
 \verb{/&lt;file&gt;} for a file inside a ZIP) — re-fetchable with \code{\link[=dg_refetch]{dg_refetch()}}
-and readable with \code{\link[=dg_table_id]{dg_table_id()}}.
+and readable with \code{\link[=dg_table_id]{dg_table_id()}}. Any parsing issues vroom encountered are
+attached as an \code{rdatagouv_problems} attribute (a data frame), readable with
+\code{\link[=dg_problems]{dg_problems()}}.
 }
 \description{
 Downloads the first tabular resource of a dataset and parses it into a

@@ -33,6 +33,82 @@ resources)`, `dg_pull_dataset(id, all_files, remove_na)`,
 > enumerated or validated. The exhaustive option sets live in the
 > `dg_*_values` constants in `R/dg-find-datasets.R` and are mirrored in the
 > roxygen docs.
+>
+> **Implemented (2026-08): `col_types` + parsing-problem surfacing.**
+> `dg_pull_dataset()`/`dg_refetch()` gain a `col_types` argument (named vector
+> of shorthand strings, e.g. `c(date_mise_en_service = "Date")`, translated to
+> a vroom cols() spec by internal `col_types_to_spec()` — no readr dependency)
+> to force specific column types instead of vroom's inference. The noisy
+> per-cell vroom parsing warnings are muffled by default via
+> `withCallingHandlers`, and the underlying issues are captured with
+> `vroom::problems()` and attached to the returned table as an
+> `rdatagouv_problems` attribute (a plain data frame — the temp-file path is
+> stripped and, unlike a vroom class, it survives `tibble::as_tibble()` in
+> `format_tibble()`), read with the new export `dg_problems(x)`. Root cause
+> that motivated this: the vignette's dynamic-pull live chunks (e.g. the IRVE
+> dataset) hit mostly-padded ISO date columns with a few non-padded stragglers
+> (`2021-7-01`), which vroom flags and warns about per cell; the warning was a
+> dead-end because `as_tibble()` strips the vroom class so `vroom::problems()`
+> failed on the returned table. See AGENTS.md.
+>
+> **Implemented (2026-08): tabular-profile-backed column typing
+> (`use_tabular_types`, default `TRUE`).** `dg_pull_dataset()`/`dg_refetch()`
+> gain a `use_tabular_types` argument (default `TRUE`) that seeds column types
+> from data.gouv's tabular service per-resource profile
+> (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`); the detected types
+> are used as vroom's `col_types` for any column `col_types` does not already
+> pin (explicit `col_types` always win on collision). Internal helpers in
+> `R/utils.R`: `python_type_to_col()` (csv-detective `python_type` →
+> shorthand: `string`→character, `int`→integer, `float`→double, `bool`→logical,
+> `date`→Date, `datetime`/`timestamp`/`time`→datetime, else character);
+> `tabular_profile(rid)` (HTTP fetch via `req_data_gouv()`/`http_perform()`);
+> `tabular_profile_col_types(profile)` (named shorthand vector, `NULL` when
+> empty); `tabular_types_for_resource(resource, use_tabular_types)` (no-op
+> unless opted in; skips ZIP; `tryCatch` 404/network → NULL); and
+> `merge_col_types(col_types, tabular)`.
+>
+> **Resolution moved into the parse loop.** Unlike the prototype (which resolved
+> the first candidate's profile *up front* and merged, guessing which resource
+> `dg_pull_dataset()` would parse), the final design resolves the profile at the
+> **leaf that actually parses the resource**: `read_resource()` now calls
+> `tabular_types_for_resource(resource, use_tabular_types)` +
+> `merge_col_types()` for its own non-ZIP resource before parsing, and
+> `read_first_parseable_resource()` forwards `use_tabular_types` into its loop.
+> So a multi-resource dataset uses **each resource's actual profile**, not a
+> first-candidate guess — the resource that parses supplies its own types. The
+> prototype-only helper `first_tabular_candidate()` was **removed** (it existed
+> solely to support the up-front-guess path).
+>
+> **Open caveats.** (1) The profile only exists for **single-file resources
+> indexed by the tabular service** — ZIP members (`read_one_zip_file`,
+> `read_zip_resource`) and oversized/unindexed files have no rid-scoped profile
+> and fall back to type inference (the `use_tabular_types` arg is a no-op there).
+> (2) The profile's per-column confidence `score` is thresholded: a
+
+> detected type whose `score` is below the default `min_score = 0.5` is left
+> out of the `col_types` map so vroom infers that column instead of pinning the
+> low-confidence type (a missing score passes through). (3) `tabular_profile()`
+> is best-effort: a 404 or network failure silently degrades to inference.
+>
+> **Schema vs profile — why the profile stays the column-typing source when a
+> schema is co-present.** A resource may carry both a tabular profile (empirical)
+> and a declared schema (`resource$schema` pointer resolved via `dg_schema()`).
+> These answer different questions — "what type are these bytes" vs "what does
+> the producer say this column means" — and only the profile is usable as a
+> vroom `col_types` seed. Survey of 20 resolvable schemas / 386 fields on
+> `schema.data.gouv.fr`: producer-declared `type` values are
+> `string` (252), `integer` (38), `date` (36), `boolean` (23), `number` (21),
+> `array` (12), `year` (2), `datetime` (1), `geopoint` (1). Several are outside
+> the csv-detective/`col_types` vocabulary (`year`, `geopoint`, `array`; the
+> `integer`/`number` split has no csv-detective counterpart), most schemas are
+> all-`string` or stale, and only ~5% of datasets carry a resolvable pointer
+> (many such pointers are empty: `name`/`url` `NULL`). The profile, by contrast,
+> is computed from the real file bytes with a per-column confidence `score`
+> (verified on the live Citeair fixture: `o3/no2/pm10/ninsee→integer`,
+> `date→Date`, scores 1.0–1.5), so it matches what vroom actually reads. Hence:
+> prefer the profile for typing when available; the schema keeps its distinct
+> documentation role via `dg_schema()`; `col_types`/`use_tabular_types` already
+> provides the opt-out knob when a profile's per-file HTTP request is unwanted.
 
 ## Target flow
 
@@ -231,10 +307,13 @@ Implications for this package:
   preserves full format/coverage (xlsx, json, zip; resources the tabular
   service hasn't indexed), which the tabular API cannot guarantee.
 - The tabular API's unique value is **variable metadata at pull time**, which
-  the main API lacks. In practice this package sources that metadata from the
-  producer's schema documents on schema.data.gouv.fr (see below) rather than
-  the tabular service's `/profile/` endpoint; the tabular service is not used
-  by the current implementation.
+  the main API lacks. The package uses it in two distinct ways: documented
+  per-column descriptions come from the producer's schema documents on
+  schema.data.gouv.fr (see below, `dg_schema()`), while the profile-backed
+  column **types** come from the tabular service's `/resources/{rid}/profile/`
+  endpoint (see `use_tabular_types` above) — the pull keeps downloading and
+  parsing the raw file itself, only *seeding* vroom's col_types from the
+  profile.
 - Keying lines up with the ID design: the tabular API is addressed by
   `resource$id` (a UUID), and its profile carries `dataset_id`, so a composed
   table id maps straight onto the `dataset_id`/`resource_id`/`file` triple
@@ -267,15 +346,16 @@ Implications for this package:
 
 | File | Change |
 |------|--------|
-| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. **Topics:** `datagouv_topics_url()`; thread `topic` through `fetch_search_page()`/`fetch_search_all()`; topics crawler `fetch_topic_page()` / `fetch_topics_all()` (clone of the organizations crawler), `fetch_topic_elements()` (paginated elements subsection, nested `element$class` classifier), `topic_element_counts()`. |
-| `R/dg-pull-dataset.R` | `dg_pull_dataset()` returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. (Stays on v1.) |
+| `R/utils.R` | `read_zip_resource()` unchanged; add `read_one_zip_file(zip, file)`; id helpers `compose_table_id()` / `parse_table_id()`, `table_attr()` / `table_id_from_attr()` / `resolve_table_id()`; `prefer_lightest_file()` reduces same-data multi-format candidates to the lightest copy. **v2 switch:** add `datagouv_v2_base_url()` / `datagouv_search_url()`, `fetch_search_page()` (repeated `format` params + new filter args), `fetch_search_all()` (string `next_page` pagination with v1-object fallback), `fetch_resource_subsection()` (fully paginated), `fetch_dataset_v2()`, `append_url_params()`, `replace_url_page()`. **Topics:** `datagouv_topics_url()`; thread `topic` through `fetch_search_page()`/`fetch_search_all()`; topics crawler `fetch_topic_page()` / `fetch_topics_all()` (clone of the organizations crawler), `fetch_topic_elements()` (paginated elements subsection, nested `element$class` classifier), `topic_element_counts()`. **col_types/problems:** internal `col_types_to_spec()` maps named shorthand vectors to a `vroom::cols()` spec; `parse_resource_file()`/`read_resource()`/`read_zip_resource()`/`read_one_zip_file()` thread `col_types`; `parse_resource_file()` muffles vroom's parsing warnings via `withCallingHandlers` and attaches `vroom::problems()` (temp-file path stripped, only when non-empty) as the `rdatagouv_problems` attribute. **Tabular-profile typing:** `python_type_to_col()`, `tabular_profile(rid)`, `tabular_profile_col_types()`, `tabular_types_for_resource(resource, use_tabular_types)`, `merge_col_types(col_types, tabular)`; `read_resource()` gains `use_tabular_types` and resolves the profile + merge at the leaf for non-ZIP resources; `read_first_parseable_resource()`/`read_one_zip_file()` gain `use_tabular_types` (no-op for ZIP members); `first_tabular_candidate()` removed. |
+| `R/dg-pull-dataset.R` | `dg_pull_dataset()` returns a single tibble (first parseable file of a ZIP) with the `id` as an attribute; `all_files = TRUE` returns a named list, each element carrying its own id. Adds `col_types` (named shorthand vector, threaded to the parse step) and `use_tabular_types` (default `TRUE`, threaded to `read_first_parseable_resource()`). (Stays on v1.) |
 | `R/dg-table-id.R` (new) | Exported `dg_table_id(x)` reads the `id` attribute. |
+| `R/dg-problems.R` (new) | Exported `dg_problems(x)` reads the `rdatagouv_problems` attribute on a pulled/re-fetched table. |
 | `R/dg-summary.R` / `R/dg-summarise.R` | `dg_summary()` needs no metadata-column exclusion (id is an attribute); `dg_summarise()` accepts a `dg_list_datasets()` tibble. |
 | `R/dg-list-datasets.R` | Add `n_resources`, `formats`, `has_table`, `has_schema` columns, and the `format` argument (server-side per-format filtering, unioned and de-duplicated by id). **v2 switch:** rework onto `fetch_search_all()` over `datasets/search`; new server-side filter args (`organization`, `geozone`, `access_type`, `license`, `tag`, `granularity`, `last_update`, `producer_type`); new inline columns; resource columns `NA` unless `resources = TRUE`. |
 | `R/dg-find-datasets.R` (formerly `dg-list-datasets.R`) | Renamed verb-first. Adds the `topic` server-side filter (a 24-hex topic id, open vocabulary like `tag`/`geozone`, deliberately not validated and not name/slug-resolved). |
 | `R/dg-find-topics.R` (new) | Exported `dg_find_topics(q, n, elements)` mirroring `dg_find_organization()`: tibble `{id, name, slug, description, tags, featured, n_elements}` plus `n_datasets`/`n_dataservices`/`n_reuses` when `elements = TRUE` (N+1 per-topic fetch, counting nested `element$class`); external-link (NULL-class) entries excluded. |
 | `R/dg-glimpse.R` (new) | Exported `dg_glimpse(id, table = NULL)` surfaces v2-inline dataset metadata (`quality`, `metrics`, `context`, plus `resources` when `table = TRUE`) via `fetch_dataset_v2()` + `fetch_resource_subsection()`. |
-| `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. |
+| `R/dg-refetch.R` (new) | `dg_refetch(x)` + `resolve_table_id()` validation; re-attaches the id attribute. Adds `col_types` (threaded to `read_resource()`/`read_one_zip_file()`) and `use_tabular_types` (default `TRUE`, threaded to `read_resource()` for single-file / `read_one_zip_file()` for ZIP members). |
 | `R/dg-schema.R` (new) | `dg_schema(x)` via `resolve_table_id()` → schema.data.gouv.fr Table Schema, with `NULL` when no schema pointer. |
 | `R/rdatagouv-package.R` / NAMESPACE | Document/export the new functions. |
 | `tests/` | Unit + snapshot tests for each change. |
@@ -318,3 +398,15 @@ Implications for this package:
     on `dg_find_datasets()`. Topics reuse the exact pointer-pagination envelope of
     organizations, so no new pagination machinery. Element kind lives in the nested
     `element$class`; NULL-class entries are curator external links and never counted.
+11. **Tabular-profile column typing** *(implemented)*: `dg_pull_dataset()`/`dg_refetch()`
+    gain `use_tabular_types` (default `TRUE`), seeding vroom's `col_types` from each
+    resource's own csv-detective profile on
+    `tabular-api.data.gouv.fr/api/resources/<rid>/profile/` (explicit `col_types` win on
+    collision). The profile is resolved at the leaf `read_resource()` inside the parse loop,
+    so a multi-resource dataset uses the actual profile of the resource that parses, not a
+    first-candidate guess (the prototype-only `first_tabular_candidate()` was removed).
+    Best-effort: only single-file indexed resources have a profile (ZIP members are a
+    no-op), a 404/network failure degrades to inference, and a per-column detection whose
+    confidence `score` falls below `min_score = 0.5` is left for vroom to infer rather
+    than pinned. Tests in `tests/testthat/test-tabular-types.R` (all
+    network/file steps mocked).
