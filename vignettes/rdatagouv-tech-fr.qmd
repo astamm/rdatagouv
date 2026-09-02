@@ -1,5 +1,5 @@
 ---
-title: "Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : de la découverte des données à la reproductibilité"
+title: "Le package R {rdatagouv} : de la découverte des données à la reproductibilité"
 subtitle: "Documentation technique — API [datagouv](https://www.data.gouv.fr/), [{httr2}](https://httr2.r-lib.org/), URI, tests et mocking"
 author: "Équipe rdatagouv"
 date: 2026-08-21
