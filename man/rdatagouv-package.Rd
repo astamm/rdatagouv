@@ -17,6 +17,7 @@ missing-value rates, ...). Requests are built on top of the \code{httr2} package
 Useful links:
 \itemize{
   \item \url{https://astamm.github.io/rdatagouv/}
+  \item \url{https://github.com/astamm/rdatagouv}
   \item Report bugs at \url{https://github.com/astamm/rdatagouv/issues}
 }
 

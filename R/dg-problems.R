@@ -1,6 +1,6 @@
 #' Return the parsing problems of a downloaded table
 #'
-#' Returns the data frame of parsing issues that [vroom](https://vroom.r-lib.org/)
+#' Returns the data frame of parsing issues that [vroom](https://vroom.tidyverse.org/)
 #' encountered while reading a table downloaded with [dg_pull_dataset()] or
 #' [dg_refetch()]. These are vroom's "parsing issues" (rows that could not be
 #' converted to the inferred column type, e.g. a mostly-padded ISO date column

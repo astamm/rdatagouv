@@ -14,7 +14,7 @@ A data frame with columns \code{row}, \code{col}, \code{expected} and \code{actu
 (one row per parsing issue), or \code{NULL} if there were none.
 }
 \description{
-Returns the data frame of parsing issues that \href{https://vroom.r-lib.org/}{vroom}
+Returns the data frame of parsing issues that \href{https://vroom.tidyverse.org/}{vroom}
 encountered while reading a table downloaded with \code{\link[=dg_pull_dataset]{dg_pull_dataset()}} or
 \code{\link[=dg_refetch]{dg_refetch()}}. These are vroom's "parsing issues" (rows that could not be
 converted to the inferred column type, e.g. a mostly-padded ISO date column
