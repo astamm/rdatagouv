@@ -1,11 +1,12 @@
 url: https://astamm.github.io/rdatagouv/
 template:
   bootstrap: 5
-articles:
-- title: Articles
-  contents:
-  - rdatagouv
-  - rdatagouv-howto
+
+navbar:
+  structure:
+    left: [reference, articles, news, talks]
+    right: [search, github, lightswitch]
+
 reference:
 - title: Finding and downloading datasets
   desc: |

@@ -840,19 +840,18 @@ data.frame(
   make_gt()
 ```
 
-# Le parsing des colonnes : types, profil et problèmes {#sec-parsing}
+# Le parsing des colonnes : types, profil et rapport d'erreurs {#sec-parsing}
 
 `dg_pull_dataset()` et `dg_refetch()` lisent les fichiers délimités (CSV,
-CSV.GZ, TSV, TXT) avec une unique appel [`vroom::vroom()`](https://vroom.r-lib.org), qui **devine**
+CSV.GZ, TSV, TXT) avec un unique appel à [`vroom::vroom()`](https://vroom.r-lib.org), qui **devine**
 le type de chaque colonne (entier, double, date, ...) à partir des valeurs
-qu'elle contient. Deux mécanismes permettent de contrôler — et de fiabiliser —
+qu'elle contient. Deux mécanismes permettent de contrôler et de fiabiliser
 cette inférence, et un troisième d'inspecter ce qui s'est mal passé.
 
 ## Forcer les types de colonnes avec `col_types`
 
 `col_types` est un **vecteur nommé** de chaînes courtes qui impose le type de
-vroom pour les colonnes nommées. Les colonnes non nommées gardent leur
-inférence. Les abréviations reconnues sont `"character"`, `"double"`/`"numeric"`,
+[{vroom}](https://vroom.tidyverse.org) pour les colonnes nommées. Les colonnes non nommées voient toujours leurs types inférés. Les abréviations reconnues sont `"character"`, `"double"`/`"numeric"`,
 `"integer"`, `"logical"`, `"Date"`, `"datetime"`, `"skip"` et `"guess"`. Par
 exemple, pour forcer une colonne au type `Date` :
 
@@ -860,18 +859,17 @@ exemple, pour forcer une colonne au type `Date` :
 tbl <- dg_pull_dataset(id, col_types = c(date_mise_en_service = "Date"))
 ```
 
-Le mécanisme est translaté en interne par `col_types_to_spec()` en une spec
-[`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) ; le package ne dépend pas de {readr}. Les colonnes ainsi
-forcées **gagnent toujours** en cas de collision avec l'inférence ou le profil.
+Le mécanisme est converti en interne par `col_types_to_spec()` en une spec
+[`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) ; le package ne dépend pas de [{readr}](https://readr.tidyverse.org). Le typage manuel **l'emporte toujours** en cas de collision avec l'inférence ou le profil.
 
 ## Amorcer les types depuis le profil de la plateforme : `use_tabular_types`
 
 Par défaut (`use_tabular_types = TRUE`), `dg_pull_dataset()` amorce les `col_types`
-de vroom à partir du **profil `csv-detective`** publié par data.gouv lui-même
+de [`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) à partir du **profil `csv-detective`** publié par la plateforme [data.gouv](https://www.data.gouv.fr/) elle-même
 (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`). C'est une information
 nativement portée par la plateforme sur la ressource ciblée, résolue **par
 ressource à l'intérieur de la boucle de parsing** : pour un dataset multi-ressources,
-chaque ressource utilise son propre profil, pas une devinette sur le premier
+chaque ressource utilise son propre profil, et non pas une tentative de deviner sur le premier
 candidat.
 
 Ce profil n'existant que pour les ressources **mono-fichier indexées** par le
@@ -881,24 +879,23 @@ sans effet sur `read_one_zip_file()`/`read_zip_resource()`), et un échec résea
 ou une 404 dégrade en silence. De plus, une détection par colonne dont le score
 de confiance est inférieur à `min_score = 0.5` (le seuil par défaut de
 `tabular_profile_col_types()`) est **laissée hors** de la carte `col_types` afin
-que vroom l'infère plutôt que de figer un type peu fiable. Un `col_types` explicite
+que [`vroom::vroom()`](https://vroom.r-lib.org) l'infère plutôt que de figer un type peu fiable. Un `col_types` explicite
 gagne toujours en cas de collision.
 
 Passer `use_tabular_types = FALSE` désactive entièrement cette amorce et laisse
-tout à l'inférence de vroom.
+tout à l'inférence de [`vroom::vroom()`](https://vroom.r-lib.org).
 
 ## Inspecter les problèmes de parsing : `dg_problems()`
 
 Les données publiques réelles collaborent rarement parfaitement : une colonne
-peut contenir un mélange de types, et l'inférence de vroom peut se tromper. Les
-avertissements par cellule de vroom (qui se déclenchent dès qu'il s'engage sur un
-collecteur et rencontre une valeur qu'il ne peut convertir) sont **étouffés**
+peut contenir un mélange de types, et l'inférence de [`vroom::vroom()`](https://vroom.r-lib.org) peut se tromper. Les
+avertissements par cellule de [`vroom::vroom()`](https://vroom.r-lib.org) (qui se déclenchent dès qu'il s'engage sur un
+collecteur et rencontre une valeur qu'il ne peut convertir) sont **passés sous silence**
 avec `withCallingHandlers`, et les problèmes sous-jacents sont capturés avec
 [`vroom::problems()`](https://vroom.r-lib.org/reference/problems.html) puis attachés à la table comme attribut
-`rdatagouv_problems`. C'est délibéré : `vroom::problems()` opère sur l'objet
-*vroom* lui-même, mais la conversion en tibble par `format_tibble()` retire la
-classe vroom — l'avertissement par cellule aurait été une impasse pour
-l'utilisateur final. L'attribut, lui, survit à `tibble::as_tibble()` et est lu par
+`rdatagouv_problems`. Cette stratégie est délibérée : `vroom::problems()` opère sur l'objet
+`vroom` lui-même, mais la conversion en tibble par `format_tibble()` retire la
+classe `vroom`. L'attribut, lui, survit à `tibble::as_tibble()` et est lu par
 la fonction exportée `dg_problems()`.
 
 `dg_problems(x)` renvoie le data frame `{row, col, expected, actual}` des
@@ -906,26 +903,24 @@ problèmes, ou `NULL` si la table a été parsée proprement (l'attribut n'est
 attaché que lorsqu'il y a quelque chose à signaler, si bien qu'une table saine
 reste légère et qu'un data.frame ordinaire renvoie `NULL`).
 
-### Le déclencheur fréquent : les dates ISO majoritairement rembourrées
+### Une erreur de parsing fréquente : les dates *presque* ISO
 
-Un cas réel courant est une colonne de dates telle que `2021-07-01`, **rembourrée**
-(chiffres sur deux positions) pour presque toutes les lignes, avec quelques
-traînard·es non rembourré·es comme `2021-7-01` ou `2024-11-5`. vroom voit des
-dates ISO majoritairement rembourrées, s'engage sur un collecteur `Date`, et
-signale chaque traînard·e comme un problème de parsing — les valeurs fautives
-deviennent `NA`. C'est une **qualité de donnée** à corriger, pas un bug du
-téléchargement. Deux façons de la corriger :
+Un cas réel courant est une colonne de dates telle que `2021-07-01` (chiffres sur deux positions) pour presque toutes les lignes, avec quelques
+exceptions comme `2021-7-01` ou `2024-11-5`. [`vroom::vroom()`](https://vroom.r-lib.org) voit des
+dates ISO majoritairement remplies, s'engage sur un collecteur `Date`, et
+signale chacune de ces exceptions comme un problème de parsing, les valeurs fautives
+devenant `NA`. Dans ce cas, la donnée était bien renseignée mais pas au format attendu. Deux façons de la corriger :
 
 1. **Forcer `"character"`** pour ne rien perdre — aucune valeur ne devient `NA`,
    et vous pouvez parser les dates vous-même ensuite.
-2. **Forcer `"Date"`** et accepter que les traînard·es deviennent `NA`, ce qui est
+2. **Forcer `"Date"`** et accepter que certaines deviennent `NA`, ce qui est
    adapté lorsqu'un petit nombre de dates non parsées est acceptable.
 
 Le flux de travail général : télécharger, inspecter avec `dg_problems()`,
-repérer la colonne fautive dans `col`, choisir une entrée `col_types` alignée sur
+repérer la ou les colonne(s) fautive(s) dans `col`, choisir une entrée `col_types` alignée sur
 votre usage, puis re-télécharger ou re-fetcher. Si le problème est une valeur non
 numérique dans une colonne numérique, forcer `"character"` garde le texte brut ;
-forcer `"double"` le transforme en `NA`. Dans les deux cas, vous avancez avec une
+forcer `"double"` le transforme en `NA`. Dans les deux cas, vous récupérez une
 table dont les colonnes se comportent de façon prévisible.
 
 # Annexe : conventions de développement
