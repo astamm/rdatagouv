@@ -1,5 +1,5 @@
 Package: rdatagouv
-Title: Tools to Download and Explore Datasets from the French Open Data Platform
+Title: Tools to Download and Explore Datasets from data.gouv.fr
 Version: 0.1.0
 Authors@R: c( 
     person(given = "Magali", 
@@ -32,14 +32,16 @@ Authors@R: c(
            email = "aymeric.stamm@cnrs.fr",
            comment = c(ORCID = "0000-0002-8725-3654")))
 Description: Provides a client for the public API of data.gouv.fr, the French
-    government's open data platform. It helps find a dataset that matches your
-    interests, judge whether it is usable, download it and re-fetch the exact
-    same table later in a reproducible way. You can list datasets (full-text
-    search, or restricted to schema-documented ones), pull a dataset's tabular
-    resources into tidy tibbles, inspect the documented variables of the data
-    schema it declares, and compute summary metrics (size, number of columns,
-    missing-value rate, ...). Each returned table carries a stable identifier
-    so it can be re-fetched later. Requests are built on top of 'httr2'.
+    government's open data platform. It helps you find a dataset that matches
+    your interests, judge whether it is usable, download it, and re-fetch the
+    exact same table later in a reproducible way. You can search the catalog
+    and filter by producer or theme (dg_find_datasets(), dg_find_organization(),
+    dg_find_topics()), pull a dataset's tabular resources into tidy tibbles
+    (dg_pull_dataset()), inspect the documented variables of its data schema
+    (dg_schema()), and compute summary metrics such as size, number of columns
+    and missing-value rate (dg_summary(), dg_summarise()). Each returned table
+    carries a stable identifier (dg_table_id(), dg_refetch()) so it can be
+    re-fetched later. Requests are built on top of 'httr2'.
 License: MIT + file LICENSE
 URL: https://astamm.github.io/rdatagouv/
 BugReports: https://github.com/astamm/rdatagouv/issues
