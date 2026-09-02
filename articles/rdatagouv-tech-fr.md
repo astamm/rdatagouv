@@ -1,4 +1,4 @@
-# Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : de la découverte des données à la reproductibilité
+# Le package R {rdatagouv} : de la découverte des données à la reproductibilité
 
 > **Note**
 >
