@@ -40,8 +40,8 @@ the `topic` filter on
 was sketched in a separate `TOPIC-SUPPORT-SKETCH.md` decision log that
 has been **removed** now that the work is fully shipped (its
 implementation lives in the source and docs; see git history for the
-sketch). A second vignette, `vignettes/rdatagouv-howto.qmd`, is a French
-architecture/development guide (separate from the user-facing
+sketch). A second vignette, `vignettes/rdatagouv-tech-fr.qmd`, is a
+French architecture/development guide (separate from the user-facing
 getting-started vignette `vignettes/rdatagouv.qmd`). The README and the
 vignette `vignettes/rdatagouv.qmd` document usage for end users.
 

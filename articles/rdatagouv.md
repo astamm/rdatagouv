@@ -115,8 +115,8 @@ cycle[, c("title", "n_resources", "has_table", "has_schema")]
        <chr>                                              <int> <lgl>     <lgl>
      1 "Statistiques de subventions d’achat de vél…           2 TRUE      FALSE
      2 "Fréquentation mesurée dans les Parkings Vé…           2 TRUE      FALSE
-     3 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
-     4 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+     3 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+     4 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
      5 "Plan Vélo 2021-2026"                                  4 TRUE      FALSE
      6 "Aménagements vélo en Île-de-France"                  21 TRUE      FALSE
      7 "Comptages vélo et piétons"                            5 TRUE      FALSE
@@ -269,8 +269,8 @@ topics[, c("name", "n_elements")]
     1 Indicateurs du tableau de bord des mobilités durables                       28
     2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
     3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-    4 Lutte contre la vacance des logements                                        8
-    5 Véhicules électriques                                                       27
+    4 Véhicules électriques                                                       27
+    5 Lutte contre la vacance des logements                                        8
 
 Pass a theme’s id to `dg_find_datasets(topic =)` to narrow a catalog
 search to datasets grouped under it (the same single-valued server-side
@@ -327,7 +327,7 @@ glimpse$quality$score             # 0..1 quality score
 glimpse$metrics$views             # how often the dataset is looked at
 ```
 
-    [1] 578
+    [1] 625
 
 ``` r
 

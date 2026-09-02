@@ -5,7 +5,7 @@
 - New technical vignette, *Documentation technique du package rdatagouv*
   — a French architecture/development guide (in French) previously
   maintained as an Rbuildignore’d root document. It now ships as a real
-  vignette (`vignettes/rdatagouv-howto.qmd`), is registered under
+  vignette (`vignettes/rdatagouv-tech-fr.qmd`), is registered under
   `articles` on the pkgdown site, and gains a section on column parsing
   (`col_types`, `use_tabular_types` and the `csv-detective` profile
   seeding, and

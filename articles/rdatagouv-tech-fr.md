@@ -1,0 +1,1039 @@
+# Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : de la découverte des données à la reproductibilité
+
+> **Note**
+>
+> Ce document décrit l’architecture et le fonctionnement du package R
+> [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html), un
+> client de l’API publique de la plateforme gouvernemantale
+> [datagouv](https://www.data.gouv.fr/) des données publiques
+> françaises. Il est conçu comme une documentation pédagogique et
+> technique : il couvre l’intention du package, les différents points
+> d’entrée de la plateforme, l’usage du package
+> [{httr2}](https://httr2.r-lib.org/) pour interroger des API web, le
+> concept d’**URI** appliqué à la reproductibilité, et la stratégie de
+> **test** (mocking et API live) avec mise en place via
+> [{testthat}](https://testthat.r-lib.org).
+
+## 1 Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : intention et objectif principal
+
+Le package [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html)
+est un client R pour l’API publique de
+[datagouv](https://www.data.gouv.fr/), la plateforme gouvernementale des
+données publiques françaises ouvertes. Le public cible est constitué
+d’étudiants et de data scientists qui souhaitent travailler sur des
+données réelles mais manquent souvent de repères pour naviguer un
+catalogue de plusieurs dizaines de milliers de jeux de données.
+L’objectif principal est le suivant :
+
+> Permettre à un·e étudiant·e ou data scientist de **trouver** un jeu de
+> données correspondant à ses centres d’intérêt, de **juger** s’il est
+> utilisable, de le **télécharger**, puis de **re-télécharger exactement
+> la même table** de manière reproductible.
+
+Ce flux de travail se décompose en quatre étapes, chacune assurée au
+sein du package par une fonction dédiée, ainsi qu’un certain nombre
+d’autres fonctions utilitaires également exposées (toutes préfixées par
+`dg_*`). [Table 1](#tbl-workflow) résume les étapes et les fonctions
+correspondantes.
+
+| Étape du workflow | Fonction(s) |
+|----|----|
+| **Trouver** / chercher | [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html) |
+| Identifier les producteurs | [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.html) |
+| Identifier les thèmes | [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.html) |
+| **Juger** les colonnes documentées | [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.html) |
+| **Télécharger** une ressource | [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.html) |
+| Résumer le contenu | [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.html), [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.html) |
+| **Re-télécharger** (reproducibilité) | [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.html) |
+
+Table 1: **Liste des fonctions exposées du package
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html).** Chaque
+étape (trouver, juger, télécharger, re-télécharger) est assurée par une
+fonction dédiée (et quelques fonctions utilitaires).
+
+Les flux de travail typiques sont élicités dans la vignette [*Getting
+started*](https://astamm.github.io/rdatagouv/articles/rdatagouv.html) et
+dans le [README](https://astamm.github.io/rdatagouv/index.html) du
+package et résumés par la [Figure 1](#fig-workflow).
+
+``` mermaid
+flowchart TD
+    A["dg_find_datasets(*q*)"] -->|"formats / n_resources / has_table / has_schema"| B{"choisir un candidat"}
+    B --> C["dg_pull_dataset(id)"]
+    C --> C2["tibble avec attribut id"]
+    C2 --> D["dg_schema(tbl)"]
+    D --> D2["variables documentées (ou NULL)"]
+    C2 --> E["dg_summarise(tbl)"]
+    E --> F["tibble de métriques"]
+    C2 -. "identifiant stable (attribut)" .-> G["dg_refetch(tbl) / dg_refetch(id)"]
+    G --> H["la même table"]
+```
+
+Figure 1: **Flux de travail principaux.** Une fois un jeu de données
+téléchargé, il est possible de vérifier la documentation de ses
+variables et d’y accéder, ou d’afficher un aperçu (nombre
+d’observations, de variables quantitatives, qualitatives, proportion de
+valeurs manquantes) ou encore de re-télécharger les mêmes données pour
+assurer la reproducibilité des analyses.
+
+L’idée structurante est que les *identifiants humains* (titres) sont
+instables — ils peuvent changer, se dupliquer ou être ambigus — alors
+que les *identifiants de plateforme* (ObjectId de dataset, UUID de
+ressource) sont uniques et stables. C’est sur ces derniers que repose
+toute l’architecture, notamment via le concept d’URI développé plus bas.
+D’un autre côté, il est plus naturel pour l’utilisateur de rechercher
+par mots-clés dans le catalogue, et c’est ce que permettent de faire
+[`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html)
+en combinaison avec
+[`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.html)
+et
+[`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.html).
+Le package gère donc la **traduction** entre les deux mondes : recherche
+par titre, puis adressage par identifiant stable.
+
+## 2 La plateforme [datagouv](https://www.data.gouv.fr/) et ses points d’entrée
+
+[datagouv](https://www.data.gouv.fr/) est la plateforme gouvernementale
+des données publiques françaises ouvertes : elle héberge des jeux de
+données, des organisations productrices, des réutilisations (dans des
+APIs externes) et des services de données. Pour un client logiciel, elle
+expose **plusieurs API complémentaires**, qui ne sont pas des substituts
+mais interviennent à des étapes différentes du flux.
+
+### 2.1 Vue d’ensemble des quatre points d’entrée
+
+[Table 2](#tbl-entrypoints) donne un aperçu des quatre points d’entrée
+de la plateforme [datagouv](https://www.data.gouv.fr/) qu’il a été
+possible d’identifier ainsi que leur rôle dans l’implémentation de
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html).
+
+| Point d'entrée dans datagouv | Rôle dans rdatagouv |
+|----|----|
+| <https://www.data.gouv.fr/api/1/> | **Backbone** : recherche catalogue et métadonnées de découverte, téléchargement brut des fichiers. |
+| <https://www.data.gouv.fr/api/2/> | API v2 (interface uData native) : recherche `datasets/search`, `organizations/search`, `topics/search`, métadonnées riches par dataset. |
+| <https://tabular-api.data.gouv.fr/api/doc> | Service tabulaire (métadonnées par variable) — **non utilisé** par l’implémentation actuelle. |
+| <https://schema.data.gouv.fr/schemas.json> | Schémas de données documentés par les producteurs (champs par colonne). |
+
+Table 2: **Récapitulatif des 4 points d’entrée de la plateforme
+[datagouv](https://www.data.gouv.fr/).**
+
+### 2.2 API principale v1 (`/api/1/`)
+
+C’est **l’épine dorsale** de la plateforme. Elle gère la recherche par
+mots-clés sur le catalogue, les métadonnées de découverte (titre,
+organisation, licence, fréquence, couverture temporelle/spatiale,
+description, formats, tailles) et le téléchargement brut des fichiers
+(servis par le CDN `static.data.gouv.fr`). Dans
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html), le
+téléchargement
+([`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.html)),
+le re-téléchargement
+([`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.html)),
+le schéma
+([`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.html))
+et le résumé
+([`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.html)
+et
+[`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.html))
+requêtent cette API.
+
+Sa couverture est **totale** : tout ce qui est publié sur la plateforme
+y est adressable. C’est crucial, car l’API tabulaire ne couvre qu’une
+partie des ressources (les non indexées renvoient une erreur 404).
+
+### 2.3 API v2 (`/api/2/`)
+
+C’est l’interface qu’utilisent les pages web de
+[datagouv](https://www.data.gouv.fr/). Elle apporte deux bénéfices
+majeurs pour la *découverte* :
+
+1.  **Recherche riche** sur `datasets/search/`, `organizations/search/`
+    et `topics/search/`, avec pagination par pointeur (`next_page` sous
+    forme de chaîne URL) et filtres côté serveur (`organization`,
+    `geozone`, `access_type`, `license`, `tag`, `topic`, `granularity`,
+    `last_update`, `producer_type`).
+2.  **Métadonnées intégrées par dataset** : `quality` (score et
+    contexte - présence d’une license, fréquence, couverture, …) et
+    `metrics` (vues, nombre de téléchargements, …) exposées par
+    [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html)
+    et
+    [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.html).
+
+> **Accès aux ressources**
+>
+> Le point clé : **la v2 n’intègre PAS les ressources d’un dataset** au
+> sein des résultats de recherche — elles sont des pointeurs vers une «
+> subsection ». De ce fait, les colonnes dérivées des ressources
+> (`n_resources`, `formats`, `has_table`, `has_schema`) valent `NA` par
+> défaut, et ne sont remplies qu’avec `resources = TRUE` (au prix de N+1
+> requêtes par dataset au lieu d’une).
+
+### 2.4 API tabulaire (`tabular-api.data.gouv.fr`)
+
+Cette API propose des métadonnées par variable (profil de table, types,
+formats, statistiques via `/resources/{rid}/profile/`) ainsi qu’un
+service de filtrage/pagination/tri. Cependant, elle ne couvre que les
+ressources indexées par le service tabulaire, est orientée CSV, et ne
+propose **pas** de recherche par mots-clés sur le catalogue.
+
+Dans [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html), elle
+n’est **pas utilisée** par l’implémentation actuelle. Les métadonnées
+par variable proviennent des documents de schéma publiés sur
+<https://schema.data.gouv.fr/> (voir ci-dessous), qui contiennent les
+descriptions réellement rédigées par les producteurs.
+
+### 2.5 API des schémas (`schema.data.gouv.fr`)
+
+[datagouv](https://www.data.gouv.fr/) n’attache un schéma que sous forme
+de **pointeur** (`resource$schema = {name, url, version}`). La
+documentation réelle des colonnes (description par champ du Table
+Schema) vit dans les documents publiés sur
+<https://schema.data.gouv.fr/>. C’est ce que lit
+[`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.html)
+: elle résout le pointeur (le `url` directement, ou le `name` via le
+catalogue <https://schema.data.gouv.fr/schemas.json>) et renvoie les
+`fields` sous forme de tibble avec colonnes `name`, `title`,
+`description`, `type` et `example`. [Table 3](#tbl-complementarity)
+résume la complémentarité des quatre API.
+
+[TABLE]
+
+Table 3: **Complémentarité des quatre points d’entrée de la plateforme
+[datagouv](https://www.data.gouv.fr/).** Sur l’ensemble des tâches
+nécessaires au fonctionnement de
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html), une unique
+API ne suffit pas.
+
+## 3 Utiliser [{httr2}](https://httr2.r-lib.org/index.html) pour construire des requêtes vers des API web
+
+Le package [{httr2}](https://httr2.r-lib.org/index.html) est un client
+HTTP moderne et déclaratif pour R : on construit une **requête**
+([`request()`](https://httr2.r-lib.org/reference/request.html)), on la
+**configure** avec des *policies* (timeout, retry, erreurs), puis on
+l’**exécute** avec
+[`req_perform()`](https://httr2.r-lib.org/reference/req_perform.html) et
+on en **extrait** le corps
+([`resp_body_json()`](https://httr2.r-lib.org/reference/resp_body_json.html)).
+
+### 3.1 L’approche « wrapping » recommandée
+
+Comme le suggère l’article [*Wrapping
+APIs*](https://httr2.r-lib.org/articles/wrapping-apis.html), un package
+client comme
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) ne doit pas
+laisser les détails HTTP fuiter partout dans le code. On centralise la
+configuration dans un **helper interne** unique, puis chaque appel
+l’utilise. Cela offre un seul endroit où gérer user-agent, timeouts,
+retries et messages d’erreur — et, comme on le verra, une **seule pile
+de fonctions** à émuler dans les tests.
+
+Dans [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html), ce
+helper est `req_data_gouv()` (`.env` interne, `R/utils.R`). Il définit
+de manière globale les *policies* httr2 pour le package entier. La
+cellule suivante reproduit la définition de la fonction, puis construit
+une requête et affiche les policies qui s’y sont agrégées.
+
+``` r
+
+req_data_gouv <- function(req) {
+  httr2::req_retry(
+    httr2::req_error(
+      httr2::req_timeout(
+        # Une réponse bloquée ne doit pas geler dg_pull_dataset() indéfiniment.
+        httr2::req_user_agent(
+          req,
+          "rdatagouv R package (https://github.com/stamm-a/rdatagouv)"
+        ),
+        seconds = 30
+      ),
+      is_error = function(resp) httr2::resp_status(resp) >= 400,
+      body = function(resp) {
+        tryCatch(
+          httr2::resp_body_json(resp)$message,
+          error = function(e) ""
+        )
+      }
+    ),
+    is_transient = function(resp) {
+      httr2::resp_status(resp) %in% c(429, 500, 502, 503, 504)
+    },
+    retry_on_failure = TRUE,
+    max_tries = 3,
+    max_seconds = 8
+  )
+}
+
+# La requête construite cumule bien les policies httr2
+# (user-agent, timeout 30 s, erreurs ≥ 400, retry borné 429/5xx) :
+req_data_gouv(httr2::request("https://www.data.gouv.fr/api/2/datasets/search/"))
+```
+
+    <httr2_request>
+    GET https://www.data.gouv.fr/api/2/datasets/search/
+    Body: empty
+    Options:
+    * useragent     : "rdatagouv R package (https://github.com/stamm-a/rdatagouv)"
+    * timeout_ms    : 30000
+    * connecttimeout: 0
+    Policies:
+    * error_is_error         : <function>
+    * error_body             : <function>
+    * retry_max_tries        : 3
+    * retry_max_wait         : 8
+    * retry_on_failure       : TRUE
+    * retry_is_transient     : <function>
+    * retry_failure_threshold: Inf
+    * retry_failure_timeout  : 30
+    * retry_realm            : "www.data.gouv.fr"
+
+Les choix sont réfléchis selon la nature de l’API cible :
+
+- **User-agent** : une chaîne identifiant le package, conforme à
+  l’étiquette des clients HTTP.
+- **`req_timeout(seconds = 30)`** : l’API v2 peut être lente ; un délai
+  borné garantit qu’un appel ne bloque pas indéfiniment.
+- **`req_error(is_error = >= 400)`** : toute réponse ≥ 400 est une
+  erreur, mais avec un **corps d’erreur lisible** extrait du JSON
+  (`$message`). `tryCatch` protège contre le cas où le corps n’est pas
+  du JSON.
+- **`req_retry(is_transient = {429, 5xx})`** : seul un statut vraiment
+  *transitoire* (429 et 5xx) est rejoué — jamais une erreur 4xx, qui est
+  une condition permanente (rejouer ne ferait qu’allonger la latence
+  d’un crawl déjà lent). `retry_on_failure = TRUE` rejoue aussi les
+  échecs de bas niveau (timeout, connexion coupée, DNS), mais dans un
+  budget global borné (`max_tries = 3`, `max_seconds = 8`) pour qu’une
+  API défaillante ne bloque pas l’énumération pendant des minutes.
+
+### 3.2 Construction des requêtes : chemins, query, encodage
+
+[{httr2}](https://httr2.r-lib.org/index.html) fournit des aides
+ergonomiques que le package utilise selon les cas. Par exemple, il est
+possible de composer des URLs à l’aide de
+[`req_url_path_append()`](https://httr2.r-lib.org/reference/req_url.html)
+:
+
+``` r
+
+datagouv_base_url <- "https://www.data.gouv.fr/api/1/"
+
+# Composition des URL (fetch_dataset) : $url expose l'URL finale composée.
+req <- httr2::request(datagouv_base_url) |>
+  httr2::req_url_path_append("datasets", "6a6be5976a05df136d48fb7a")
+req$url
+```
+
+    [1] "https://www.data.gouv.fr/api/1/datasets/6a6be5976a05df136d48fb7a"
+
+Puis, il est possible d’ajuster les paramètres d’une requête données à
+l’aide de
+[`req_url_query()`](https://httr2.r-lib.org/reference/req_url.html) (en
+s’assurant au préable auprès de l’API requêtée de l’existence de ces
+paramètres) :
+
+``` r
+
+# Paramètres de query simples (find_dataset) :
+req <- httr2::request(datagouv_base_url) |>
+  httr2::req_url_path_append("datasets", "6a6be5976a05df136d48fb7a") |>
+  httr2::req_url_query(q = "velo", page_size = 50)
+req$url
+```
+
+    [1] "https://www.data.gouv.fr/api/1/datasets/6a6be5976a05df136d48fb7a?q=velo&page_size=50"
+
+#### 3.2.1 Le cas particulier des paramètres répétés
+
+L’API v2 honore plusieurs valeurs de `format` uniquement **en paramètres
+répétés** (`format=csv&format=parquet`, une union côté serveur). Or
+[`req_url_query()`](https://httr2.r-lib.org/reference/req_url.html)
+**écrase** un paramètre déjà présent sur répétition. La solution retenue
+est de construire la requête manuellement avec la fonction utilitaire
+`append_url_params()`, puis de la passer à
+[`request()`](https://httr2.r-lib.org/reference/request.html) :
+
+``` r
+
+# Chaque format devient son propre paramètre répété.
+url_v2 <- "https://www.data.gouv.fr/api/2/datasets/search/"
+rdatagouv:::append_url_params(
+  url = url_v2, 
+  frags = c("format=csv", "format=parquet")
+)
+```
+
+    [1] "https://www.data.gouv.fr/api/2/datasets/search/?format=csv&format=parquet"
+
+### 3.3 Exécution et parsing
+
+L’exécution passe par un helper interne, `http_perform()` :
+
+``` r
+
+http_perform <- function(req) {
+  httr2::req_perform(req)
+}
+```
+
+C’est une fine enveloppe autour de
+[`httr2::req_perform()`](https://httr2.r-lib.org/reference/req_perform.html).
+Elle évite les directives `@importFrom` dans chaque appel et, surtout,
+fournit **une unique pile réseau émulable pour les tests** (cf.
+[Section 5](#sec-mocking)).
+
+Le parsing est standardisé :
+[`httr2::resp_body_json()`](https://httr2.r-lib.org/reference/resp_body_raw.html)
+pour les réponses API, et
+[`httr2::resp_body_raw()`](https://httr2.r-lib.org/reference/resp_body_raw.html)
+pour les téléchargements binaires de ressources (`download_resource()`
+écrit le corps brut sur disque via
+[`writeBin()`](https://rdrr.io/r/base/readBin.html)).
+
+La cellule suivante met tout en action sans nécessité d’accès au réseau
+:
+[`httr2::with_mocked_responses()`](https://httr2.r-lib.org/reference/with_mocked_responses.html)
+intercepte la pile de transport et fournit des réponses
+**déterministes**, exactement comme
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) émule
+`http_perform()` dans ses tests. C’est la façon de rendre un exemple
+[{httr2}](https://httr2.r-lib.org/index.html) exécutable *et*
+reproductible.
+
+``` r
+
+library(httr2)
+
+# 1. Construire et configurer la requête via le helper central.
+build_request <- function() {
+  request("https://www.data.gouv.fr/api/2/datasets/search/") |>
+    req_url_query(q = "velo", page_size = 2) |>
+    req_user_agent("rdatagouv exemple") |>
+    req_timeout(seconds = 30) |>
+    req_error(
+      is_error = function(resp) resp_status(resp) >= 400,
+      body = function(resp) {
+        tryCatch(
+          httr2::resp_body_json(resp)$message,
+          error = function(e) ""
+        )
+      }
+    )
+}
+
+# 2. Une « fausse » réponse JSON (comme helper-data.R dans les tests).
+build_fake_response <- function(status, json) {
+  httr2::response(
+    status_code = status,
+    headers = list(`Content-Type` = "application/json"),
+    body = charToRaw(json)
+  )
+}
+
+# 3. Exécution + parsing, transport émulé => pas de réseau, sortie déterministe.
+with_mocked_responses(
+  function(req) {
+    build_fake_response(
+      status = 200, 
+      json = '{"total": 1234, "next_page": null}'
+    )
+  },
+  resp <- http_perform(build_request())
+)
+cat("Statut HTTP:", resp_status(resp), "\n")
+```
+
+    Statut HTTP: 200 
+
+``` r
+
+str(resp_body_json(resp))
+```
+
+    List of 2
+     $ total    : int 1234
+     $ next_page: NULL
+
+On voit que la *même* fonction `http_perform()` exécute la requête et
+que
+[`httr2::resp_body_json()`](https://httr2.r-lib.org/reference/resp_body_raw.html)
+en extrait un objet R exploitable, ce qui est le fondement de
+`fetch_search_page()`. Le cas d’erreur est lui aussi testable de façon
+déterministe : avec un statut `404` et un corps portant `message`, la
+policy
+[`httr2::req_error()`](https://httr2.r-lib.org/reference/req_error.html)
+déclenche une erreur R **lisible** :
+
+``` r
+
+with_mocked_responses(
+  function(req) {
+    build_fake_response(
+      status = 404, 
+      json = '{"message": "Ressource introuvable"}'
+    )
+  },
+  http_perform(build_request())
+)
+```
+
+    Error in `httr2::req_perform()`:
+    ! HTTP 404 Not Found.
+    ℹ Ressource introuvable
+
+Le message d’erreur extrait vient directement du champ `message` défini
+par la policy
+[`httr2::req_error()`](https://httr2.r-lib.org/reference/req_error.html)
+de `req_data_gouv()` — une erreur compréhensible, extraite du corps JSON
+de la réponse, plutôt qu’un vague échec HTTP.
+
+## 4 URI : définition et usage dans [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html)
+
+### 4.1 Qu’est-ce qu’une URI ?
+
+Une **URI** (*Uniform Resource Identifier*), dont la forme la plus
+connue est l’**URL**, est une chaîne de caractères qui **identifie de
+manière unique** une ressource. Elle est composée d’un *schéma*
+(`https`), d’une *autorité* (le nom de domaine) et d’un *chemin* vers
+une ressource, auquel peut s’ajouter un *fragment* après le caractère
+`#`.
+
+Une URI permet d’identifier une *chose* de façon stable et universelle.
+Pour un jeu de données, les identifiants « humains », comme le titre,
+sont mauvais : deux datasets peuvent partager un titre, un titre peut
+changer, être tronqué, ou ne pas refléter le contenu. Une URI construite
+sur des identifiants de plateforme est au contraire stable, parseable et
+globale.
+
+### 4.2 Comment [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) construit une URI par table
+
+Chaque table parsée reçoit une **adresse unique et re-fetchable** sous
+forme d’URI, composée par `compose_table_id()` :
+
+- **Ressource mono-fichier** :
+  `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>`,
+- **Fichier dans un ZIP multi-fichiers** :
+  `https://www.data.gouv.fr/datasets/<dataset_id>#<resource_id>/<file>`,
+
+où `dataset_id` est un **ObjectId 24-hexadécimal**, `resource_id` un
+**UUID**, et `<file>` un nom de fichier de base. Le caractère `#` (et
+`/`) n’apparaissant jamais dans ces champs, le fragment est non ambigu.
+
+Deux propriétés en découlent :
+
+1.  **L’adresse est « href-able »** : la base est la page dataset de
+    data.gouv, donc l’URI s’ouvre dans un navigateur et pointe vers la
+    bonne page.
+2.  **L’adresse est stable** : construite sur l’identité propre de la
+    plateforme (ObjectId + UUID), elle ne dépend pas du titre.
+
+L’URI est stockée comme attribut **`id`** de la tibble (via
+`table_attr()`). La fonction
+utilitaire[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.md)
+retourne l’attribut ou renvoie `NULL` pour un data.frame ordinaire.
+
+L’attribut survit aux verbes de [{dplyr}](https://dplyr.tidyverse.org)
+(tels que `select()`, [`filter()`](https://rdrr.io/r/stats/filter.html),
+`mutate()`, `slice()`, …) qui conservent la structure de la table. En
+revanche, il est perdu sous la manipulation par les verbes de
+[{tidyr}](https://tidyr.tidyverse.org) (tels que `pivot_longer()` ou
+`pivot_wider()`) qui construisent une table structurellement différente.
+Ce comportement est voulu, car ces objets ne sont plus la même table
+logique.
+
+### 4.3 URI et reproductibilité : [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.html)
+
+`dg_refetch(x)` réalise le « re-télécharger exactement la même table »
+de l’énoncé d’intention. `x` peut être un tibble (son attribut `id` est
+lu) ou une chaîne URI nue. Son implémentation suit les étapes suivantes
+:
+
+1.  `resolve_table_id(x)` → la chaîne URI.
+2.  `parse_table_id(id)` → le triplet `{dataset_id, resource_id, file}`.
+3.  `fetch_dataset(dataset_id)` (GET direct sur l’ObjectId, qui
+    sélectionne exactement le bon dataset).
+4.  Localisation de la ressource par `resource_id` ; erreur si absente.
+5.  Lecture ; si un segment `file` est présent, extraction de **ce
+    fichier** précis du ZIP (`read_one_zip_file`), sinon
+    `read_resource(resource)`.
+6.  `format_tibble(..., remove_na)`, re-attachement de l’attribut `id`,
+    retour d’un tibble unique.
+
+`parse_table_id()` rejette les ids malformés (mauvais nombre de
+segments, ObjectId non hexadécimal) avec un message clair ;
+`resolve_table_id()` retourne une erreur sur tout ce qui n’est ni une
+table avec attribut `id` ni une chaîne URI. C’est ce mécanisme qui
+garantit la reproductibilité : le même URI re-fetchable renvoie la même
+table, indépendamment des libellés du catalogue.
+
+## 5 Le *mocking* dans les tests unitaires
+
+### 5.1 Qu’est-ce que le *mocking*, et pourquoi ?
+
+Le ***mocking***, ou **émulation** en français, consiste à **remplacer
+temporairement** une dépendance d’un code (dans notre cas un appel
+réseau) par une **illusion contrôlée**, afin de tester le comportement
+du code sans avoir à contacter le système réel.
+
+Les tests unitaires de
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) doivent
+s’exécuter **sans réseau** (network-free) et de manière **déterministe**
+: on ne peut pas dépendre d’Internet pour vérifier la logique
+d’assemblage d’un tibble, car un appel réel serait lent, fragile et
+instable dans ses réponses. On émule donc chaque couche de la pile
+réseau.
+
+Voir [l’article testthat sur le
+*mocking*](https://testthat.r-lib.org/articles/mocking.html).
+
+### 5.2 Les deux niveaux d’émulation dans [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html)
+
+Le package teste deux niveaux, en émulant des fonctions différentes
+selon ce qu’on veut vérifier.
+
+#### 5.2.1 Emulation de la pile réseau : `http_perform()`
+
+Dans `test/testthat/test-utils.R`, on vérifie les helpers réseau *au
+niveau de l’exécution HTTP*. On construit de fausses réponses
+[{httr2}](https://httr2.r-lib.org) et on **remplace `http_perform()`**
+(l’enveloppe autour de
+[`httr2::req_perform()`](https://httr2.r-lib.org/reference/req_perform.html))
+:
+
+``` r
+
+# Une fausse réponse httr2 portant un corps JSON.
+fake_json_response <- function(json, status = 200) {
+  httr2::response(
+    status_code = status,
+    url = "https://example.org/",
+    headers = list("Content-Type" = "application/json"),
+    body = charToRaw(json)
+  )
+}
+
+# Mock http_perform() : chaque requête sortante est interceptée.
+local_mock_req_perform <- function(response_fun, env = parent.frame()) {
+  testthat::local_mocked_bindings(http_perform = response_fun, .env = env)
+}
+```
+
+Ceci teste les helpers de transport : `req_data_gouv()` (timeout 30s,
+retries bornés, seuls 429/5xx transitoires), `download_resource()`, le
+parsing, etc.
+
+#### 5.2.2 Emulation des briques fonctionnelles
+
+Pour tester les fonctions exposées, on émule les **briques internes de
+plus haut niveau**, comme `fetch_search_all()` (dans
+`test/testthat/test-dg-find-datasets.R`) ou `fetch_dataset()` et
+`read_resource()` (dans `test/testthat/test-dg-refetch.R`), en utilisant
+[`testthat::local_mocked_bindings()`](https://testthat.r-lib.org/reference/local_mocked_bindings.html).
+Les fakes sont construites par `tests/testthat/helper-data.R`
+(`mock_dataset`, `mock_dataset_v2`, `mock_resource`,
+`mock_search_envelope`, `mock_csv_data`, …).
+
+``` r
+
+test_that("dg_refetch() re-fetch une table mono-fichier par son URI", {
+  local_mocked_bindings(
+    fetch_dataset = function(id) {
+      mock_dataset(title = id, id = id,
+                   resources = list(mock_resource("csv", id = rid)))
+    },
+    read_resource = function(resource) mock_csv_data()
+  )
+  out <- dg_refetch(uri)
+  expect_equal(dg_table_id(out), uri)
+})
+```
+
+On vérifie ainsi le *comportement* (quelles fonctions sont appelées,
+avec quels arguments, et quel tibble en résulte) sans réseau.
+`helper-data.R` reproduit avec soin les formes réelles des objets API
+(enveloppe de recherche v2, subsection de ressources, éléments de thème
+au `element$class` imbriqué) pour que les fakes restent réalistes et
+proches de la réalité.
+
+### 5.3 Pourquoi et quand émule-t-on dans [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html)
+
+- **Quand?** : pour tous les tests unitaires de logique, de parsing,
+  d’assemblage de tibbles, de gestion d’erreurs et de validation des
+  filtres — c’est-à-dire **tout ce qui ne dépend pas de la réponse
+  réelle du serveur**.
+- **Pourquoi** : vitesse (pas de latence réseau), fiabilité (pas de
+  flakiness), déterminisme (réponses connues ⇒ assertions exactes), et
+  test des chemins d’erreur que l’API live ne produit pas aisément.
+
+En revanche, l’émulation **ne peut pas** prouver que les adressages
+fonctionnent contre le vrai serveur (que l’URL construite correspond
+vraiment à une ressource existante). C’est précisément ce vide que
+comble la [Section 6](#sec-live-api).
+
+## 6 Exercer l’API live
+
+### 6.1 L’intégration live opt-in : `tests/test-live-api.R`
+
+L’émulation ne suffit pas : il faut vérifier que les URI composées et la
+pagination correspondent au **vrai** comportament de
+[datagouv](https://www.data.gouv.fr/). C’est le rôle des **tests
+d’intégration live**, regroupés dans `tests/test-live-api.R`, qui
+interrogent la plateforme réelle.
+
+Ces tests sont **opt-in** : ils sont **ignorés sauf** si la variable
+d’environnement `DATAGOUV_LIVE=1` est définie en amont. Ainsi, un appel
+à `R CMD check` ou à `devtools::test()` par défaut reste sans réseau et
+déterministe. Pour exécuter les tests d’intégration live, on peut par
+exemple exécuter le code suivant dans un terminal (l’argument optionnel
+`filter = "live"` ne lance que l’exécution des tests d’intégration live)
+:
+
+``` r
+DATAGOUV_LIVE=1 Rscript -e 'devtools::test(filter = "live")'
+```
+
+### 6.2 La garde d’exécution : `skip_unless_live()`
+
+Le helper `skip_unless_live()` fait deux choses :
+
+1.  Il saute le test si `DATAGOUV_LIVE != 1`.
+2.  Il sonde **[datagouv](https://www.data.gouv.fr/) lui-même** (une
+    requête GET à `/api/1/datasets/<id>/`) et non l’hôte par défaut de
+    testthat, `captive.apple.com`, qui peut être inaccessible même quand
+    [datagouv](https://www.data.gouv.fr/) fonctionne.
+
+### 6.3 Que prouvent les tests live ?
+
+Les tests live vérifient ce que les émulations ne peuvent pas prouver,
+notamment :
+
+- **L’enveloppe de la recherche v2** : `fetch_search_page()` renvoie
+  bien `{data, total, next_page, facets}` avec une pagination par
+  pointeur (`next_page` est une chaîne URL).
+- **Les filtres serveur** (`organization`, `geozone`) réduisent
+  réellement le `total` par rapport au catalogue non filtré.
+- **L’adressage d’un fichier dans un ZIP** : un URI composé
+  (`#<resource_id>/stops.txt`) re-télécharge réellement ce membre, est
+  reproductible (deux
+  [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+  identiques), et correspond à une lecture directe de ce fichier dans
+  l’archive.
+
+> **Tip**
+>
+> Les fixtures live sont choisies pour leur **stabilité** : le dataset
+> Caen GTFS `6a6be5976a05df136d48fb7a`, sa ressource ZIP
+> `a5a8f046-e282-4010-91c5-82bc1f70ff73` et son membre `stops.txt`. Si
+> ce dataset disparaissait ou était réorganisé, il faudrait mettre à
+> jour ces identifiants.
+
+Les tests live couvrent aussi la résolution d’organisation (id 24-hex vs
+name vs slug → mêmes résultats), la filtrabilité de chaque `id`
+découvert, et la pagination des thèmes volumineux
+(`dg_find_topics(elements = TRUE)` sur un thème de plus de 100
+éléments). Cette double stratégie — émulations pour la logique, live
+pour l’adressage réel — est complémentaire et nécessaire dans un package
+qui enveloppe une API vivante.
+
+## 7 API du package [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html)
+
+Toutes les fonctions exposées partagent un préfixe **`dg_*`** uniforme.
+Une table représente soit un tibble unique (porte un attribut `id`),
+soit — pour `all_files = TRUE` sur un ZIP — une liste nommée de tibbles.
+Les fonctions d’adressage acceptent indifféremment une **table**
+(attribut `id` lu) ou une **chaîne URI** nue.
+
+### 7.1 [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html)
+
+Solution de recherche sur le catalogue, via l’API v2 `datasets/search`.
+
+``` r
+
+dg_find_datasets(q = NULL, n = 1000, format = catalog_formats(),
+                 schema_only = FALSE, organization = NULL, geozone = NULL,
+                 access_type = NULL, license = NULL, tag = NULL,
+                 topic = NULL, granularity = NULL, last_update = NULL,
+                 producer_type = NULL, resources = FALSE)
+```
+
+Renvoie un tibble aux colonnes robustes :
+`title, id, description, slug, organization, license, quality_score, quality_flags, views, resources_downloads, access_type, frequency, spatial_granularity, temporal_start, temporal_end, archived, featured`,
+plus les colonnes dérivées des ressources
+`n_resources, formats, has_table, has_schema`.
+
+Points remarquables :
+
+- **`q`** est une recherche en texte plein côté serveur ; **`format`**
+  est un vecteur passé en paramètres répétés (union serveur) ; `n = Inf`
+  prend autant que l’API permet (**plafonné à 10 000** par
+  [datagouv](https://www.data.gouv.fr/)).
+- **`organization`** accepte un id 24-hex **ou** un `name`/`slug` qui
+  est résolu en id via `organizations/search` (**correspondance exacte
+  uniquement**, pour rester reproductible ; une valeur ambiguë ou
+  absente stoppe avec la liste des candidats). Un id 24-hex nu est
+  transmis tel quel, sans requête.
+- **`topic`** prend l’id 24-hex d’un thème (découvert via
+  [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.html))
+  ; comme `tag`/`geozone`, c’est un vocabulaire ouvert, donc **non
+  validé et non résolu** (à la différence de `organization`).
+- **Fidélité des ressources opt-in** : `n_resources`, `formats`,
+  `has_table`, `has_schema` valent `NA` sauf si `resources = TRUE`
+  (parcours N+1 des subsections de ressources). `schema_only = TRUE`
+  force `resources = TRUE` avec un message informatif.
+- Les filtres à **vocabulaire fermé** (`access_type`, `license`,
+  `granularity`, `last_update`, `producer_type`) sont **validés côté
+  client** par `validate_filter_args()`, qui produit un message d’erreur
+  avec la liste exhaustive des valeurs valides.
+
+### 7.2 [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.html)
+
+Recherche les producteurs via `organizations/search`.
+
+``` r
+
+dg_find_organization(q = NULL, n = 20)
+```
+
+Renvoie
+`id, name, slug, acronym, description, datasets, badges, business_number_id`
+(n = 20 par défaut). L’`id` stable 24-hex obtenu sert à filtrer
+`dg_find_datasets(organization =)`. Les champs absents sont coercés vers
+`NA` par `organization_empty_columns()`.
+
+### 7.3 [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.html)
+
+Recherche les thèmes via `topics/search`.
+
+``` r
+
+dg_find_topics(q = NULL, n = 20, elements = FALSE)
+```
+
+Renvoie `id, name, slug, description, tags, featured, n_elements` plus
+`n_datasets, n_dataservices, n_reuses`. `n_elements` est le
+`elements$total` déclaré ; le détail par catégorie n’est rempli que si
+`elements = TRUE` (parcours N+1 de `topics/<id>/elements/`, comptage du
+**`element$class` imbriqué** Dataset/Reuse/Dataservice ; les liens
+externes de classe NULL sont exclus).
+
+### 7.4 [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.html)
+
+``` r
+
+dg_pull_dataset(id, all_files = FALSE, remove_na = FALSE,
+                col_types = NULL, use_tabular_types = TRUE)
+```
+
+Renvoie un **tibble unique** (la première ressource parseable ; un ZIP
+donne son premier fichier parseable). `all_files = TRUE` renvoie une
+liste nommée (un élément par fichier du ZIP). Chaque table porte son id
+composé en **attribut** `id`, attaché par `table_attr()` après parsing
+(les lecteurs bas niveau restent intacts), et lu par
+[`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.html)/[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.html).
+
+Voir [Section 8](#sec-parsing) pour le détail du contrôle des types de
+colonnes (`col_types` et `use_tabular_types`) et de la récupération des
+problèmes de parsing.
+
+### 7.5 [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html)
+
+``` r
+
+dg_refetch(x, remove_na = FALSE, col_types = NULL, use_tabular_types = TRUE)
+```
+
+Re-télécharge **une table unique** depuis le triplet d’un id composé.
+`x` peut être une table (attribut `id` lu) ou une chaîne URI (cf.
+[Section 4](#sec-uri) pour le détail du mécanisme de reproductibilité).
+`col_types` et `use_tabular_types` se comportent comme dans
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.html).
+
+### 7.6 [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.html)
+
+``` r
+
+dg_schema(x)
+```
+
+Renvoie le tibble `{name, title, description, type, example}` des
+colonnes documentées d’une table, avec les attributs
+`schema_title`/`schema_name`. Renvoie `NULL` (+ message) quand la
+ressource ne déclare pas de schéma, et une erreur si la ressource n’est
+pas trouvée. `x` peut être une table ou un id composé (cf.
+[Section 2.5](#sec-schema)).
+
+### 7.7 [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.html), [`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.html), [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.html), [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.html), [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.html)
+
+- **`dg_table_id(x)`** — lis l’id composé d’une table
+  récupérée/re-fetchée ; renvoie `NULL` pour un data.frame ordinaire.
+- **`dg_problems(x)`** — le data frame `{row, col, expected, actual}`
+  des problèmes de parsing rencontrés par vroom lors du téléchargement,
+  ou `NULL` si la table a été parsée proprement (cf.
+  [Section 8](#sec-parsing)). Il est lu depuis l’attribut
+  `rdatagouv_problems` de la table.
+- **`dg_summary(x, name = NULL)`** — métriques d’une table (une ligne) :
+  `dataset, size_kb, n_vars, n_numeric, n_non_numeric, n_rows, prop_missing`.
+- **`dg_summarise(datasets = NULL, n = 100)`** — métriques sur plusieurs
+  tables. Accepte une liste nommée de tibbles, une liste imbriquée
+  (ZIP), un tibble de
+  [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html),
+  un vecteur de ids, ou `NULL` (les `n` premiers jeux du catalogue).
+  Utilise `flatten_tables()` pour linéariser les ZIP.
+- **`dg_glimpse(id, table = NULL)`** — surface les métadonnées v2
+  intégrées (non exposées par le chemin v1) : `quality` (score +
+  drapeaux), `metrics` (vues, téléchargements, followers, …), `context`
+  (organisation, licence, fréquence, couverture, access_type, archived,
+  featured) ; `table = TRUE` ajoute la liste des ressources (N+1). `id`
+  peut être un id de dataset, un id de table composé ou une table
+  récupérée.
+
+### 7.8 Récapitulatif de l’API exposée
+
+| Fonction | Rôle |
+|----|----|
+| [`dg_find_datasets()`](https://astamm.github.io/rdatagouv/reference/dg_find_datasets.html) | Rechercher le catalogue (filtres serveur) |
+| [`dg_find_organization()`](https://astamm.github.io/rdatagouv/reference/dg_find_organization.html) | Identifier les producteurs |
+| [`dg_find_topics()`](https://astamm.github.io/rdatagouv/reference/dg_find_topics.html) | Identifier les thèmes |
+| [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.html) | Télécharger une ressource tabulaire |
+| [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.html) | Re-télécharger la même table (URI) |
+| [`dg_schema()`](https://astamm.github.io/rdatagouv/reference/dg_schema.html) | Colonnes documentées du schéma |
+| [`dg_table_id()`](https://astamm.github.io/rdatagouv/reference/dg_table_id.html) | Lire l’URI d’une table |
+| [`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.html) | Inspecter les problèmes de parsing |
+| [`dg_summary()`](https://astamm.github.io/rdatagouv/reference/dg_summary.html) / [`dg_summarise()`](https://astamm.github.io/rdatagouv/reference/dg_summarise.html) | Résumer le contenu |
+| [`dg_glimpse()`](https://astamm.github.io/rdatagouv/reference/dg_glimpse.html) | Métadonnées v2 d’un dataset |
+
+Table 4: **Récapitulatif de l’API du package
+[{rdatagouv}](https://astamm.github.io/rdatagouv/index.html).** Liste
+des fonctions exposées et de leur rôle.
+
+## 8 Le parsing des colonnes : types, profil et rapport d’erreurs
+
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
+et
+[`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
+lisent les fichiers délimités (CSV, CSV.GZ, TSV, TXT) avec un unique
+appel à [`vroom::vroom()`](https://vroom.r-lib.org), qui **devine** le
+type de chaque colonne (entier, double, date, …) à partir des valeurs
+qu’elle contient. Deux mécanismes permettent de contrôler et de
+fiabiliser cette inférence, et un troisième d’inspecter ce qui s’est mal
+passé.
+
+### 8.1 Forcer les types de colonnes avec `col_types`
+
+`col_types` est un **vecteur nommé** de chaînes courtes qui impose le
+type de [{vroom}](https://vroom.tidyverse.org) pour les colonnes
+nommées. Les colonnes non nommées voient toujours leurs types inférés.
+Les abréviations reconnues sont `"character"`, `"double"`/`"numeric"`,
+`"integer"`, `"logical"`, `"Date"`, `"datetime"`, `"skip"` et `"guess"`.
+Par exemple, pour forcer une colonne au type `Date` :
+
+``` r
+
+tbl <- dg_pull_dataset(id, col_types = c(date_mise_en_service = "Date"))
+```
+
+Le mécanisme est converti en interne par `col_types_to_spec()` en une
+spec [`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) ; le
+package ne dépend pas de [{readr}](https://readr.tidyverse.org). Le
+typage manuel **l’emporte toujours** en cas de collision avec
+l’inférence ou le profil.
+
+### 8.2 Amorcer les types depuis le profil de la plateforme : `use_tabular_types`
+
+Par défaut (`use_tabular_types = TRUE`),
+[`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
+amorce les `col_types` de
+[`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) à partir
+du **profil `csv-detective`** publié par la plateforme
+[data.gouv](https://www.data.gouv.fr/) elle-même
+(`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`). C’est une
+information nativement portée par la plateforme sur la ressource ciblée,
+résolue **par ressource à l’intérieur de la boucle de parsing** : pour
+un dataset multi-ressources, chaque ressource utilise son propre profil,
+et non pas une tentative de deviner sur le premier candidat.
+
+Ce profil n’existant que pour les ressources **mono-fichier indexées**
+par le service tabulaire, il est **best-effort** : les membres d’un ZIP
+et les fichiers non indexés ou trop volumineux retombent sur l’inférence
+(l’argument est alors sans effet sur
+`read_one_zip_file()`/`read_zip_resource()`), et un échec réseau ou une
+404 dégrade en silence. De plus, une détection par colonne dont le score
+de confiance est inférieur à `min_score = 0.5` (le seuil par défaut de
+`tabular_profile_col_types()`) est **laissée hors** de la carte
+`col_types` afin que [`vroom::vroom()`](https://vroom.r-lib.org)
+l’infère plutôt que de figer un type peu fiable. Un `col_types`
+explicite gagne toujours en cas de collision.
+
+Passer `use_tabular_types = FALSE` désactive entièrement cette amorce et
+laisse tout à l’inférence de
+[`vroom::vroom()`](https://vroom.r-lib.org).
+
+### 8.3 Inspecter les problèmes de parsing : `dg_problems()`
+
+Les données publiques réelles collaborent rarement parfaitement : une
+colonne peut contenir un mélange de types, et l’inférence de
+[`vroom::vroom()`](https://vroom.r-lib.org) peut se tromper. Les
+avertissements par cellule de
+[`vroom::vroom()`](https://vroom.r-lib.org) (qui se déclenchent dès
+qu’il s’engage sur un collecteur et rencontre une valeur qu’il ne peut
+convertir) sont **passés sous silence** avec `withCallingHandlers`, et
+les problèmes sous-jacents sont capturés avec
+[`vroom::problems()`](https://vroom.r-lib.org/reference/problems.html)
+puis attachés à la table comme attribut `rdatagouv_problems`. Cette
+stratégie est délibérée :
+[`vroom::problems()`](https://vroom.tidyverse.org/reference/problems.html)
+opère sur l’objet `vroom` lui-même, mais la conversion en tibble par
+`format_tibble()` retire la classe `vroom`. L’attribut, lui, survit à
+[`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+et est lu par la fonction exportée
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md).
+
+`dg_problems(x)` renvoie le data frame `{row, col, expected, actual}`
+des problèmes, ou `NULL` si la table a été parsée proprement (l’attribut
+n’est attaché que lorsqu’il y a quelque chose à signaler, si bien qu’une
+table saine reste légère et qu’un data.frame ordinaire renvoie `NULL`).
+
+#### 8.3.1 Une erreur de parsing fréquente : les dates *presque* ISO
+
+Un cas réel courant est une colonne de dates telle que `2021-07-01`
+(chiffres sur deux positions) pour presque toutes les lignes, avec
+quelques exceptions comme `2021-7-01` ou `2024-11-5`.
+[`vroom::vroom()`](https://vroom.r-lib.org) voit des dates ISO
+majoritairement remplies, s’engage sur un collecteur `Date`, et signale
+chacune de ces exceptions comme un problème de parsing, les valeurs
+fautives devenant `NA`. Dans ce cas, la donnée était bien renseignée
+mais pas au format attendu. Deux façons de la corriger :
+
+1.  **Forcer `"character"`** pour ne rien perdre — aucune valeur ne
+    devient `NA`, et vous pouvez parser les dates vous-même ensuite.
+2.  **Forcer `"Date"`** et accepter que certaines deviennent `NA`, ce
+    qui est adapté lorsqu’un petit nombre de dates non parsées est
+    acceptable.
+
+Le flux de travail général : télécharger, inspecter avec
+[`dg_problems()`](https://astamm.github.io/rdatagouv/reference/dg_problems.md),
+repérer la ou les colonne(s) fautive(s) dans `col`, choisir une entrée
+`col_types` alignée sur votre usage, puis re-télécharger ou re-fetcher.
+Si le problème est une valeur non numérique dans une colonne numérique,
+forcer `"character"` garde le texte brut ; forcer `"double"` le
+transforme en `NA`. Dans les deux cas, vous récupérez une table dont les
+colonnes se comportent de façon prévisible.
+
+## 9 Annexe : conventions de développement
+
+Par souci de reproductibilité, quelques conventions du dépôt sont
+rappelées :
+
+- **Formatage** : code R formaté avec `air` (`air format .` à la racine
+  à la fin de chaque tâche touchant des fichiers `.R`).
+- **Fichiers sources** : tirets, pas de soulignés
+  (`R/dg-find-datasets.R`).
+- **Tout le HTTP** passe par `req_data_gouv()` + `http_perform()`
+  (user-agent, timeouts, retries cohérents).
+- **Tests** : testthat édition 3, fichiers `test-*.R` ; mocks dans
+  `helper-data.R` ; captures sous `_snaps/`. Lancer `devtools::test()`.
+- **Tests live opt-in** : `DATAGOUV_LIVE=1` (cf.
+  [Section 6](#sec-live-api)).
+- **Exemples roxygen** : `@examples` pour le code sans réseau,
+  `@examplesIf interactive()` pour tout ce qui touche l’API live (un
+  appel live dans `@examples` casse `R CMD check`).
+- **README** : modifier `README.qmd`, puis régénérer `README.md` via
+  `devtools::build_readme()` (ne jamais éditer `README.md` à la main).

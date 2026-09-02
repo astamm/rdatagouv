@@ -31,9 +31,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="active nav-item"><a class="nav-link" href="../articles/rdatagouv.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/rdatagouv-tech-fr.html">Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : de la découverte des données à la reproductibilité</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -173,8 +177,8 @@
    &lt;chr&gt;                                              &lt;int&gt; &lt;lgl&gt;     &lt;lgl&gt;
  1 "Statistiques de subventions d’achat de vél…           2 TRUE      FALSE
  2 "Fréquentation mesurée dans les Parkings Vé…           2 TRUE      FALSE
- 3 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
- 4 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+ 3 "Vélib - Vélos et bornes - Disponibilité te…           5 TRUE      FALSE
+ 4 "Nombre de places de stationnement vélo "              5 TRUE      FALSE
  5 "Plan Vélo 2021-2026"                                  4 TRUE      FALSE
  6 "Aménagements vélo en Île-de-France"                  21 TRUE      FALSE
  7 "Comptages vélo et piétons"                            5 TRUE      FALSE
@@ -290,8 +294,8 @@
 1 Indicateurs du tableau de bord des mobilités durables                       28
 2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
 3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-4 Lutte contre la vacance des logements                                        8
-5 Véhicules électriques                                                       27</code></pre>
+4 Véhicules électriques                                                       27
+5 Lutte contre la vacance des logements                                        8</code></pre>
 </div>
 </div>
 <p>Pass a theme’s id to <code>dg_find_datasets(topic =)</code> to narrow a catalog search to datasets grouped under it (the same single-valued server-side filter that <code>organization</code>/<code>geozone</code> use; it takes a topic id, not a name/slug):</p>
@@ -329,7 +333,7 @@
 <div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">glimpse</span><span class="op">$</span><span class="va">metrics</span><span class="op">$</span><span class="va">views</span>             <span class="co"># how often the dataset is looked at</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 578</code></pre>
+<pre><code>[1] 625</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">glimpse</span><span class="op">$</span><span class="va">context</span><span class="op">$</span><span class="va">license</span>           <span class="co"># e.g. "open" / "notspecified"</span></span></code></pre></div>

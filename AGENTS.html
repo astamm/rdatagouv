@@ -15,9 +15,11 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="articles/rdatagouv.html">Get started</a></li>
-<li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="articles/index.html">Articles</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/rdatagouv-tech-fr.html">Le package R [{rdatagouv}](https://astamm.github.io/rdatagouv/index.html) : de la découverte des données à la reproductibilité</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json"></form></li>
@@ -62,7 +64,7 @@
 </td>
 </tr><tr><td>Re-fetch a table reproducibly</td>
 <td><code><a href="reference/dg_refetch.html">dg_refetch()</a></code></td>
-</tr></tbody></table><p>The design rationale and full history live in <code>DESIGN-discovery.md</code> (top-level, ignored by R CMD build). Treat that file as a proposal/decision log: its <code>*(implemented)*</code> phasing markers and change map reflect status, but the “Core design concepts”, <a href="#public-api-7-exports">Public API</a> and architecture sections of <em>this</em> AGENTS.md are the source of truth for how the package currently behaves; exploratory/optional and superseded-alternative sections in the design doc are historical, not normative. The topic-support work (<code><a href="reference/dg_find_topics.html">dg_find_topics()</a></code> + the <code>topic</code> filter on <code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code>) was sketched in a separate <code>TOPIC-SUPPORT-SKETCH.md</code> decision log that has been <strong>removed</strong> now that the work is fully shipped (its implementation lives in the source and docs; see git history for the sketch). A second vignette, <code>vignettes/rdatagouv-howto.qmd</code>, is a French architecture/development guide (separate from the user-facing getting-started vignette <code>vignettes/rdatagouv.qmd</code>). The README and the vignette <code>vignettes/rdatagouv.qmd</code> document usage for end users.</p>
+</tr></tbody></table><p>The design rationale and full history live in <code>DESIGN-discovery.md</code> (top-level, ignored by R CMD build). Treat that file as a proposal/decision log: its <code>*(implemented)*</code> phasing markers and change map reflect status, but the “Core design concepts”, <a href="#public-api-7-exports">Public API</a> and architecture sections of <em>this</em> AGENTS.md are the source of truth for how the package currently behaves; exploratory/optional and superseded-alternative sections in the design doc are historical, not normative. The topic-support work (<code><a href="reference/dg_find_topics.html">dg_find_topics()</a></code> + the <code>topic</code> filter on <code><a href="reference/dg_find_datasets.html">dg_find_datasets()</a></code>) was sketched in a separate <code>TOPIC-SUPPORT-SKETCH.md</code> decision log that has been <strong>removed</strong> now that the work is fully shipped (its implementation lives in the source and docs; see git history for the sketch). A second vignette, <code>vignettes/rdatagouv-tech-fr.qmd</code>, is a French architecture/development guide (separate from the user-facing getting-started vignette <code>vignettes/rdatagouv.qmd</code>). The README and the vignette <code>vignettes/rdatagouv.qmd</code> document usage for end users.</p>
 </div>
 <div class="section level2">
 <h2 id="public-api-11-exports">Public API (11 exports)<a class="anchor" aria-label="anchor" href="#public-api-11-exports"></a></h2>
