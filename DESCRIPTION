@@ -1,6 +1,6 @@
 Package: rdatagouv
 Title: Tools to Download and Explore Datasets from the French Open Data Platform
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c( 
     person(given = "Magali", 
            family = "Berland", 

@@ -9,3 +9,4 @@
 ^AGENTS\.md$
 ^vignettes/\.quarto$
 ^codecov\.yml$
+^cran-comments\.md$
