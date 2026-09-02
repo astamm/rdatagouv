@@ -1,7 +1,7 @@
 # Return the parsing problems of a downloaded table
 
 Returns the data frame of parsing issues that
-[vroom](https://vroom.r-lib.org/) encountered while reading a table
+[vroom](https://vroom.tidyverse.org/) encountered while reading a table
 downloaded with
 [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 or

@@ -13,6 +13,8 @@ Useful links:
 
 - <https://astamm.github.io/rdatagouv/>
 
+- <https://github.com/astamm/rdatagouv>
+
 - Report bugs at <https://github.com/astamm/rdatagouv/issues>
 
 ## Author

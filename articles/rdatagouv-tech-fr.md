@@ -910,8 +910,8 @@ des fonctions exposées et de leur rôle.
 et
 [`dg_refetch()`](https://astamm.github.io/rdatagouv/reference/dg_refetch.md)
 lisent les fichiers délimités (CSV, CSV.GZ, TSV, TXT) avec un unique
-appel à [`vroom::vroom()`](https://vroom.r-lib.org), qui **devine** le
-type de chaque colonne (entier, double, date, …) à partir des valeurs
+appel à [`vroom::vroom()`](https://vroom.tidyverse.org), qui **devine**
+le type de chaque colonne (entier, double, date, …) à partir des valeurs
 qu’elle contient. Deux mécanismes permettent de contrôler et de
 fiabiliser cette inférence, et un troisième d’inspecter ce qui s’est mal
 passé.
@@ -931,8 +931,8 @@ tbl <- dg_pull_dataset(id, col_types = c(date_mise_en_service = "Date"))
 ```
 
 Le mécanisme est converti en interne par `col_types_to_spec()` en une
-spec [`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) ; le
-package ne dépend pas de [{readr}](https://readr.tidyverse.org). Le
+spec [`vroom::cols()`](https://vroom.tidyverse.org/reference/cols.html)
+; le package ne dépend pas de [{readr}](https://readr.tidyverse.org). Le
 typage manuel **l’emporte toujours** en cas de collision avec
 l’inférence ou le profil.
 
@@ -941,8 +941,8 @@ l’inférence ou le profil.
 Par défaut (`use_tabular_types = TRUE`),
 [`dg_pull_dataset()`](https://astamm.github.io/rdatagouv/reference/dg_pull_dataset.md)
 amorce les `col_types` de
-[`vroom::cols()`](https://vroom.r-lib.org/reference/cols.html) à partir
-du **profil `csv-detective`** publié par la plateforme
+[`vroom::cols()`](https://vroom.tidyverse.org/reference/cols.html) à
+partir du **profil `csv-detective`** publié par la plateforme
 [data.gouv](https://www.data.gouv.fr/) elle-même
 (`tabular-api.data.gouv.fr/api/resources/<rid>/profile/`). C’est une
 information nativement portée par la plateforme sur la ressource ciblée,
@@ -958,25 +958,25 @@ et les fichiers non indexés ou trop volumineux retombent sur l’inférence
 404 dégrade en silence. De plus, une détection par colonne dont le score
 de confiance est inférieur à `min_score = 0.5` (le seuil par défaut de
 `tabular_profile_col_types()`) est **laissée hors** de la carte
-`col_types` afin que [`vroom::vroom()`](https://vroom.r-lib.org)
+`col_types` afin que [`vroom::vroom()`](https://vroom.tidyverse.org)
 l’infère plutôt que de figer un type peu fiable. Un `col_types`
 explicite gagne toujours en cas de collision.
 
 Passer `use_tabular_types = FALSE` désactive entièrement cette amorce et
 laisse tout à l’inférence de
-[`vroom::vroom()`](https://vroom.r-lib.org).
+[`vroom::vroom()`](https://vroom.tidyverse.org).
 
 ### 8.3 Inspecter les problèmes de parsing : `dg_problems()`
 
 Les données publiques réelles collaborent rarement parfaitement : une
 colonne peut contenir un mélange de types, et l’inférence de
-[`vroom::vroom()`](https://vroom.r-lib.org) peut se tromper. Les
+[`vroom::vroom()`](https://vroom.tidyverse.org) peut se tromper. Les
 avertissements par cellule de
-[`vroom::vroom()`](https://vroom.r-lib.org) (qui se déclenchent dès
+[`vroom::vroom()`](https://vroom.tidyverse.org) (qui se déclenchent dès
 qu’il s’engage sur un collecteur et rencontre une valeur qu’il ne peut
 convertir) sont **passés sous silence** avec `withCallingHandlers`, et
 les problèmes sous-jacents sont capturés avec
-[`vroom::problems()`](https://vroom.r-lib.org/reference/problems.html)
+[`vroom::problems()`](https://vroom.tidyverse.org/reference/problems.html)
 puis attachés à la table comme attribut `rdatagouv_problems`. Cette
 stratégie est délibérée :
 [`vroom::problems()`](https://vroom.tidyverse.org/reference/problems.html)
@@ -996,7 +996,7 @@ table saine reste légère et qu’un data.frame ordinaire renvoie `NULL`).
 Un cas réel courant est une colonne de dates telle que `2021-07-01`
 (chiffres sur deux positions) pour presque toutes les lignes, avec
 quelques exceptions comme `2021-7-01` ou `2024-11-5`.
-[`vroom::vroom()`](https://vroom.r-lib.org) voit des dates ISO
+[`vroom::vroom()`](https://vroom.tidyverse.org) voit des dates ISO
 majoritairement remplies, s’engage sur un collecteur `Date`, et signale
 chacune de ces exceptions comme un problème de parsing, les valeurs
 fautives devenant `NA`. Dans ce cas, la donnée était bien renseignée
