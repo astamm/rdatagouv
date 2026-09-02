@@ -1,4 +1,4 @@
-# Le package R {rdatagouv} : de la découverte des données à la reproductibilité
+# De la découverte des données à la reproductibilité
 
 > **Note**
 >
