@@ -24,11 +24,11 @@ Source:
 
 Berland M, Gloaguen P, Leroy A, Mariadassou M, Midoux C, Rey J, Stamm A
 (2026). *rdatagouv: Tools to Download and Explore Datasets from
-data.gouv.fr*. R package version 0.1.0,
+Data.gouv.fr*. R package version 0.1.0,
 <https://astamm.github.io/rdatagouv/>.
 
     @Manual{,
-      title = {rdatagouv: Tools to Download and Explore Datasets from data.gouv.fr},
+      title = {rdatagouv: Tools to Download and Explore Datasets from Data.gouv.fr},
       author = {Magali Berland and Pierre Gloaguen and Arthur Leroy and Mahendra Mariadassou and Cédric Midoux and Jean-François Rey and Aymeric Stamm},
       year = {2026},
       note = {R package version 0.1.0},

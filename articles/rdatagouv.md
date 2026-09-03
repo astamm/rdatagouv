@@ -327,7 +327,7 @@ glimpse$quality$score             # 0..1 quality score
 glimpse$metrics$views             # how often the dataset is looked at
 ```
 
-    [1] 625
+    [1] 640
 
 ``` r
 

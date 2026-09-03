@@ -109,7 +109,7 @@ possible d’identifier ainsi que leur rôle dans l’implémentation de
 
 | Point d'entrée dans datagouv | Rôle dans rdatagouv |
 |----|----|
-| <https://www.data.gouv.fr/api/1/> | **Backbone** : recherche catalogue et métadonnées de découverte, téléchargement brut des fichiers. |
+| <https://guides.data.gouv.fr/api-de-data.gouv.fr/reference> | **Backbone** : recherche catalogue et métadonnées de découverte, téléchargement brut des fichiers. |
 | <https://www.data.gouv.fr/api/2/> | API v2 (interface uData native) : recherche `datasets/search`, `organizations/search`, `topics/search`, métadonnées riches par dataset. |
 | <https://tabular-api.data.gouv.fr/api/doc> | Service tabulaire (métadonnées par variable) — **non utilisé** par l’implémentation actuelle. |
 | <https://schema.data.gouv.fr/schemas.json> | Schémas de données documentés par les producteurs (champs par colonne). |
