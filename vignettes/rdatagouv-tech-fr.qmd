@@ -123,7 +123,7 @@ API complémentaires**, qui ne sont pas des substituts mais interviennent à des
 data.frame(
   check.names = FALSE,
   `Point d'entrée dans datagouv` = c(
-    "<https://www.data.gouv.fr/api/1/>",
+    "<https://guides.data.gouv.fr/api-de-data.gouv.fr/reference>",
     "<https://www.data.gouv.fr/api/2/>",
     "<https://tabular-api.data.gouv.fr/api/doc>",
     "<https://schema.data.gouv.fr/schemas.json>"
