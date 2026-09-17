@@ -20,7 +20,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/astamm/rdatagouv/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/astamm/rdatagouv/blob/v0.1.0/DESCRIPTION)
 
 Berland M, Gloaguen P, Leroy A, Mariadassou M, Midoux C, Rey J, Stamm A
 (2026). *rdatagouv: Tools to Download and Explore Datasets from
