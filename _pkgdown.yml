@@ -29,3 +29,8 @@ reference:
   contents:
   - dg_summary
   - dg_summarise
+
+news:
+  releases:
+  - text: "rdatagouv 0.1.0"
+    href: https://astamm.github.io/posts/2026-09-12-rdatagouv-010/
