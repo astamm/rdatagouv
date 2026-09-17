@@ -208,11 +208,11 @@ orgs[, c("name", "slug", "datasets")]
        name                                                      slug       datasets
        <chr>                                                     <chr>         <int>
      1 SNCF                                                      sncf            183
-     2 Île-de-France Mobilités                                   ile-de-fr…       97
+     2 Île-de-France Mobilités                                   ile-de-fr…       95
      3 Fluo Grand Est                                            fluo-gran…       50
      4 AlertesRER                                                alertesrer        1
      5 Etablissement public d'aménagement Bordeaux Euratlantique etablisse…        1
-     6 SFERIS                                                    sferis            1
+     6 SFERIS                                                    sferis            2
      7 Mairie de St NICOLAS DE REDON                             mairie-de…        1
      8 Isomaps                                                   isomaps           0
      9 SNCF Connect                                              sncf-conn…        0
@@ -266,11 +266,11 @@ topics[, c("name", "n_elements")]
     # A tibble: 5 × 2
       name                                                                n_elements
       <chr>                                                                    <int>
-    1 Indicateurs du tableau de bord des mobilités durables                       28
-    2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
+    1 Indicateurs du tableau de bord des mobilités durables                       27
+    2 Vie quotidienne                                                            532
     3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-    4 Véhicules électriques                                                       27
-    5 Lutte contre la vacance des logements                                        8
+    4 Élaboration ou évolution d'un document d'urbanisme                          87
+    5 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
 
 Pass a theme’s id to `dg_find_datasets(topic =)` to narrow a catalog
 search to datasets grouped under it (the same single-valued server-side
@@ -327,7 +327,7 @@ glimpse$quality$score             # 0..1 quality score
 glimpse$metrics$views             # how often the dataset is looked at
 ```
 
-    [1] 640
+    [1] 735
 
 ``` r
 

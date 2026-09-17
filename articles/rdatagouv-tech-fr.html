@@ -39,7 +39,15 @@
 <li><a class="dropdown-item" href="../articles/rdatagouv-tech-fr.html">De la découverte des données à la reproductibilité</a></li>
   </ul>
 </li>
-<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-news" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">News</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-news">
+<li><h6 class="dropdown-header" data-toc-skip>Releases</h6></li>
+    <li><a class="external-link dropdown-item" href="https://astamm.github.io/posts/2026-09-12-rdatagouv-010/">rdatagouv 0.1.0</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../news/index.html">Changelog</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -89,23 +97,23 @@
 Table 1: <strong>Liste des fonctions exposées du package <a href="https://astamm.github.io/rdatagouv/index.html">{rdatagouv}</a>.</strong> Chaque étape (trouver, juger, télécharger, re-télécharger) est assurée par une fonction dédiée (et quelques fonctions utilitaires).
 </figcaption><div aria-describedby="tbl-workflow-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<div id="dwgsknbiig" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#dwgsknbiig table {
+<div id="pcbbashukn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#pcbbashukn table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#dwgsknbiig thead, #dwgsknbiig tbody, #dwgsknbiig tfoot, #dwgsknbiig tr, #dwgsknbiig td, #dwgsknbiig th {
+#pcbbashukn thead, #pcbbashukn tbody, #pcbbashukn tfoot, #pcbbashukn tr, #pcbbashukn td, #pcbbashukn th {
   border-style: none;
 }
 
-#dwgsknbiig p {
+#pcbbashukn p {
   margin: 0;
   padding: 0;
 }
 
-#dwgsknbiig .gt_table {
+#pcbbashukn .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -131,12 +139,12 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-left-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_caption {
+#pcbbashukn .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#dwgsknbiig .gt_title {
+#pcbbashukn .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -148,7 +156,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-bottom-width: 0;
 }
 
-#dwgsknbiig .gt_subtitle {
+#pcbbashukn .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -160,7 +168,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-top-width: 0;
 }
 
-#dwgsknbiig .gt_heading {
+#pcbbashukn .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -172,13 +180,13 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-right-color: #D3D3D3;
 }
 
-#dwgsknbiig .gt_bottom_border {
+#pcbbashukn .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_col_headings {
+#pcbbashukn .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -193,7 +201,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-right-color: #D3D3D3;
 }
 
-#dwgsknbiig .gt_col_heading {
+#pcbbashukn .gt_col_heading {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -213,7 +221,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   overflow-x: hidden;
 }
 
-#dwgsknbiig .gt_column_spanner_outer {
+#pcbbashukn .gt_column_spanner_outer {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -225,15 +233,15 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   padding-right: 4px;
 }
 
-#dwgsknbiig .gt_column_spanner_outer:first-child {
+#pcbbashukn .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#dwgsknbiig .gt_column_spanner_outer:last-child {
+#pcbbashukn .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#dwgsknbiig .gt_column_spanner {
+#pcbbashukn .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
@@ -245,11 +253,11 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   width: 100%;
 }
 
-#dwgsknbiig .gt_spanner_row {
+#pcbbashukn .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#dwgsknbiig .gt_group_heading {
+#pcbbashukn .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -275,7 +283,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   text-align: left;
 }
 
-#dwgsknbiig .gt_empty_group_heading {
+#pcbbashukn .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -290,15 +298,15 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   vertical-align: middle;
 }
 
-#dwgsknbiig .gt_from_md > :first-child {
+#pcbbashukn .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#dwgsknbiig .gt_from_md > :last-child {
+#pcbbashukn .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#dwgsknbiig .gt_row {
+#pcbbashukn .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -317,7 +325,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   overflow-x: hidden;
 }
 
-#dwgsknbiig .gt_stub {
+#pcbbashukn .gt_stub {
   color: #FFFFFF;
   background-color: #929292;
   font-size: 100%;
@@ -330,7 +338,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   padding-right: 5px;
 }
 
-#dwgsknbiig .gt_stub_row_group {
+#pcbbashukn .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -344,15 +352,15 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   vertical-align: top;
 }
 
-#dwgsknbiig .gt_row_group_first td {
+#pcbbashukn .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#dwgsknbiig .gt_row_group_first th {
+#pcbbashukn .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#dwgsknbiig .gt_summary_row {
+#pcbbashukn .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -362,16 +370,16 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   padding-right: 5px;
 }
 
-#dwgsknbiig .gt_first_summary_row {
+#pcbbashukn .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_first_summary_row.thick {
+#pcbbashukn .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#dwgsknbiig .gt_last_summary_row {
+#pcbbashukn .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -381,7 +389,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-bottom-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_grand_summary_row {
+#pcbbashukn .gt_grand_summary_row {
   color: #FFFFFF;
   background-color: #0076BA;
   text-transform: inherit;
@@ -391,7 +399,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   padding-right: 5px;
 }
 
-#dwgsknbiig .gt_first_grand_summary_row {
+#pcbbashukn .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -401,7 +409,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-top-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_last_grand_summary_row_top {
+#pcbbashukn .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -411,11 +419,11 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-bottom-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_striped {
+#pcbbashukn .gt_striped {
   background-color: #F4F4F4;
 }
 
-#dwgsknbiig .gt_table_body {
+#pcbbashukn .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -424,7 +432,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-bottom-color: #D5D5D5;
 }
 
-#dwgsknbiig .gt_footnotes {
+#pcbbashukn .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -438,7 +446,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-right-color: #D3D3D3;
 }
 
-#dwgsknbiig .gt_footnote {
+#pcbbashukn .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -447,7 +455,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   padding-right: 5px;
 }
 
-#dwgsknbiig .gt_sourcenotes {
+#pcbbashukn .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -461,7 +469,7 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   border-right-color: #D3D3D3;
 }
 
-#dwgsknbiig .gt_sourcenote {
+#pcbbashukn .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -469,72 +477,72 @@ Table 1: <strong>Liste des fonctions exposées du package <a href="https://asta
   padding-right: 5px;
 }
 
-#dwgsknbiig .gt_left {
+#pcbbashukn .gt_left {
   text-align: left;
 }
 
-#dwgsknbiig .gt_center {
+#pcbbashukn .gt_center {
   text-align: center;
 }
 
-#dwgsknbiig .gt_right {
+#pcbbashukn .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#dwgsknbiig .gt_font_normal {
+#pcbbashukn .gt_font_normal {
   font-weight: normal;
 }
 
-#dwgsknbiig .gt_font_bold {
+#pcbbashukn .gt_font_bold {
   font-weight: bold;
 }
 
-#dwgsknbiig .gt_font_italic {
+#pcbbashukn .gt_font_italic {
   font-style: italic;
 }
 
-#dwgsknbiig .gt_super {
+#pcbbashukn .gt_super {
   font-size: 65%;
 }
 
-#dwgsknbiig .gt_footnote_marks {
+#pcbbashukn .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#dwgsknbiig .gt_asterisk {
+#pcbbashukn .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#dwgsknbiig .gt_indent_1 {
+#pcbbashukn .gt_indent_1 {
   text-indent: 5px;
 }
 
-#dwgsknbiig .gt_indent_2 {
+#pcbbashukn .gt_indent_2 {
   text-indent: 10px;
 }
 
-#dwgsknbiig .gt_indent_3 {
+#pcbbashukn .gt_indent_3 {
   text-indent: 15px;
 }
 
-#dwgsknbiig .gt_indent_4 {
+#pcbbashukn .gt_indent_4 {
   text-indent: 20px;
 }
 
-#dwgsknbiig .gt_indent_5 {
+#pcbbashukn .gt_indent_5 {
   text-indent: 25px;
 }
 
-#dwgsknbiig .katex-display {
+#pcbbashukn .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#dwgsknbiig div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#pcbbashukn div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -626,23 +634,23 @@ Figure 1: <strong>Flux de travail principaux.</strong> Une fois un jeu de donn�
 Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a href="https://www.data.gouv.fr/" class="external-link">datagouv</a>.</strong>
 </figcaption><div aria-describedby="tbl-entrypoints-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<div id="rtxgxcszfs" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#rtxgxcszfs table {
+<div id="csvxxhxfne" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#csvxxhxfne table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#rtxgxcszfs thead, #rtxgxcszfs tbody, #rtxgxcszfs tfoot, #rtxgxcszfs tr, #rtxgxcszfs td, #rtxgxcszfs th {
+#csvxxhxfne thead, #csvxxhxfne tbody, #csvxxhxfne tfoot, #csvxxhxfne tr, #csvxxhxfne td, #csvxxhxfne th {
   border-style: none;
 }
 
-#rtxgxcszfs p {
+#csvxxhxfne p {
   margin: 0;
   padding: 0;
 }
 
-#rtxgxcszfs .gt_table {
+#csvxxhxfne .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -668,12 +676,12 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-left-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_caption {
+#csvxxhxfne .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#rtxgxcszfs .gt_title {
+#csvxxhxfne .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -685,7 +693,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-bottom-width: 0;
 }
 
-#rtxgxcszfs .gt_subtitle {
+#csvxxhxfne .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -697,7 +705,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-top-width: 0;
 }
 
-#rtxgxcszfs .gt_heading {
+#csvxxhxfne .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -709,13 +717,13 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-right-color: #D3D3D3;
 }
 
-#rtxgxcszfs .gt_bottom_border {
+#csvxxhxfne .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_col_headings {
+#csvxxhxfne .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -730,7 +738,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-right-color: #D3D3D3;
 }
 
-#rtxgxcszfs .gt_col_heading {
+#csvxxhxfne .gt_col_heading {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -750,7 +758,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   overflow-x: hidden;
 }
 
-#rtxgxcszfs .gt_column_spanner_outer {
+#csvxxhxfne .gt_column_spanner_outer {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -762,15 +770,15 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   padding-right: 4px;
 }
 
-#rtxgxcszfs .gt_column_spanner_outer:first-child {
+#csvxxhxfne .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#rtxgxcszfs .gt_column_spanner_outer:last-child {
+#csvxxhxfne .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#rtxgxcszfs .gt_column_spanner {
+#csvxxhxfne .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
@@ -782,11 +790,11 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   width: 100%;
 }
 
-#rtxgxcszfs .gt_spanner_row {
+#csvxxhxfne .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#rtxgxcszfs .gt_group_heading {
+#csvxxhxfne .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -812,7 +820,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   text-align: left;
 }
 
-#rtxgxcszfs .gt_empty_group_heading {
+#csvxxhxfne .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -827,15 +835,15 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   vertical-align: middle;
 }
 
-#rtxgxcszfs .gt_from_md > :first-child {
+#csvxxhxfne .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#rtxgxcszfs .gt_from_md > :last-child {
+#csvxxhxfne .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#rtxgxcszfs .gt_row {
+#csvxxhxfne .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -854,7 +862,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   overflow-x: hidden;
 }
 
-#rtxgxcszfs .gt_stub {
+#csvxxhxfne .gt_stub {
   color: #FFFFFF;
   background-color: #929292;
   font-size: 100%;
@@ -867,7 +875,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   padding-right: 5px;
 }
 
-#rtxgxcszfs .gt_stub_row_group {
+#csvxxhxfne .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -881,15 +889,15 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   vertical-align: top;
 }
 
-#rtxgxcszfs .gt_row_group_first td {
+#csvxxhxfne .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#rtxgxcszfs .gt_row_group_first th {
+#csvxxhxfne .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#rtxgxcszfs .gt_summary_row {
+#csvxxhxfne .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -899,16 +907,16 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   padding-right: 5px;
 }
 
-#rtxgxcszfs .gt_first_summary_row {
+#csvxxhxfne .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_first_summary_row.thick {
+#csvxxhxfne .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#rtxgxcszfs .gt_last_summary_row {
+#csvxxhxfne .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -918,7 +926,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-bottom-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_grand_summary_row {
+#csvxxhxfne .gt_grand_summary_row {
   color: #FFFFFF;
   background-color: #0076BA;
   text-transform: inherit;
@@ -928,7 +936,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   padding-right: 5px;
 }
 
-#rtxgxcszfs .gt_first_grand_summary_row {
+#csvxxhxfne .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -938,7 +946,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-top-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_last_grand_summary_row_top {
+#csvxxhxfne .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -948,11 +956,11 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-bottom-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_striped {
+#csvxxhxfne .gt_striped {
   background-color: #F4F4F4;
 }
 
-#rtxgxcszfs .gt_table_body {
+#csvxxhxfne .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -961,7 +969,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-bottom-color: #D5D5D5;
 }
 
-#rtxgxcszfs .gt_footnotes {
+#csvxxhxfne .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -975,7 +983,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-right-color: #D3D3D3;
 }
 
-#rtxgxcszfs .gt_footnote {
+#csvxxhxfne .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -984,7 +992,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   padding-right: 5px;
 }
 
-#rtxgxcszfs .gt_sourcenotes {
+#csvxxhxfne .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -998,7 +1006,7 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   border-right-color: #D3D3D3;
 }
 
-#rtxgxcszfs .gt_sourcenote {
+#csvxxhxfne .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1006,72 +1014,72 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
   padding-right: 5px;
 }
 
-#rtxgxcszfs .gt_left {
+#csvxxhxfne .gt_left {
   text-align: left;
 }
 
-#rtxgxcszfs .gt_center {
+#csvxxhxfne .gt_center {
   text-align: center;
 }
 
-#rtxgxcszfs .gt_right {
+#csvxxhxfne .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#rtxgxcszfs .gt_font_normal {
+#csvxxhxfne .gt_font_normal {
   font-weight: normal;
 }
 
-#rtxgxcszfs .gt_font_bold {
+#csvxxhxfne .gt_font_bold {
   font-weight: bold;
 }
 
-#rtxgxcszfs .gt_font_italic {
+#csvxxhxfne .gt_font_italic {
   font-style: italic;
 }
 
-#rtxgxcszfs .gt_super {
+#csvxxhxfne .gt_super {
   font-size: 65%;
 }
 
-#rtxgxcszfs .gt_footnote_marks {
+#csvxxhxfne .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#rtxgxcszfs .gt_asterisk {
+#csvxxhxfne .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#rtxgxcszfs .gt_indent_1 {
+#csvxxhxfne .gt_indent_1 {
   text-indent: 5px;
 }
 
-#rtxgxcszfs .gt_indent_2 {
+#csvxxhxfne .gt_indent_2 {
   text-indent: 10px;
 }
 
-#rtxgxcszfs .gt_indent_3 {
+#csvxxhxfne .gt_indent_3 {
   text-indent: 15px;
 }
 
-#rtxgxcszfs .gt_indent_4 {
+#csvxxhxfne .gt_indent_4 {
   text-indent: 20px;
 }
 
-#rtxgxcszfs .gt_indent_5 {
+#csvxxhxfne .gt_indent_5 {
   text-indent: 25px;
 }
 
-#rtxgxcszfs .katex-display {
+#csvxxhxfne .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#rtxgxcszfs div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#csvxxhxfne div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1142,23 +1150,23 @@ Table 2: <strong>Récapitulatif des 4 points d’entrée de la plateforme <a hr
 Table 3: <strong>Complémentarité des quatre points d’entrée de la plateforme <a href="https://www.data.gouv.fr/" class="external-link">datagouv</a>.</strong> Sur l’ensemble des tâches nécessaires au fonctionnement de <a href="https://astamm.github.io/rdatagouv/index.html">{rdatagouv}</a>, une unique API ne suffit pas.
 </figcaption><div aria-describedby="tbl-complementarity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<div id="dznlzzmnnu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#dznlzzmnnu table {
+<div id="sxlrbtvqfd" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#sxlrbtvqfd table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#dznlzzmnnu thead, #dznlzzmnnu tbody, #dznlzzmnnu tfoot, #dznlzzmnnu tr, #dznlzzmnnu td, #dznlzzmnnu th {
+#sxlrbtvqfd thead, #sxlrbtvqfd tbody, #sxlrbtvqfd tfoot, #sxlrbtvqfd tr, #sxlrbtvqfd td, #sxlrbtvqfd th {
   border-style: none;
 }
 
-#dznlzzmnnu p {
+#sxlrbtvqfd p {
   margin: 0;
   padding: 0;
 }
 
-#dznlzzmnnu .gt_table {
+#sxlrbtvqfd .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1184,12 +1192,12 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-left-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_caption {
+#sxlrbtvqfd .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#dznlzzmnnu .gt_title {
+#sxlrbtvqfd .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1201,7 +1209,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-bottom-width: 0;
 }
 
-#dznlzzmnnu .gt_subtitle {
+#sxlrbtvqfd .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1213,7 +1221,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-top-width: 0;
 }
 
-#dznlzzmnnu .gt_heading {
+#sxlrbtvqfd .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1225,13 +1233,13 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-right-color: #D3D3D3;
 }
 
-#dznlzzmnnu .gt_bottom_border {
+#sxlrbtvqfd .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_col_headings {
+#sxlrbtvqfd .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -1246,7 +1254,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-right-color: #D3D3D3;
 }
 
-#dznlzzmnnu .gt_col_heading {
+#sxlrbtvqfd .gt_col_heading {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -1266,7 +1274,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   overflow-x: hidden;
 }
 
-#dznlzzmnnu .gt_column_spanner_outer {
+#sxlrbtvqfd .gt_column_spanner_outer {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -1278,15 +1286,15 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   padding-right: 4px;
 }
 
-#dznlzzmnnu .gt_column_spanner_outer:first-child {
+#sxlrbtvqfd .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#dznlzzmnnu .gt_column_spanner_outer:last-child {
+#sxlrbtvqfd .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#dznlzzmnnu .gt_column_spanner {
+#sxlrbtvqfd .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
@@ -1298,11 +1306,11 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   width: 100%;
 }
 
-#dznlzzmnnu .gt_spanner_row {
+#sxlrbtvqfd .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#dznlzzmnnu .gt_group_heading {
+#sxlrbtvqfd .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1328,7 +1336,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   text-align: left;
 }
 
-#dznlzzmnnu .gt_empty_group_heading {
+#sxlrbtvqfd .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1343,15 +1351,15 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   vertical-align: middle;
 }
 
-#dznlzzmnnu .gt_from_md > :first-child {
+#sxlrbtvqfd .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#dznlzzmnnu .gt_from_md > :last-child {
+#sxlrbtvqfd .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#dznlzzmnnu .gt_row {
+#sxlrbtvqfd .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1370,7 +1378,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   overflow-x: hidden;
 }
 
-#dznlzzmnnu .gt_stub {
+#sxlrbtvqfd .gt_stub {
   color: #FFFFFF;
   background-color: #929292;
   font-size: 100%;
@@ -1383,7 +1391,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   padding-right: 5px;
 }
 
-#dznlzzmnnu .gt_stub_row_group {
+#sxlrbtvqfd .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1397,15 +1405,15 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   vertical-align: top;
 }
 
-#dznlzzmnnu .gt_row_group_first td {
+#sxlrbtvqfd .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#dznlzzmnnu .gt_row_group_first th {
+#sxlrbtvqfd .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#dznlzzmnnu .gt_summary_row {
+#sxlrbtvqfd .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1415,16 +1423,16 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   padding-right: 5px;
 }
 
-#dznlzzmnnu .gt_first_summary_row {
+#sxlrbtvqfd .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_first_summary_row.thick {
+#sxlrbtvqfd .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#dznlzzmnnu .gt_last_summary_row {
+#sxlrbtvqfd .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1434,7 +1442,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-bottom-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_grand_summary_row {
+#sxlrbtvqfd .gt_grand_summary_row {
   color: #FFFFFF;
   background-color: #0076BA;
   text-transform: inherit;
@@ -1444,7 +1452,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   padding-right: 5px;
 }
 
-#dznlzzmnnu .gt_first_grand_summary_row {
+#sxlrbtvqfd .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1454,7 +1462,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-top-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_last_grand_summary_row_top {
+#sxlrbtvqfd .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1464,11 +1472,11 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-bottom-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_striped {
+#sxlrbtvqfd .gt_striped {
   background-color: #F4F4F4;
 }
 
-#dznlzzmnnu .gt_table_body {
+#sxlrbtvqfd .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -1477,7 +1485,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-bottom-color: #D5D5D5;
 }
 
-#dznlzzmnnu .gt_footnotes {
+#sxlrbtvqfd .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1491,7 +1499,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-right-color: #D3D3D3;
 }
 
-#dznlzzmnnu .gt_footnote {
+#sxlrbtvqfd .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1500,7 +1508,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   padding-right: 5px;
 }
 
-#dznlzzmnnu .gt_sourcenotes {
+#sxlrbtvqfd .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1514,7 +1522,7 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   border-right-color: #D3D3D3;
 }
 
-#dznlzzmnnu .gt_sourcenote {
+#sxlrbtvqfd .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1522,72 +1530,72 @@ Table 3: <strong>Complémentarité des quatre points d’entrée de la platefor
   padding-right: 5px;
 }
 
-#dznlzzmnnu .gt_left {
+#sxlrbtvqfd .gt_left {
   text-align: left;
 }
 
-#dznlzzmnnu .gt_center {
+#sxlrbtvqfd .gt_center {
   text-align: center;
 }
 
-#dznlzzmnnu .gt_right {
+#sxlrbtvqfd .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#dznlzzmnnu .gt_font_normal {
+#sxlrbtvqfd .gt_font_normal {
   font-weight: normal;
 }
 
-#dznlzzmnnu .gt_font_bold {
+#sxlrbtvqfd .gt_font_bold {
   font-weight: bold;
 }
 
-#dznlzzmnnu .gt_font_italic {
+#sxlrbtvqfd .gt_font_italic {
   font-style: italic;
 }
 
-#dznlzzmnnu .gt_super {
+#sxlrbtvqfd .gt_super {
   font-size: 65%;
 }
 
-#dznlzzmnnu .gt_footnote_marks {
+#sxlrbtvqfd .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#dznlzzmnnu .gt_asterisk {
+#sxlrbtvqfd .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#dznlzzmnnu .gt_indent_1 {
+#sxlrbtvqfd .gt_indent_1 {
   text-indent: 5px;
 }
 
-#dznlzzmnnu .gt_indent_2 {
+#sxlrbtvqfd .gt_indent_2 {
   text-indent: 10px;
 }
 
-#dznlzzmnnu .gt_indent_3 {
+#sxlrbtvqfd .gt_indent_3 {
   text-indent: 15px;
 }
 
-#dznlzzmnnu .gt_indent_4 {
+#sxlrbtvqfd .gt_indent_4 {
   text-indent: 20px;
 }
 
-#dznlzzmnnu .gt_indent_5 {
+#sxlrbtvqfd .gt_indent_5 {
   text-indent: 25px;
 }
 
-#dznlzzmnnu .katex-display {
+#sxlrbtvqfd .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#dznlzzmnnu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#sxlrbtvqfd div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -2102,23 +2110,23 @@ Policies:
 Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.github.io/rdatagouv/index.html">{rdatagouv}</a>.</strong> Liste des fonctions exposées et de leur rôle.
 </figcaption><div aria-describedby="tbl-api-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<div id="degkxbouny" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#degkxbouny table {
+<div id="hlwfhbzyyc" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#hlwfhbzyyc table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#degkxbouny thead, #degkxbouny tbody, #degkxbouny tfoot, #degkxbouny tr, #degkxbouny td, #degkxbouny th {
+#hlwfhbzyyc thead, #hlwfhbzyyc tbody, #hlwfhbzyyc tfoot, #hlwfhbzyyc tr, #hlwfhbzyyc td, #hlwfhbzyyc th {
   border-style: none;
 }
 
-#degkxbouny p {
+#hlwfhbzyyc p {
   margin: 0;
   padding: 0;
 }
 
-#degkxbouny .gt_table {
+#hlwfhbzyyc .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -2144,12 +2152,12 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-left-color: #D5D5D5;
 }
 
-#degkxbouny .gt_caption {
+#hlwfhbzyyc .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#degkxbouny .gt_title {
+#hlwfhbzyyc .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -2161,7 +2169,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-bottom-width: 0;
 }
 
-#degkxbouny .gt_subtitle {
+#hlwfhbzyyc .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -2173,7 +2181,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-top-width: 0;
 }
 
-#degkxbouny .gt_heading {
+#hlwfhbzyyc .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -2185,13 +2193,13 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-right-color: #D3D3D3;
 }
 
-#degkxbouny .gt_bottom_border {
+#hlwfhbzyyc .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
 }
 
-#degkxbouny .gt_col_headings {
+#hlwfhbzyyc .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -2206,7 +2214,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-right-color: #D3D3D3;
 }
 
-#degkxbouny .gt_col_heading {
+#hlwfhbzyyc .gt_col_heading {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -2226,7 +2234,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   overflow-x: hidden;
 }
 
-#degkxbouny .gt_column_spanner_outer {
+#hlwfhbzyyc .gt_column_spanner_outer {
   color: #FFFFFF;
   background-color: #0076BA;
   font-size: 100%;
@@ -2238,15 +2246,15 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   padding-right: 4px;
 }
 
-#degkxbouny .gt_column_spanner_outer:first-child {
+#hlwfhbzyyc .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#degkxbouny .gt_column_spanner_outer:last-child {
+#hlwfhbzyyc .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#degkxbouny .gt_column_spanner {
+#hlwfhbzyyc .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D5D5D5;
@@ -2258,11 +2266,11 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   width: 100%;
 }
 
-#degkxbouny .gt_spanner_row {
+#hlwfhbzyyc .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#degkxbouny .gt_group_heading {
+#hlwfhbzyyc .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2288,7 +2296,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   text-align: left;
 }
 
-#degkxbouny .gt_empty_group_heading {
+#hlwfhbzyyc .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2303,15 +2311,15 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   vertical-align: middle;
 }
 
-#degkxbouny .gt_from_md > :first-child {
+#hlwfhbzyyc .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#degkxbouny .gt_from_md > :last-child {
+#hlwfhbzyyc .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#degkxbouny .gt_row {
+#hlwfhbzyyc .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2330,7 +2338,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   overflow-x: hidden;
 }
 
-#degkxbouny .gt_stub {
+#hlwfhbzyyc .gt_stub {
   color: #FFFFFF;
   background-color: #929292;
   font-size: 100%;
@@ -2343,7 +2351,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   padding-right: 5px;
 }
 
-#degkxbouny .gt_stub_row_group {
+#hlwfhbzyyc .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2357,15 +2365,15 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   vertical-align: top;
 }
 
-#degkxbouny .gt_row_group_first td {
+#hlwfhbzyyc .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#degkxbouny .gt_row_group_first th {
+#hlwfhbzyyc .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#degkxbouny .gt_summary_row {
+#hlwfhbzyyc .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2375,16 +2383,16 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   padding-right: 5px;
 }
 
-#degkxbouny .gt_first_summary_row {
+#hlwfhbzyyc .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D5D5D5;
 }
 
-#degkxbouny .gt_first_summary_row.thick {
+#hlwfhbzyyc .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#degkxbouny .gt_last_summary_row {
+#hlwfhbzyyc .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2394,7 +2402,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-bottom-color: #D5D5D5;
 }
 
-#degkxbouny .gt_grand_summary_row {
+#hlwfhbzyyc .gt_grand_summary_row {
   color: #FFFFFF;
   background-color: #0076BA;
   text-transform: inherit;
@@ -2404,7 +2412,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   padding-right: 5px;
 }
 
-#degkxbouny .gt_first_grand_summary_row {
+#hlwfhbzyyc .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2414,7 +2422,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-top-color: #D5D5D5;
 }
 
-#degkxbouny .gt_last_grand_summary_row_top {
+#hlwfhbzyyc .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2424,11 +2432,11 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-bottom-color: #D5D5D5;
 }
 
-#degkxbouny .gt_striped {
+#hlwfhbzyyc .gt_striped {
   background-color: #F4F4F4;
 }
 
-#degkxbouny .gt_table_body {
+#hlwfhbzyyc .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D5D5D5;
@@ -2437,7 +2445,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-bottom-color: #D5D5D5;
 }
 
-#degkxbouny .gt_footnotes {
+#hlwfhbzyyc .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2451,7 +2459,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-right-color: #D3D3D3;
 }
 
-#degkxbouny .gt_footnote {
+#hlwfhbzyyc .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -2460,7 +2468,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   padding-right: 5px;
 }
 
-#degkxbouny .gt_sourcenotes {
+#hlwfhbzyyc .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2474,7 +2482,7 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   border-right-color: #D3D3D3;
 }
 
-#degkxbouny .gt_sourcenote {
+#hlwfhbzyyc .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2482,72 +2490,72 @@ Table 4: <strong>Récapitulatif de l’API du package <a href="https://astamm.g
   padding-right: 5px;
 }
 
-#degkxbouny .gt_left {
+#hlwfhbzyyc .gt_left {
   text-align: left;
 }
 
-#degkxbouny .gt_center {
+#hlwfhbzyyc .gt_center {
   text-align: center;
 }
 
-#degkxbouny .gt_right {
+#hlwfhbzyyc .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#degkxbouny .gt_font_normal {
+#hlwfhbzyyc .gt_font_normal {
   font-weight: normal;
 }
 
-#degkxbouny .gt_font_bold {
+#hlwfhbzyyc .gt_font_bold {
   font-weight: bold;
 }
 
-#degkxbouny .gt_font_italic {
+#hlwfhbzyyc .gt_font_italic {
   font-style: italic;
 }
 
-#degkxbouny .gt_super {
+#hlwfhbzyyc .gt_super {
   font-size: 65%;
 }
 
-#degkxbouny .gt_footnote_marks {
+#hlwfhbzyyc .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#degkxbouny .gt_asterisk {
+#hlwfhbzyyc .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#degkxbouny .gt_indent_1 {
+#hlwfhbzyyc .gt_indent_1 {
   text-indent: 5px;
 }
 
-#degkxbouny .gt_indent_2 {
+#hlwfhbzyyc .gt_indent_2 {
   text-indent: 10px;
 }
 
-#degkxbouny .gt_indent_3 {
+#hlwfhbzyyc .gt_indent_3 {
   text-indent: 15px;
 }
 
-#degkxbouny .gt_indent_4 {
+#hlwfhbzyyc .gt_indent_4 {
   text-indent: 20px;
 }
 
-#degkxbouny .gt_indent_5 {
+#hlwfhbzyyc .gt_indent_5 {
   text-indent: 25px;
 }
 
-#degkxbouny .katex-display {
+#hlwfhbzyyc .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#degkxbouny div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#hlwfhbzyyc div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>

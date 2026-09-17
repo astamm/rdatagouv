@@ -2,6 +2,8 @@
 
 ## rdatagouv 0.1.0
 
+CRAN release: 2026-09-12
+
 This is the first release of **rdatagouv**, an R client for the public
 API of data.gouv.fr, the French government’s open data platform.
 Download and install the package to explore, download and reuse public
