@@ -14,12 +14,12 @@ coverage](https://codecov.io/gh/astamm/rdatagouv/graph/badge.svg)](https://app.c
 status](https://www.r-pkg.org/badges/version/rdatagouv.png)](https://CRAN.R-project.org/package=rdatagouv)
 <!-- badges: end -->
 
-`rdatagouv` is an R client for the public API of
-[data.gouv.fr](https://www.data.gouv.fr), the French government’s open
-data platform. It helps you *find* a dataset that matches your
-interests, *judge* whether it is usable, *download* it, and later
-*re-fetch the exact same table* reproducibly. Requests are built on top
-of the [`httr2`](https://httr2.r-lib.org) package.
+[{rdatagouv}](https://astamm.github.io/rdatagouv/) is an R client for
+the public API of [data.gouv.fr](https://www.data.gouv.fr), the French
+government’s open data platform. It helps you *find* a dataset that
+matches your interests, *judge* whether it is usable, *download* it, and
+later *re-fetch the exact same table* reproducibly. Requests are built
+on top of the [`httr2`](https://httr2.r-lib.org) package.
 
 ## Installation
 
@@ -30,10 +30,11 @@ of the [`httr2`](https://httr2.r-lib.org) package.
 
 ## Quick start
 
-`rdatagouv` revolves around a simple workflow: **find** a dataset,
-**judge** whether it is usable, **fetch** it into a table, and later
-**re-fetch the exact same table** reproducibly. The examples below hit
-the live data.gouv.fr API and show real results.
+[{rdatagouv}](https://astamm.github.io/rdatagouv/) revolves around a
+simple workflow: **find** a dataset, **judge** whether it is usable,
+**fetch** it into a table, and later **re-fetch the exact same table**
+reproducibly. The examples below hit the live data.gouv.fr API and show
+real results.
 
 ### 1. Find
 
