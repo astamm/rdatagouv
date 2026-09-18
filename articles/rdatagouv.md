@@ -267,10 +267,10 @@ topics[, c("name", "n_elements")]
       name                                                                n_elements
       <chr>                                                                    <int>
     1 Indicateurs du tableau de bord des mobilités durables                       27
-    2 Vie quotidienne                                                            532
+    2 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
     3 Catalogue des données sur l'immobilier logistique à l'échelle nati…        135
-    4 Élaboration ou évolution d'un document d'urbanisme                          87
-    5 🚎 Tarification sociale/solidaire des transports publics | Attribut…          0
+    4 Lutte contre la vacance des logements                                        8
+    5 Véhicules électriques                                                       27
 
 Pass a theme’s id to `dg_find_datasets(topic =)` to narrow a catalog
 search to datasets grouped under it (the same single-valued server-side
@@ -327,7 +327,7 @@ glimpse$quality$score             # 0..1 quality score
 glimpse$metrics$views             # how often the dataset is looked at
 ```
 
-    [1] 735
+    [1] 750
 
 ``` r
 
